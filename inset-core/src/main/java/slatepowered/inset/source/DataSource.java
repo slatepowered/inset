@@ -1,11 +1,19 @@
 package slatepowered.inset.source;
 
+import slatepowered.inset.DataManager;
 import slatepowered.inset.codec.EncodeOutput;
 
 /**
  * Represents a type of data storage.
  */
 public interface DataSource {
+
+    /**
+     * Get the data manager for this source.
+     *
+     * @return The data manager.
+     */
+    DataManager getDataManager();
 
     /**
      * Creates a new document serialization output which produces

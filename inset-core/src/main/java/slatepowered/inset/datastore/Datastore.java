@@ -1,6 +1,5 @@
 package slatepowered.inset.datastore;
 
-import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import slatepowered.inset.DataManager;
@@ -30,6 +29,7 @@ public class Datastore<K, T> {
     protected final List<DataItem<K, T>> cachedList = new LinkedList<>();
 
     /** All cached data items by key. */
+    @Getter
     protected final Map<K, DataItem<K, T>> cachedMap = new ConcurrentHashMap<>();
 
     @Getter
@@ -57,10 +57,23 @@ public class Datastore<K, T> {
      * or a new instance is created.
      *
      * @param key The key.
-     * @return The item.
+     * @return The never-null data item.
      */
-    public DataItem<K, T> reference(K key) {
-        return cachedMap.computeIfAbsent(key, k -> new DataItem<>(this, k));
+    public DataItem<K, T> get(K key) {
+        return cachedMap.computeIfAbsent(key,
+                k -> new DataItem<>(this, k));
+    }
+
+    /**
+     * Get or create a data item with a value present for the given key.
+     *
+     * @see #get(Object)
+     * @see DataItem#defaultIfAbsent()
+     * @param key The key.
+     * @return The never-null data item.
+     */
+    public DataItem<K, T> getOrCreate(K key) {
+        return get(key).defaultIfAbsent();
     }
 
     /**
@@ -115,14 +128,14 @@ public class Datastore<K, T> {
     public QueryStatus<K, T> find(Query query) {
         DataItem<K, T> cachedItem = findCached(query);
         if (cachedItem != null) {
-            return new QueryStatus<K, T>().completeSuccessfully(QueryResult.FOUND, cachedItem);
+            return new QueryStatus<>(this, query).completeSuccessfully(QueryResult.FOUND, cachedItem);
         }
 
         query = query.qualify(this);
 
         // asynchronously try to load the item
         // from the datatable
-        QueryStatus<K, T> queryStatus = new QueryStatus<>();
+        QueryStatus<K, T> queryStatus = new QueryStatus<>(this, query);
         getTable().findOneAsync(query)
                 .whenComplete((result, throwable) -> {
                     if (throwable != null) {
@@ -143,7 +156,7 @@ public class Datastore<K, T> {
                         return;
                     }
 
-                    DataItem<K, T> item = reference(key);
+                    DataItem<K, T> item = get(key);
                     item.decode(input);
                     item.pulledNow();
                     queryStatus.completeSuccessfully(QueryResult.LOADED, item);

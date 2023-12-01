@@ -40,13 +40,14 @@ public class MongoDataTable implements DataTable {
         String keyField = output.getSetKeyField();
 
         // create filter for item
+        System.out.println("UpsertReplaceOne with filter: " + Filters.eq(keyField, key) + ", document: " + document);
         collection.replaceOne(Filters.eq(keyField, key), document, new ReplaceOptions().upsert(true));
     }
 
     @Override
     public DataSourceQueryResult findOneSync(Query query) throws DataSourceException {
         String keyFieldOverride = source.getKeyFieldOverride();
-        Bson filter = MongoQueries.serializeQueryToFilter(keyFieldOverride, query);
+        Bson filter = MongoQueries.serializeQueryToFindOneFilter(keyFieldOverride, query);
 
         FindIterable<Document> iterable = collection.find(filter);
         Document result = iterable.first();

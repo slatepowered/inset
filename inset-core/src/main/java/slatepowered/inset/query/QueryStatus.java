@@ -1,6 +1,10 @@
 package slatepowered.inset.query;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import slatepowered.inset.datastore.DataItem;
+import slatepowered.inset.datastore.Datastore;
+import slatepowered.inset.datastore.OperationStatus;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -11,48 +15,15 @@ import java.util.function.Consumer;
  * @param <K> The primary key type.
  * @param <T> The data type.
  */
-public class QueryStatus<K, T> {
-
-    /**
-     * Whether the query completed at all, success is not required.
-     */
-    private volatile boolean completed = false;
-
-    /**
-     * The completable future.
-     */
-    private final CompletableFuture<QueryStatus<K, T>> future = new CompletableFuture<>();
+public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> {
 
     /* Result Fields (set when the query completed) */
     private volatile QueryResult result;  // The type of result
     private volatile DataItem<K, T> item; // The data item if successful
     private volatile Object error;        // The error object if it failed
 
-    /**
-     * Get whether this query completed at all.
-     *
-     * @return Whether it completed.
-     */
-    public boolean isCompleted() {
-        return completed;
-    }
-
-    /**
-     * Get the awaitable future.
-     *
-     * @return The future.
-     */
-    public CompletableFuture<QueryStatus<K, T>> future() {
-        return future;
-    }
-
-    /**
-     * Block this thread to await completion of the query.
-     *
-     * @return This.
-     */
-    public QueryStatus<K, T> await() {
-        return future.join();
+    public QueryStatus(Datastore<K, T> datastore, Query query) {
+        super(datastore, query);
     }
 
     /**
@@ -64,8 +35,53 @@ public class QueryStatus<K, T> {
     public QueryStatus<K, T> then(Consumer<QueryStatus<K, T>> consumer) {
         future.whenComplete((status, throwable) -> {
             if (status != null && status.result().isSuccessful()) {
-                consumer.accept(status);
+                try {
+                    consumer.accept(status);
+                } catch (Throwable t) {
+                    System.err.println("Error while processing query result");
+                    t.printStackTrace();
+                }
             }
+        });
+
+        return this;
+    }
+
+    /**
+     * On successful completion, if the value is absent in the data source
+     * but we do know the key from the query, create a new reference item and
+     * fill it with the default value.
+     *
+     * @return This.
+     */
+    public QueryStatus<K, T> thenDefaultIfAbsent() {
+        if (!query.hasKey())
+            return this;
+
+        future = future.thenApply(status -> {
+            if (status.absent()) {
+                this.item = datastore.getOrCreate(key());
+            }
+
+            return this;
+        });
+
+        return this;
+    }
+
+    /**
+     * Reload/re-pull the data from the data source on successful completion if that
+     * wasn't already done as part of the original query.
+     *
+     * @return This.
+     */
+    public QueryStatus<K, T> thenReloadIfCached() {
+        future = future.thenApplyAsync(status -> {
+            if (status.found()) {
+                status.item().pullSync();
+            }
+
+            return status;
         });
 
         return this;
@@ -176,8 +192,7 @@ public class QueryStatus<K, T> {
         this.result = result;
         this.item = item;
         this.error = error;
-
-        future.complete(this);
+        completeInternal(this);
         return this;
     }
 

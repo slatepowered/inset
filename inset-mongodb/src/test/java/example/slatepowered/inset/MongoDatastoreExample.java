@@ -16,7 +16,7 @@ import java.util.UUID;
 
 public class MongoDatastoreExample {
 
-    public class Stats {
+    public static class Stats {
         @Key
         protected UUID uuid;
 
@@ -26,16 +26,16 @@ public class MongoDatastoreExample {
         protected Integer deaths = 0;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         // Create the data manager
         DataManager dataManager = DataManager.builder()
                 .codecRegistry(new CodecRegistry(ReflectiveCodecFactory.builder().build()))
                 .build();
 
         // Connect to the data source (database)
-        MongoDataSource dataSource = MongoDataSource.builder()
+        MongoDataSource dataSource = MongoDataSource.builder(dataManager)
                 .keyFieldOverride("_id")
-                .connect("", "test-db")
+                .connect(System.getProperty("test.slatepowered.inset.mongoUri"), "test")
                 .build();
         DataTable dataTable = dataSource.table("test");
 
@@ -43,16 +43,15 @@ public class MongoDatastoreExample {
         Datastore<UUID, Stats> datastore = dataManager.createDatastore(dataTable, UUID.class, Stats.class);
 
         // Load an item by key
-        QueryStatus<UUID, Stats> queryStatus1 =
-                datastore.find(Query.key(UUID.randomUUID()));
+        final UUID key = UUID.randomUUID();
+        QueryStatus<UUID, Stats> queryStatus1 = datastore.find(Query.key(key));
         queryStatus1.then(result /* = queryStatus1 */ -> {
             // This is called if the query succeeds, this doesn't mean
             // it would've found anything it just means no errors occurred
 
             if (result.absent()) { // No item found in database or locally
-                /* same as */ if (!result.present()) { /* ... */ }
-
-                System.out.println("Could not find item");
+                System.out.println("Could not find item, inserting new item with key: " + key);
+                datastore.getOrCreate(key).ifPresent(stats -> stats.deaths++).saveSync();
                 return;
             }
 
@@ -71,13 +70,24 @@ public class MongoDatastoreExample {
 
             Optional<Stats> statsOptional = item.optional();
             Stats stats = item.get();
-            UUID key = item.key();
+            UUID itemKey = item.key(); // should be the same as the above defined `key` value in this case
 
             stats.deaths++;
             item.saveAsync().whenComplete((__, err) -> {
                 System.out.println("saved data n shit");
             });
         });
+
+        queryStatus1.awaitHandled();
+
+        QueryStatus<UUID, Stats> queryStatus2 = datastore.find(Query.key(key));
+        queryStatus2.then(result -> {
+            if (!result.found()) {
+                throw new IllegalArgumentException("wtf it should be");
+            }
+        });
+
+        dataManager.await();
     }
 
 }

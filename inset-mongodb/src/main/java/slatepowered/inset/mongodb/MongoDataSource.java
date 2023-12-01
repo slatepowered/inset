@@ -8,6 +8,7 @@ import com.mongodb.client.MongoDatabase;
 import lombok.*;
 import org.bson.Document;
 import org.bson.UuidRepresentation;
+import slatepowered.inset.DataManager;
 import slatepowered.inset.bson.DocumentEncodeOutput;
 import slatepowered.inset.codec.EncodeOutput;
 import slatepowered.inset.source.DataSource;
@@ -35,6 +36,9 @@ public class MongoDataSource implements DataSource {
         }
     }
 
+    // The data manager
+    private final DataManager dataManager;
+
     // The MongoDB database instance
     private final MongoDatabase database;
 
@@ -44,6 +48,11 @@ public class MongoDataSource implements DataSource {
     @Getter
     @Setter
     private String keyFieldOverride; // The key field to use
+
+    @Override
+    public DataManager getDataManager() {
+        return dataManager;
+    }
 
     @Override
     public EncodeOutput createDocumentSerializationOutput() {
@@ -64,12 +73,14 @@ public class MongoDataSource implements DataSource {
     /**
      * Creates a new builder.
      */
-    public static Builder builder() {
-        return new Builder();
+    public static Builder builder(DataManager dataManager) {
+        return new Builder(dataManager);
     }
 
+    @RequiredArgsConstructor
     public static class Builder {
         /* Options */
+        private final DataManager dataManager;
         private MongoDatabase database;
         private String keyFieldOverride = "_id";
 
@@ -105,6 +116,7 @@ public class MongoDataSource implements DataSource {
 
         public MongoDataSource build() {
             MongoDataSource source = new MongoDataSource(
+                    dataManager,
                     database
             );
 

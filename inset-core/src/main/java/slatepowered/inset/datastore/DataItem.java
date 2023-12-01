@@ -149,6 +149,30 @@ public class DataItem<K, T> {
     }
 
     /**
+     * Create a new default value for this item if the value is absent.
+     *
+     * @return This.
+     */
+    public DataItem<K, T> defaultIfAbsent() {
+        if (!isPresent()) {
+            value = datastore.getDataCodec().createDefault(this);
+        }
+
+        return this;
+    }
+
+    /**
+     * Forces the current value to be disposed and a new default
+     * value to be created regardless of whether a current value exists.
+     *
+     * @return This.
+     */
+    public DataItem<K, T> resetToDefaults() {
+        value = datastore.getDataCodec().createDefault(this);
+        return this;
+    }
+
+    /**
      * Synchronously serialize and update this item in the remote data storage.
      *
      * @return This.
@@ -178,7 +202,7 @@ public class DataItem<K, T> {
      * @return This.
      */
     public CompletableFuture<DataItem<K, T>> saveAsync() {
-        return CompletableFuture.supplyAsync(this::saveSync);
+        return CompletableFuture.supplyAsync(this::saveSync, datastore.getDataManager().getExecutorService());
     }
 
     /**

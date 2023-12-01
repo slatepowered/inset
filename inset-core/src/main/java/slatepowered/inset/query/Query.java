@@ -3,6 +3,7 @@ package slatepowered.inset.query;
 import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.datastore.Datastore;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -53,7 +54,7 @@ public interface Query {
         return this;
     }
 
-    static Query key(Object key) {
+    static Query key(final Object key) {
         return new Query() {
             // The cached field map
             Map<String, FieldConstraint<?>> fieldConstraintMap;
@@ -106,6 +107,110 @@ public interface Query {
                 return this;
             }
         };
+    }
+
+    /**
+     * Creates a new field constraint-based query for the given
+     * field constraints.
+     *
+     * @param fieldConstraintMap The field constraints.
+     * @return The query.
+     */
+    static Query forFields(Map<String, FieldConstraint<?>> fieldConstraintMap) {
+        return new Query() {
+            // Cached hasKey field, can be checked reliably
+            // once it is qualified
+            Boolean hasKey;
+
+            // Cached key
+            Object key;
+
+            // The datastore this query was qualified for
+            Datastore<?, ?> datastore;
+
+            @Override
+            public boolean hasKey() {
+                if (hasKey == null) {
+                    String field = getKeyField();
+                    hasKey = field != null && fieldConstraintMap.containsKey(field);
+                }
+
+                return hasKey;
+            }
+
+            @Override
+            public Object getKey() {
+                if (key == null) {
+                    String field = getKeyField();
+                    if (field == null) {
+                        return null;
+                    }
+
+                    // find key from field constraints
+                    FieldConstraint<?> constraint = fieldConstraintMap.get(field);
+                    if (constraint == null) {
+                        return null;
+                    }
+
+                    if (constraint instanceof CommonFieldConstraint) {
+                        return key = ((CommonFieldConstraint<?>)constraint).getOperand();
+                    }
+                }
+
+                return key;
+            }
+
+            @Override
+            public String getKeyField() {
+                return datastore.getDataCodec().getPrimaryKeyFieldName();
+            }
+
+            @Override
+            public FieldConstraint<?> getConstraint(String name) {
+                return fieldConstraintMap.get(name);
+            }
+
+            @Override
+            public Map<String, FieldConstraint<?>> getFieldConstraints() {
+                return Collections.unmodifiableMap(fieldConstraintMap);
+            }
+
+            @Override
+            public Query qualify(Datastore<?, ?> datastore) {
+                key = null;
+                hasKey = null;
+                this.datastore = datastore;
+                return this;
+            }
+        };
+    }
+
+    static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Builds queries with field constraints.
+     */
+    class Builder {
+        private Map<String, FieldConstraint<?>> fieldConstraintMap = new HashMap<>();
+
+        public Builder constrain(String field, FieldConstraint<?> constraint) {
+            fieldConstraintMap.put(field, constraint);
+            return this;
+        }
+
+        public Builder equal(String field, Object value) {
+            return constrain(field, CommonConstraintType.EQUAL.forOperand(value));
+        }
+
+        public Builder notEqual(String field, Object value) {
+            return constrain(field, CommonConstraintType.NOT_EQUAL.forOperand(value));
+        }
+
+        public Query build() {
+            return forFields(fieldConstraintMap);
+        }
     }
 
 }

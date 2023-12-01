@@ -9,6 +9,7 @@ import slatepowered.veru.reflect.UnsafeUtil;
 import sun.misc.Unsafe;
 
 import java.lang.invoke.MethodHandle;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Predicate;
 
@@ -18,13 +19,30 @@ import java.util.function.Predicate;
 @SuppressWarnings("unchecked")
 final class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T> implements DataCodec<K, T> {
 
+    // what the method name says lol
+    private static UnsafeFieldDesc[] removePrimaryKeyFieldFromDefaultCodecFieldArray(UnsafeFieldDesc[] arr, String name) {
+        int i = 0;
+        for (; i < arr.length; i++)
+            if (arr[i].name.equals(name))
+                break;
+
+        UnsafeFieldDesc[] result = new UnsafeFieldDesc[arr.length - 1];
+        if (i > 0) // its not the first element
+            System.arraycopy(arr, 0, result, 0, i);
+        if (i < arr.length - 1) // its not the last element
+            System.arraycopy(arr, i + 1, result, i, arr.length - i - 1);
+        return result;
+    }
+
     static final Unsafe UNSAFE = UnsafeUtil.getUnsafe();
 
     /** The field containing the primary key. */
+    final UnsafeFieldDesc[] allFields;
     final UnsafeFieldDesc primaryKeyField;
 
     public UnsafeReflectiveDataCodec(Class<T> tClass, UnsafeFieldDesc[] fields, MethodHandle constructor, UnsafeFieldDesc primaryKeyField) {
-        super(tClass, fields, constructor);
+        super(tClass, removePrimaryKeyFieldFromDefaultCodecFieldArray(fields, primaryKeyField.name), constructor);
+        this.allFields = fields;
         this.primaryKeyField = primaryKeyField;
     }
 
@@ -64,8 +82,8 @@ final class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T
 
             UnsafeFieldDesc fieldDesc;
             UnsafeFieldDesc theField = null;
-            for (int j = fields.length - 1; j >= 0; i--) {
-                if ((fieldDesc = fields[j]).name.equals(fieldName)) {
+            for (int j = allFields.length - 1; j >= 0; j--) {
+                if ((fieldDesc = allFields[j]).name.equals(fieldName)) {
                     theField = fieldDesc;
                     break;
                 }
