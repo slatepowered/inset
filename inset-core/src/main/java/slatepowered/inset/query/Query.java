@@ -166,7 +166,7 @@ public interface Query {
 
             @Override
             public String getKeyField() {
-                return datastore.getDataCodec().getPrimaryKeyFieldName();
+                return datastore != null ? datastore.getDataCodec().getPrimaryKeyFieldName() : null;
             }
 
             @Override

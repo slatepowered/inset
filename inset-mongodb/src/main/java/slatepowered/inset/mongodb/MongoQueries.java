@@ -73,7 +73,7 @@ final class MongoQueries {
                 case ONE_OF: return Filters.in(fieldName, (Iterable<?>) encodeFieldConstraintOperand(constraint, commonConstraint.getOperand()));
             }
         }
-
+        
         throw new UnsupportedOperationException("Unsupported field constraint type " + constraint.getClass().getName() + " for field `" + fieldName + "`");
     }
 

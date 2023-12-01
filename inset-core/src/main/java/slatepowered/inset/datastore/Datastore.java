@@ -150,7 +150,7 @@ public class Datastore<K, T> {
                     }
 
                     DecodeInput input = result.input();
-                    K key = (K) input.read(null, dataCodec.getPrimaryKeyFieldName(), keyClass);
+                    K key = (K) input.getOrReadKey(null, keyClass);
                     if (key == null) {
                         queryStatus.completeFailed("Query result doesnt contain a primary key");
                         return;

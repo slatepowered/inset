@@ -1,12 +1,9 @@
 package slatepowered.inset.query;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.datastore.Datastore;
 import slatepowered.inset.datastore.OperationStatus;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
@@ -83,6 +80,34 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
 
             return status;
         });
+
+        return this;
+    }
+
+    /**
+     * If a value is present, run the given consumer.
+     *
+     * @param consumer The consumer.
+     * @return This.
+     */
+    public QueryStatus<K, T> ifPresent(Consumer<QueryStatus<K, T>> consumer) {
+        if (isPresent()) {
+            consumer.accept(this);
+        }
+
+        return this;
+    }
+
+    /**
+     * If a value is present, run the given consumer.
+     *
+     * @param consumer The consumer.
+     * @return This.
+     */
+    public QueryStatus<K, T> ifPresentUse(Consumer<DataItem<K, T>> consumer) {
+        if (isPresent()) {
+            consumer.accept(this.item);
+        }
 
         return this;
     }
@@ -212,7 +237,7 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
         return result != null && !result.isSuccessful();
     }
 
-    public boolean present() {
+    public boolean isPresent() {
         return result != null && result.isValue();
     }
 

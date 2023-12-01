@@ -7,6 +7,7 @@ import slatepowered.inset.datastore.Datastore;
 import slatepowered.inset.mongodb.MongoDataSource;
 import slatepowered.inset.query.Query;
 import slatepowered.inset.query.QueryStatus;
+import slatepowered.inset.query.constraint.FieldConstraint;
 import slatepowered.inset.reflective.Key;
 import slatepowered.inset.reflective.ReflectiveCodecFactory;
 import slatepowered.inset.source.DataTable;
@@ -43,7 +44,7 @@ public class MongoDatastoreExample {
         Datastore<UUID, Stats> datastore = dataManager.createDatastore(dataTable, UUID.class, Stats.class);
 
         // Load an item by key
-        final UUID key = UUID.randomUUID();
+        final UUID key = new UUID(393939, 32020032);
         QueryStatus<UUID, Stats> queryStatus1 = datastore.find(Query.key(key));
         queryStatus1.then(result /* = queryStatus1 */ -> {
             // This is called if the query succeeds, this doesn't mean
@@ -78,14 +79,13 @@ public class MongoDatastoreExample {
             });
         });
 
-        queryStatus1.awaitHandled();
-
-        QueryStatus<UUID, Stats> queryStatus2 = datastore.find(Query.key(key));
-        queryStatus2.then(result -> {
-            if (!result.found()) {
-                throw new IllegalArgumentException("wtf it should be");
-            }
-        });
+        datastore.find(Query.builder()
+                .eq("kills", 0)
+                .eq("deaths", 1)
+                .build()
+        )
+                .then(result -> result.ifPresentUse(item -> System.out.println(item.get().uuid)))
+                .exceptionally(result -> result.errorAs(Throwable.class).printStackTrace());
 
         dataManager.await();
     }

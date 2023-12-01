@@ -25,7 +25,7 @@ class UnsafeReflectiveValueCodec<T> implements ValueCodec<T> {
     protected final MethodHandle constructor;
 
     @Override
-    public final void encode(CodecContext context, T value, EncodeOutput output) {
+    public void encode(CodecContext context, T value, EncodeOutput output) {
         for (UnsafeFieldDesc desc : fields) {
             Object fieldValue = UNSAFE.getObject(value, desc.offset);
             output.set(context, desc.name, fieldValue);
@@ -33,7 +33,7 @@ class UnsafeReflectiveValueCodec<T> implements ValueCodec<T> {
     }
 
     @Override
-    public final T construct(CodecContext context, DecodeInput input) {
+    public T construct(CodecContext context, DecodeInput input) {
         try {
             return (T) (constructor != null ? constructor.invoke() : UNSAFE.allocateInstance(tClass));
         } catch (Throwable t) {
@@ -43,7 +43,7 @@ class UnsafeReflectiveValueCodec<T> implements ValueCodec<T> {
     }
 
     @Override
-    public final void decode(CodecContext context, T instance, DecodeInput input) {
+    public void decode(CodecContext context, T instance, DecodeInput input) {
         for (UnsafeFieldDesc desc : fields) {
             Object value = input.read(context, desc.name, desc.type);
             UNSAFE.putObject(instance, desc.offset, value);

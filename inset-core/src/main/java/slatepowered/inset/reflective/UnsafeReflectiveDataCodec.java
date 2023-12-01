@@ -1,5 +1,7 @@
 package slatepowered.inset.reflective;
 
+import slatepowered.inset.codec.CodecContext;
+import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.query.constraint.FieldConstraint;
@@ -43,6 +45,14 @@ final class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T
         super(tClass, removePrimaryKeyFieldFromDefaultCodecFieldArray(fields, primaryKeyField.name), constructor);
         this.allFields = fields;
         this.primaryKeyField = primaryKeyField;
+    }
+
+    @Override
+    public void decode(CodecContext context, T instance, DecodeInput input) {
+        super.decode(context, instance, input);
+
+        // decode primary key
+        UNSAFE.putObject(instance, primaryKeyField.offset, input.getOrReadKey(primaryKeyField.name, primaryKeyField.type));
     }
 
     @Override
