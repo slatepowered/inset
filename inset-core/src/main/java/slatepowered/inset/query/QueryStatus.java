@@ -150,6 +150,20 @@ public class QueryStatus<K, T> {
     }
 
     /**
+     * Load the data from the database anyways if the
+     * item was found in the cache.
+     *
+     * @return This.
+     */
+    public QueryStatus<K, T> pullSyncIfCached() {
+        if (result == QueryResult.FOUND) {
+            item.pullSync();
+        }
+
+        return this;
+    }
+
+    /**
      * Complete this query with the given parameters.
      *
      * @param result The result type.

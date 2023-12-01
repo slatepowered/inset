@@ -2,6 +2,7 @@ package slatepowered.inset.datastore;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import slatepowered.inset.DataManager;
 import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.codec.DecodeInput;
@@ -22,7 +23,7 @@ import java.util.function.Predicate;
  * @param <K> The primary key type.
  * @param <T> The data type.
  */
-@Builder
+@RequiredArgsConstructor
 public class Datastore<K, T> {
 
     /** All cached data items in a list for fast iteration. */
@@ -31,14 +32,14 @@ public class Datastore<K, T> {
     /** All cached data items by key. */
     protected final Map<K, DataItem<K, T>> cachedMap = new ConcurrentHashMap<>();
 
+    @Getter
+    protected final DataManager dataManager;
+
     /**
      * The primary key type.
      */
     @Getter
     protected final Class<K> keyClass;
-
-    @Getter
-    protected final DataManager dataManager;
 
     /** The database table to load/save data from/to. */
     @Getter

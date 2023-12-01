@@ -153,7 +153,7 @@ public class DataItem<K, T> {
      *
      * @return This.
      */
-    public DataItem<K, T> pushSync() {
+    public DataItem<K, T> saveSync() {
         if (value == null) {
             return this;
         }
@@ -174,11 +174,11 @@ public class DataItem<K, T> {
     /**
      * Asynchronously serialize and update this item in the remote data storage.
      *
-     * @see #pushSync()
+     * @see #saveSync()
      * @return This.
      */
-    public CompletableFuture<DataItem<K, T>> pushAsync() {
-        return CompletableFuture.supplyAsync(this::pushSync);
+    public CompletableFuture<DataItem<K, T>> saveAsync() {
+        return CompletableFuture.supplyAsync(this::saveSync);
     }
 
     /**
