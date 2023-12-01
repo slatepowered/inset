@@ -16,12 +16,24 @@ import slatepowered.veru.functional.ThrowingSupplier;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 
 /**
  * Data source using a MongoDB connection.
  */
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class MongoDataSource implements DataSource {
+
+    static {
+        // disable mongo driver logging flooding the
+        // console/terminal by default unless system property
+        //     `slatepowered.inset.mongodb.enableLogging`
+        // is set to true
+        if (!"true".equalsIgnoreCase(System.getProperty("slatepowered.inset.mongodb.enableLogging"))) {
+            java.util.logging.Logger logger = java.util.logging.Logger.getLogger("org.mongodb.driver");
+            logger.setLevel(Level.OFF);
+        }
+    }
 
     // The MongoDB database instance
     private final MongoDatabase database;
