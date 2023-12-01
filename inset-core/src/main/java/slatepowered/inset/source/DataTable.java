@@ -23,7 +23,7 @@ public interface DataTable {
      * @param output The output data.
      * @throws DataSourceException Any errors that may occur.
      */
-    void updateOneSync(EncodeOutput output) throws DataSourceException;
+    void replaceOneSync(EncodeOutput output) throws DataSourceException;
 
     /**
      * Asynchronously updates the given output data in the data table.
@@ -31,8 +31,8 @@ public interface DataTable {
      * @param output The output data.
      * @return The result future.
      */
-    default CompletableFuture<Void> updateOneAsync(final EncodeOutput output) {
-        return CompletableFuture.runAsync(() -> this.updateOneSync(output));
+    default CompletableFuture<Void> replaceOneAsync(final EncodeOutput output) {
+        return CompletableFuture.runAsync(() -> this.replaceOneSync(output));
     }
 
     /**

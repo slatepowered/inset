@@ -35,4 +35,10 @@ public interface ValueCodec<T> {
      */
     void decode(CodecContext context, T instance, DecodeInput input);
 
+    default T constructAndDecode(CodecContext context, DecodeInput input) {
+        T instance = construct(context, input);
+        decode(context, instance, input);
+        return instance;
+    }
+
 }

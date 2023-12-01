@@ -1,5 +1,6 @@
 version '1.0.0'
 
 dependencies {
-    compileOnlyApi project(":inset-core")
+    implementation project(":inset-core")
+    implementation 'org.mongodb:bson:3.4.3'
 }

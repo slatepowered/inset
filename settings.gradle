@@ -1,4 +1,5 @@
 rootProject.name = 'inset'
 include 'inset-core'
 include 'inset-bson'
+include 'inset-mongodb'
 

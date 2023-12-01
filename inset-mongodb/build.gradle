@@ -1,0 +1,8 @@
+version '1.0.0'
+
+dependencies {
+    implementation project(":inset-core")
+    implementation project(":inset-bson")
+
+    api 'org.mongodb:mongodb-driver-sync:4.1.1'
+}

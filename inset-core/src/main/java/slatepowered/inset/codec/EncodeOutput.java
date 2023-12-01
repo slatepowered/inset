@@ -1,12 +1,19 @@
 package slatepowered.inset.codec;
 
+import lombok.Getter;
+
 /**
  * An output for structured data which values are to be encoded into.
  */
 public abstract class EncodeOutput {
 
     // The key object
-    protected Object key;
+    @Getter
+    protected Object setKey;
+
+    // The set key field
+    @Getter
+    protected String setKeyField;
 
     /**
      * Set the primary key for the output data.
@@ -14,8 +21,9 @@ public abstract class EncodeOutput {
      * @param name The field name of the key.
      * @param key The key.
      */
-    public void setKey(CodecContext context, String name, Object key) {
-        this.key = key;
+    public void setSetKey(CodecContext context, String name, Object key) {
+        this.setKey = key;
+        this.setKeyField = name;
         registerKey(context, name, key);
     }
 
@@ -31,11 +39,11 @@ public abstract class EncodeOutput {
      */
     public abstract void set(CodecContext context, String field, Object value);
 
-    /**
-     * Build the output data into a final database compatible object.
-     *
-     * @return The object.
-     */
-    public abstract Object build();
+    @SuppressWarnings("unchecked")
+    public <R extends EncodeOutput> R requireType(Class<R> rClass) {
+        if (!rClass.isInstance(this))
+            throw new RuntimeException("Output of type " + rClass.getName() + " required, got " + this.getClass().getSimpleName());
+        return (R) this;
+    }
 
 }

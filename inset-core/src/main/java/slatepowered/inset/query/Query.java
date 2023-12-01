@@ -1,5 +1,9 @@
 package slatepowered.inset.query;
 
+import slatepowered.inset.codec.DataCodec;
+import slatepowered.inset.datastore.Datastore;
+
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -18,6 +22,13 @@ public interface Query {
     Object getKey();
 
     /**
+     * Get the name of the key field if applicable.
+     *
+     * @return The key field name.
+     */
+    String getKeyField();
+
+    /**
      * Get the constraint for the given field name.
      *
      * @param name The name.
@@ -32,10 +43,35 @@ public interface Query {
      */
     Map<String, FieldConstraint<?>> getFieldConstraints();
 
+    /**
+     * Qualifies this query for the given data store.
+     *
+     * @param datastore The datastore.
+     * @return This.
+     */
+    default Query qualify(Datastore<?, ?> datastore) {
+        return this;
+    }
+
     static Query key(Object key) {
         return new Query() {
             // The cached field map
             Map<String, FieldConstraint<?>> fieldConstraintMap;
+            FieldConstraint<?> constraint;
+            DataCodec<?, ?> dataCodec;
+
+            // ensure the constraints are created and
+            // registered for when we need them
+            private void ensureConstraints() {
+                if (constraint == null) {
+                    constraint = CommonConstraintType.EQUAL.forOperand(key);
+                }
+
+                if (fieldConstraintMap == null) {
+                    fieldConstraintMap = new HashMap<>();
+                    fieldConstraintMap.put(getKeyField(), constraint);
+                }
+            }
 
             @Override
             public boolean hasKey() {
@@ -48,13 +84,26 @@ public interface Query {
             }
 
             @Override
+            public String getKeyField() {
+                return dataCodec.getPrimaryKeyFieldName();
+            }
+
+            @Override
             public FieldConstraint<?> getConstraint(String name) {
-                return null; // TODO
+                ensureConstraints();
+                return name.equals(getKeyField()) ? constraint : null;
             }
 
             @Override
             public Map<String, FieldConstraint<?>> getFieldConstraints() {
-                return fieldConstraintMap; // TODO
+                ensureConstraints();
+                return fieldConstraintMap;
+            }
+
+            @Override
+            public Query qualify(Datastore<?, ?> datastore) {
+                dataCodec = datastore.getDataCodec();
+                return this;
             }
         };
     }

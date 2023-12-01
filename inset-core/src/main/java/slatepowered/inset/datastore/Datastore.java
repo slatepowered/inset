@@ -31,6 +31,12 @@ public class Datastore<K, T> {
     /** All cached data items by key. */
     protected final Map<K, DataItem<K, T>> cachedMap = new ConcurrentHashMap<>();
 
+    /**
+     * The primary key type.
+     */
+    @Getter
+    protected final Class<K> keyClass;
+
     @Getter
     protected final DataManager dataManager;
 
@@ -111,6 +117,8 @@ public class Datastore<K, T> {
             return new QueryStatus<K, T>().completeSuccessfully(QueryResult.FOUND, cachedItem);
         }
 
+        query = query.qualify(this);
+
         // asynchronously try to load the item
         // from the datatable
         QueryStatus<K, T> queryStatus = new QueryStatus<>();
@@ -128,7 +136,7 @@ public class Datastore<K, T> {
                     }
 
                     DecodeInput input = result.input();
-                    K key = (K) input.read(null, dataCodec.getPrimaryKeyFieldName());
+                    K key = (K) input.read(null, dataCodec.getPrimaryKeyFieldName(), keyClass);
                     if (key == null) {
                         queryStatus.completeFailed("Query result doesnt contain a primary key");
                         return;

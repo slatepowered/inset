@@ -40,7 +40,7 @@ public final class ReflectiveCodecFactory implements CodecFactory {
                     throw new UnsupportedOperationException("Primitive fields in values are not supported yet");
                 }
 
-                UnsafeFieldDesc fieldDesc = new UnsafeFieldDesc(field, field.getName(), UNSAFE.objectFieldOffset(field));
+                UnsafeFieldDesc fieldDesc = new UnsafeFieldDesc(field, field.getName(), UNSAFE.objectFieldOffset(field), field.getGenericType());
                 unsafeFields.add(fieldDesc);
 
                 // check for primary key field

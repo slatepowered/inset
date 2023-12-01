@@ -163,11 +163,11 @@ public class DataItem<K, T> {
         // serialize value
         EncodeOutput output = table.getSource().createDocumentSerializationOutput();
         CodecContext context = new CodecContext(datastore.getDataManager());
-        output.setKey(context, datastore.getDataCodec().getPrimaryKeyFieldName(), key);
+        output.setSetKey(context, datastore.getDataCodec().getPrimaryKeyFieldName(), key);
         datastore.getDataCodec().encode(context, value, output);
 
         // perform update
-        table.updateOneSync(output);
+        table.replaceOneSync(output);
         return this;
     }
 
