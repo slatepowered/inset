@@ -1,3 +1,4 @@
-rootProject.name = 'store'
-include 'store-core'
+rootProject.name = 'inset'
+include 'inset-core'
+include 'inset-bson'
 
