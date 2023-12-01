@@ -144,7 +144,7 @@ public class DataItem<K, T> {
      * @return This.
      */
     public DataItem<K, T> dispose() {
-        datastore.cachedMap.remove(key);
+        datastore.getDataCache().remove(this);
         return this;
     }
 
@@ -182,7 +182,7 @@ public class DataItem<K, T> {
             return this;
         }
 
-        DataTable table = datastore.getTable();
+        DataTable table = datastore.getSourceTable();
 
         // serialize value
         EncodeOutput output = table.getSource().createDocumentSerializationOutput();
@@ -231,7 +231,7 @@ public class DataItem<K, T> {
      * @return This.
      */
     public DataItem<K, T> pullSync() {
-        DataSourceQueryResult queryResult = datastore.getTable()
+        DataSourceQueryResult queryResult = datastore.getSourceTable()
                 .findOneSync(Query.key(key));
         return decode(queryResult.input()).pulledNow();
     }
@@ -242,7 +242,7 @@ public class DataItem<K, T> {
      * @return The future.
      */
     public CompletableFuture<DataItem<K, T>> pullAsync() {
-        return datastore.getTable()
+        return datastore.getSourceTable()
                 .findOneAsync(Query.key(key))
                 .thenApply(result -> this.decode(result.input()).pulledNow());
     }

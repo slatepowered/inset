@@ -1,19 +1,21 @@
 package example.slatepowered.inset;
 
 import slatepowered.inset.DataManager;
+import slatepowered.inset.cache.DataCache;
 import slatepowered.inset.codec.CodecRegistry;
 import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.datastore.Datastore;
 import slatepowered.inset.mongodb.MongoDataSource;
 import slatepowered.inset.query.Query;
 import slatepowered.inset.query.QueryStatus;
-import slatepowered.inset.query.constraint.FieldConstraint;
 import slatepowered.inset.reflective.Key;
 import slatepowered.inset.reflective.ReflectiveCodecFactory;
 import slatepowered.inset.source.DataTable;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 
 public class MongoDatastoreExample {
 
@@ -30,6 +32,7 @@ public class MongoDatastoreExample {
     public static void main(String[] args) throws InterruptedException {
         // Create the data manager
         DataManager dataManager = DataManager.builder()
+                .executorService(ForkJoinPool.commonPool())
                 .codecRegistry(new CodecRegistry(ReflectiveCodecFactory.builder().build()))
                 .build();
 
@@ -41,7 +44,10 @@ public class MongoDatastoreExample {
         DataTable dataTable = dataSource.table("test");
 
         // Create the datastore
-        Datastore<UUID, Stats> datastore = dataManager.createDatastore(dataTable, UUID.class, Stats.class);
+        Datastore<UUID, Stats> datastore = dataManager.datastore(UUID.class, Stats.class)
+                .sourceTable(dataTable)
+                .dataCache(DataCache.doubleBackedConcurrent())
+                .build();
 
         // Load an item by key
         final UUID key = new UUID(393939, 32020032);

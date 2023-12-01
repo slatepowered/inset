@@ -26,7 +26,7 @@ public class DataManager {
     /**
      * The executor to use for asynchronous operations.
      */
-    protected final ExecutorService executorService = ForkJoinPool.commonPool();
+    protected final ExecutorService executorService;
 
     /**
      * Await all ongoing queries and their handlers to finish
@@ -66,12 +66,14 @@ public class DataManager {
      * @param <T> The value type.
      * @return The datastore.
      */
-    public <K, T> Datastore<K, T> createDatastore(
-            DataTable table,
+    public <K, T> Datastore.DatastoreBuilder<K, T> datastore(
             Class<K> kClass,
             Class<T> tClass
     ) {
-        return new Datastore<>(this, kClass, table, (DataCodec<K, T>) codecRegistry.getCodec(tClass));
+        return Datastore.<K, T>builder()
+                .dataManager(this)
+                .keyClass(kClass)
+                .dataCodec((DataCodec<K, T>) codecRegistry.getCodec(tClass));
     }
 
 }
