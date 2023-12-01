@@ -1,4 +1,4 @@
-package slatepowered.inset.query;
+package slatepowered.inset.query.constraint;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +14,6 @@ import lombok.RequiredArgsConstructor;
 public abstract class CommonFieldConstraint<T> implements FieldConstraint<T> {
 
     protected final CommonConstraintType type;
-    protected final T operand;
+    protected final Object operand;
 
 }

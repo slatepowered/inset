@@ -1,4 +1,4 @@
-package slatepowered.inset.query;
+package slatepowered.inset.query.constraint;
 
 import java.util.function.Predicate;
 

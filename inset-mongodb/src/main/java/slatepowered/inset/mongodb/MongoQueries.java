@@ -5,12 +5,14 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import slatepowered.inset.bson.DocumentDecodeInput;
 import slatepowered.inset.codec.DecodeInput;
-import slatepowered.inset.query.CommonFieldConstraint;
-import slatepowered.inset.query.FieldConstraint;
+import slatepowered.inset.query.constraint.CommonFieldConstraint;
+import slatepowered.inset.query.constraint.FieldConstraint;
 import slatepowered.inset.query.Query;
 import slatepowered.inset.source.DataSourceQueryResult;
 
+import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Support/helpers/utilities for working with {@link Query} abstractions
@@ -63,6 +65,12 @@ final class MongoQueries {
             switch (commonConstraint.getType()) {
                 case EQUAL: return Filters.eq(fieldName, encodeFieldConstraintOperand(constraint, commonConstraint.getOperand()));
                 case NOT_EQUAL: return Filters.ne(fieldName, encodeFieldConstraintOperand(constraint, commonConstraint.getOperand()));
+                case GREATER: return Filters.gt(fieldName, encodeFieldConstraintOperand(constraint, commonConstraint.getOperand()));
+                case LESS: return Filters.lt(fieldName, encodeFieldConstraintOperand(constraint, commonConstraint.getOperand()));
+                case GREATER_OR_EQUAL: return Filters.gte(fieldName, encodeFieldConstraintOperand(constraint, commonConstraint.getOperand()));
+                case LESS_OR_EQUAL: return Filters.lte(fieldName, encodeFieldConstraintOperand(constraint, commonConstraint.getOperand()));
+                case EXISTS: return Filters.exists(fieldName);
+                case ONE_OF: return Filters.in(fieldName, (Iterable<?>) encodeFieldConstraintOperand(constraint, commonConstraint.getOperand()));
             }
         }
 

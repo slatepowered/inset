@@ -2,7 +2,11 @@ package slatepowered.inset.query;
 
 import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.datastore.Datastore;
+import slatepowered.inset.query.constraint.CommonConstraintType;
+import slatepowered.inset.query.constraint.CommonFieldConstraint;
+import slatepowered.inset.query.constraint.FieldConstraint;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -200,12 +204,40 @@ public interface Query {
             return this;
         }
 
-        public Builder equal(String field, Object value) {
+        public Builder eq(String field, Object value) {
             return constrain(field, CommonConstraintType.EQUAL.forOperand(value));
         }
 
-        public Builder notEqual(String field, Object value) {
+        public Builder neq(String field, Object value) {
             return constrain(field, CommonConstraintType.NOT_EQUAL.forOperand(value));
+        }
+
+        public Builder greater(String field, Object value) {
+            return constrain(field, CommonConstraintType.GREATER.forOperand(value));
+        }
+
+        public Builder less(String field, Object value) {
+            return constrain(field, CommonConstraintType.LESS.forOperand(value));
+        }
+
+        public Builder greaterOrEq(String field, Object value) {
+            return constrain(field, CommonConstraintType.GREATER_OR_EQUAL.forOperand(value));
+        }
+
+        public Builder lessOrEq(String field, Object value) {
+            return constrain(field, CommonConstraintType.LESS_OR_EQUAL.forOperand(value));
+        }
+
+        public Builder exists(String field) {
+            return constrain(field, CommonConstraintType.EXISTS.forOperand(/* no operand */ null));
+        }
+
+        public Builder oneOf(String field, Object... values) {
+            return constrain(field, CommonConstraintType.ONE_OF.forOperand(values));
+        }
+
+        public Builder oneOf(String field, Collection<Object> values) {
+            return constrain(field, CommonConstraintType.ONE_OF.forOperand(values));
         }
 
         public Query build() {

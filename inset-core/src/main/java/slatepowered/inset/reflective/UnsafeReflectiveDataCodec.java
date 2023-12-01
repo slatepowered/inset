@@ -2,14 +2,13 @@ package slatepowered.inset.reflective;
 
 import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.codec.DataCodec;
-import slatepowered.inset.query.FieldConstraint;
+import slatepowered.inset.query.constraint.FieldConstraint;
 import slatepowered.inset.query.Query;
 import slatepowered.veru.misc.Throwables;
 import slatepowered.veru.reflect.UnsafeUtil;
 import sun.misc.Unsafe;
 
 import java.lang.invoke.MethodHandle;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Predicate;
 
@@ -75,7 +74,7 @@ final class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T
         // the array of fields and comparing each one should work fine
         // also resolve the values/comparators in order into the array
         UnsafeFieldDesc[] orderedFields = new UnsafeFieldDesc[constrainedFieldCount];
-        Predicate[] orderedComparators = new Predicate[constrainedFieldCount];
+        FieldConstraint[] orderedConstrained = new FieldConstraint[constrainedFieldCount];
         i = 0;
         for (Map.Entry<String, FieldConstraint<?>> entry : fieldConstraints.entrySet()) {
             String fieldName = entry.getKey();
@@ -94,7 +93,7 @@ final class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T
             }
 
             orderedFields[i] = theField;
-            orderedComparators[i] = entry.getValue();
+            orderedConstrained[i] = entry.getValue();
 
             i++;
         }
@@ -105,7 +104,7 @@ final class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T
         return value -> {
             try {
                 for (int n = 0; n < constrainedFieldCount; n++) {
-                    if (!orderedComparators[n].test(UNSAFE.getObject(value, orderedFields[n].offset))) {
+                    if (!orderedConstrained[n].test(UNSAFE.getObject(value, orderedFields[n].offset))) {
                         return false;
                     }
                 }
