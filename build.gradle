@@ -1,4 +1,4 @@
-group 'com.github.slatepowered.store'
+group 'com.github.slatepowered.inset'
 
 buildscript {
     repositories {
