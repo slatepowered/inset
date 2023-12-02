@@ -14,7 +14,6 @@ import slatepowered.inset.source.DataTable;
 
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 
 public class MongoDatastoreExample {
@@ -51,7 +50,7 @@ public class MongoDatastoreExample {
 
         // Load an item by key
         final UUID key = new UUID(393939, 32020032);
-        QueryStatus<UUID, Stats> queryStatus1 = datastore.find(Query.key(key));
+        QueryStatus<UUID, Stats> queryStatus1 = datastore.findOne(Query.byKey(key));
         queryStatus1.then(result /* = queryStatus1 */ -> {
             // This is called if the query succeeds, this doesn't mean
             // it would've found anything it just means no errors occurred
@@ -62,16 +61,16 @@ public class MongoDatastoreExample {
                 return;
             }
 
-            if (result.found()) { // Item was cached
+            if (result.cached()) { // Item was cached
 
             }
 
-            if (result.loaded()) { // Item was loaded from the database
+            if (result.fetched()) { // Item was loaded from the database
 
             }
 
             // ensure the item is loaded again if it was cached
-            result.pullSyncIfCached();
+            result.fetchSyncIfCached();
 
             DataItem<UUID, Stats> item = result.item();
 
@@ -85,7 +84,7 @@ public class MongoDatastoreExample {
             });
         });
 
-        datastore.find(Query.builder()
+        datastore.findOne(Query.builder()
                 .eq("kills", 0)
                 .eq("deaths", 1)
                 .build()

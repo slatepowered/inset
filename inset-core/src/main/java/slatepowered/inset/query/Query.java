@@ -58,7 +58,7 @@ public interface Query {
         return this;
     }
 
-    static Query key(final Object key) {
+    static Query byKey(final Object key) {
         return new Query() {
             // The cached field map
             Map<String, FieldConstraint<?>> fieldConstraintMap;

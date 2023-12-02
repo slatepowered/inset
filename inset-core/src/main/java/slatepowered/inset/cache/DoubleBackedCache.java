@@ -1,13 +1,9 @@
 package slatepowered.inset.cache;
 
+import lombok.RequiredArgsConstructor;
 import slatepowered.inset.datastore.DataItem;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Vector;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.*;
 import java.util.function.Function;
 
 /**
@@ -16,13 +12,14 @@ import java.util.function.Function;
  *
  * @see DataCache
  */
+@RequiredArgsConstructor
 final class DoubleBackedCache<K, T> implements DataCache<K, T> {
 
-    final ConcurrentHashMap<K, DataItem<K, T>> map = new ConcurrentHashMap<>();
-    final ConcurrentLinkedQueue<DataItem<K, T>> list = new ConcurrentLinkedQueue<>();
+    final Map<K, DataItem<K, T>> map;
+    final Collection<DataItem<K, T>> list;
 
     @Override
-    public DataItem<K, T> get(K key) {
+    public DataItem<K, T> getOrNull(K key) {
         return map.get(key);
     }
 

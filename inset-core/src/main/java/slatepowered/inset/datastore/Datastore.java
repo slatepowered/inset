@@ -53,20 +53,31 @@ public class Datastore<K, T> {
      * @param key The key.
      * @return The never-null data item.
      */
-    public DataItem<K, T> get(K key) {
+    public DataItem<K, T> getOrReference(K key) {
         return dataCache.getOrCompute(key, k -> new DataItem<>(this, k));
     }
 
     /**
      * Get or create a data item with a value present for the given key.
      *
-     * @see #get(Object)
+     * @see #getOrReference(Object)
      * @see DataItem#defaultIfAbsent()
      * @param key The key.
      * @return The never-null data item.
      */
     public DataItem<K, T> getOrCreate(K key) {
-        return get(key).defaultIfAbsent();
+        return getOrReference(key).defaultIfAbsent();
+    }
+
+    /**
+     * Get an existent (potentially empty) data item for the given key or
+     * return null if absent.
+     *
+     * @param key The key.
+     * @return The data item or null if absent.
+     */
+    public DataItem<K, T> getOrNull(K key) {
+        return dataCache.getOrNull(key);
     }
 
     /**
@@ -81,9 +92,9 @@ public class Datastore<K, T> {
      * @return The item or null if no loaded item is present.
      */
     @SuppressWarnings("unchecked")
-    public DataItem<K, T> findCached(Query query) {
+    public DataItem<K, T> findOneCached(Query query) {
         if (query.hasKey()) {
-            DataItem<K, T> item = dataCache.get((K) query.getKey());
+            DataItem<K, T> item = dataCache.getOrNull((K) query.getKey());
             if (item != null && item.isPresent()) {
                 item.referencedNow();
                 return item;
@@ -118,10 +129,10 @@ public class Datastore<K, T> {
      * @return The query status object.
      */
     @SuppressWarnings("unchecked")
-    public QueryStatus<K, T> find(Query query) {
-        DataItem<K, T> cachedItem = findCached(query);
+    public QueryStatus<K, T> findOne(Query query) {
+        DataItem<K, T> cachedItem = findOneCached(query);
         if (cachedItem != null) {
-            return new QueryStatus<>(this, query).completeSuccessfully(QueryResult.FOUND, cachedItem);
+            return new QueryStatus<>(this, query).completeSuccessfully(QueryResult.CACHED, cachedItem);
         }
 
         query = query.qualify(this);
@@ -149,12 +160,24 @@ public class Datastore<K, T> {
                         return;
                     }
 
-                    DataItem<K, T> item = get(key);
+                    DataItem<K, T> item = getOrReference(key);
                     item.decode(input);
-                    item.pulledNow();
-                    queryStatus.completeSuccessfully(QueryResult.LOADED, item);
+                    item.fetchedNow();
+                    queryStatus.completeSuccessfully(QueryResult.FETCHED, item);
                 });
         return queryStatus;
+    }
+
+    /**
+     * Try to find an item by the given key.
+     *
+     * @see #findOne(Query)
+     * @see Query#byKey(Object)
+     * @param key The key.
+     * @return This.
+     */
+    public QueryStatus<K, T> findOne(K key) {
+        return findOne(Query.byKey(key));
     }
 
 }

@@ -2,10 +2,11 @@ package slatepowered.inset.cache;
 
 import slatepowered.inset.datastore.DataItem;
 
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Function;
 
 /**
@@ -20,7 +21,7 @@ public interface DataCache<K, T> extends Iterable<DataItem<K, T>> {
      * @param key The key.
      * @return The item.
      */
-    DataItem<K, T> get(K key);
+    DataItem<K, T> getOrNull(K key);
 
     /**
      * Get a cached item by the given key or create a new cached instance
@@ -49,7 +50,11 @@ public interface DataCache<K, T> extends Iterable<DataItem<K, T>> {
      * @return The cache.
      */
     static <K, T> DataCache<K, T> doubleBackedConcurrent() {
-        return new DoubleBackedCache<>();
+        return new DoubleBackedCache<>(new ConcurrentHashMap<>(), new ConcurrentLinkedQueue<>());
+    }
+
+    static <K, T> DataCache<K, T> doubleBacked(Map<K, DataItem<K, T>> map, List<DataItem<K, T>> list) {
+        return new DoubleBackedCache<>(map, list);
     }
 
 }

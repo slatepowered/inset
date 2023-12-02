@@ -6,6 +6,7 @@ import slatepowered.inset.query.Query;
 import slatepowered.inset.query.QueryStatus;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 /**
  * Common class to all operation statuses related to a {@link Datastore}.
@@ -51,6 +52,19 @@ public abstract class OperationStatus<K, T, R> {
     public CompletableFuture<R> future() {
         return future;
     }
+
+    /**
+     * Modify and return the future for this query status, setting the
+     * modified future as the current future on this query.
+     *
+     * @param action The editor action.
+     * @return The future.
+     */
+    public CompletableFuture<R> future(Function<CompletableFuture<R>, CompletableFuture<R>> action) {
+        future = action.apply(future);
+        return future;
+    }
+
 
     /**
      * The future called when all handlers on the above future have been executed.

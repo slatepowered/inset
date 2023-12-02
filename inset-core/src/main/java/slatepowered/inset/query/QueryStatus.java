@@ -4,7 +4,9 @@ import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.datastore.Datastore;
 import slatepowered.inset.datastore.OperationStatus;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Represents an awaitable query status/result.
@@ -67,15 +69,15 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
     }
 
     /**
-     * Reload/re-pull the data from the data source on successful completion if that
+     * Fetch the data from the data source on successful completion if that
      * wasn't already done as part of the original query.
      *
      * @return This.
      */
-    public QueryStatus<K, T> thenReloadIfCached() {
+    public QueryStatus<K, T> thenFetchIfCached() {
         future = future.thenApplyAsync(status -> {
-            if (status.found()) {
-                status.item().pullSync();
+            if (status.cached()) {
+                status.item().fetchSync();
             }
 
             return status;
@@ -121,6 +123,37 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
      */
     public QueryStatus<K, T> thenUse(Consumer<DataItem<K, T>> consumer) {
         return then(status -> consumer.accept(status.item()));
+    }
+
+    /**
+     * Add a new asynchronous action to be executed when the previous
+     * stage of this query finishes successfully.
+     *
+     * @param action The action.
+     * @return This.
+     */
+    public QueryStatus<K, T> thenApplyAsync(Consumer<QueryStatus<K, T>> action) {
+        future = future.thenApplyAsync(status -> {
+            action.accept(status);
+            return status;
+        }, datastore.getDataManager().getExecutorService());
+        return this;
+    }
+
+    /**
+     * Add a new synchronous action to be executed when the previous
+     * stage of this query finishes successfully.
+     *
+     * @param action The action.
+     * @return This.
+     */
+    public QueryStatus<K, T> thenApply(Consumer<QueryStatus<K, T>> action) {
+        future = future.thenApply(status -> {
+            action.accept(status);
+            return status;
+        });
+
+        return this;
     }
 
     /**
@@ -196,9 +229,9 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
      *
      * @return This.
      */
-    public QueryStatus<K, T> pullSyncIfCached() {
-        if (result == QueryResult.FOUND) {
-            item.pullSync();
+    public QueryStatus<K, T> fetchSyncIfCached() {
+        if (result == QueryResult.CACHED) {
+            item.fetchSync();
         }
 
         return this;
@@ -245,12 +278,12 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
         return result != null && !result.isValue();
     }
 
-    public boolean found() {
-        return result != null && result == QueryResult.FOUND;
+    public boolean cached() {
+        return result != null && result == QueryResult.CACHED;
     }
 
-    public boolean loaded() {
-        return result != null && result == QueryResult.LOADED;
+    public boolean fetched() {
+        return result != null && result == QueryResult.FETCHED;
     }
 
 }

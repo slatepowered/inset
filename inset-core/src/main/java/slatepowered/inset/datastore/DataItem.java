@@ -51,7 +51,7 @@ public class DataItem<K, T> {
      * The last time the cached item was loaded from the database,
      * as an offset onto the created time of this item.
      */
-    protected volatile int lastPullTime = -1;
+    protected volatile int lastFetchTime = -1;
 
     /**
      * The last time the cached item was referenced,
@@ -127,8 +127,8 @@ public class DataItem<K, T> {
      * The last time the cached item was loaded from the database.
      * Returns -1 if the item was never pulled/loaded from the database.
      */
-    public long lastPullTime() {
-        return lastPullTime == -1 ? -1 : createdTime + lastPullTime;
+    public long lastFetchTime() {
+        return lastFetchTime == -1 ? -1 : createdTime + lastFetchTime;
     }
 
     /**
@@ -226,25 +226,25 @@ public class DataItem<K, T> {
     }
 
     /**
-     * Synchronously pull and decode the value for this data item.
+     * Synchronously fetch and decode the value for this data item.
      *
      * @return This.
      */
-    public DataItem<K, T> pullSync() {
+    public DataItem<K, T> fetchSync() {
         DataSourceQueryResult queryResult = datastore.getSourceTable()
-                .findOneSync(Query.key(key));
-        return decode(queryResult.input()).pulledNow();
+                .findOneSync(Query.byKey(key));
+        return decode(queryResult.input()).fetchedNow();
     }
 
     /**
-     * Asynchronously pull and decode the value for this data item.
+     * Asynchronously fetch and decode the value for this data item.
      *
      * @return The future.
      */
-    public CompletableFuture<DataItem<K, T>> pullAsync() {
+    public CompletableFuture<DataItem<K, T>> fetchAsync() {
         return datastore.getSourceTable()
-                .findOneAsync(Query.key(key))
-                .thenApply(result -> this.decode(result.input()).pulledNow());
+                .findOneAsync(Query.byKey(key))
+                .thenApply(result -> this.decode(result.input()).fetchedNow());
     }
 
     // Update the lastReferenceTime to represent the
@@ -259,11 +259,11 @@ public class DataItem<K, T> {
 
     // Update the lastPullTime to represent the
     // current instant
-    protected DataItem<K, T> pulledNow() {
+    protected DataItem<K, T> fetchedNow() {
         long t = System.currentTimeMillis() - createdTime;
         if (t < 0) // overflow
             t = Integer.MAX_VALUE;
-        lastPullTime = (int) t;
+        lastFetchTime = (int) t;
         return this;
     }
 

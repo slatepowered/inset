@@ -11,9 +11,9 @@ import lombok.RequiredArgsConstructor;
 public enum QueryResult {
 
     /**
-     * No cached item was found so it was successfully loaded from the database.
+     * No cached item was found so it was successfully fetched/loaded from the database.
      */
-    LOADED(true, true),
+    FETCHED(true, true),
 
     /**
      * No present cached item was found and no data was found in the database.
@@ -24,7 +24,7 @@ public enum QueryResult {
     /**
      * A cached item was found.
      */
-    FOUND(true, true),
+    CACHED(true, true),
 
     /**
      * An error occurred.

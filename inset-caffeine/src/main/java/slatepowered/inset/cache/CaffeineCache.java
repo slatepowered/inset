@@ -32,7 +32,7 @@ public class CaffeineCache<K, T> implements DataCache<K, T> {
     protected final Cache<K, DataItem<K, T>> cache;
 
     @Override
-    public DataItem<K, T> get(K key) {
+    public DataItem<K, T> getOrNull(K key) {
         return cache.getIfPresent(key);
     }
 
