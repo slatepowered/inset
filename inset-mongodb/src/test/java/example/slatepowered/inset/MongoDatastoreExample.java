@@ -55,17 +55,17 @@ public class MongoDatastoreExample {
             // This is called if the query succeeds, this doesn't mean
             // it would've found anything it just means no errors occurred
 
-            if (result.absent()) { // No item found in database or locally
+            if (result.isAbsent()) { // No item found in database or locally
                 System.out.println("Could not find item, inserting new item with key: " + key);
                 datastore.getOrCreate(key).ifPresent(stats -> stats.deaths++).saveSync();
                 return;
             }
 
-            if (result.cached()) { // Item was cached
+            if (result.wasCached()) { // Item was cached
 
             }
 
-            if (result.fetched()) { // Item was loaded from the database
+            if (result.wasFetched()) { // Item was loaded from the database
 
             }
 

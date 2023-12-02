@@ -11,6 +11,7 @@ import slatepowered.inset.query.QueryResult;
 import slatepowered.inset.query.QueryStatus;
 import slatepowered.inset.source.DataTable;
 
+import java.util.Optional;
 import java.util.function.Predicate;
 
 /**
@@ -67,6 +68,17 @@ public class Datastore<K, T> {
      */
     public DataItem<K, T> getOrCreate(K key) {
         return getOrReference(key).defaultIfAbsent();
+    }
+
+    /**
+     * Get a cached data item by the given key, returning an
+     * empty optional if absent.
+     *
+     * @param key The key.
+     * @return The optional with the value if present.
+     */
+    public Optional<DataItem<K, T>> getOptional(K key) {
+        return Optional.ofNullable(dataCache.getOrNull(key));
     }
 
     /**

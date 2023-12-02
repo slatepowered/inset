@@ -4,9 +4,10 @@ import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.datastore.Datastore;
 import slatepowered.inset.datastore.OperationStatus;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Represents an awaitable query status/result.
@@ -58,7 +59,7 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
             return this;
 
         future = future.thenApply(status -> {
-            if (status.absent()) {
+            if (status.isAbsent()) {
                 this.item = datastore.getOrCreate(key());
             }
 
@@ -76,7 +77,7 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
      */
     public QueryStatus<K, T> thenFetchIfCached() {
         future = future.thenApplyAsync(status -> {
-            if (status.cached()) {
+            if (status.wasCached()) {
                 status.item().fetchSync();
             }
 
@@ -94,6 +95,20 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
      */
     public QueryStatus<K, T> ifPresent(Consumer<QueryStatus<K, T>> consumer) {
         if (isPresent()) {
+            consumer.accept(this);
+        }
+
+        return this;
+    }
+
+    /**
+     * If a value is absent, run the given consumer.
+     *
+     * @param consumer The consumer.
+     * @return This.
+     */
+    public QueryStatus<K, T> ifAbsent(Consumer<QueryStatus<K, T>> consumer) {
+        if (isAbsent()) {
             consumer.accept(this);
         }
 
@@ -150,6 +165,44 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
     public QueryStatus<K, T> thenApply(Consumer<QueryStatus<K, T>> action) {
         future = future.thenApply(status -> {
             action.accept(status);
+            return status;
+        });
+
+        return this;
+    }
+
+    /**
+     * Add a new synchronous action to be executed when the previous
+     * stage of this query finishes with a value.
+     *
+     * @param action The action.
+     * @return This.
+     */
+    public QueryStatus<K, T> thenApplyIfPresent(Consumer<QueryStatus<K, T>> action) {
+        future = future.thenApply(status -> {
+            if (status.isPresent()) {
+                action.accept(status);
+            }
+
+            return status;
+        });
+
+        return this;
+    }
+
+    /**
+     * Add a new synchronous action to be executed when the previous
+     * stage of this query finishes without a value.
+     *
+     * @param action The action.
+     * @return This.
+     */
+    public QueryStatus<K, T> thenApplyIfAbsent(Consumer<QueryStatus<K, T>> action) {
+        future = future.thenApply(status -> {
+            if (status.isAbsent()) {
+                action.accept(status);
+            }
+
             return status;
         });
 
@@ -216,11 +269,83 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
     }
 
     /**
-     * Get the key of the resolved item, this may
-     * be null if the query failed or is not completed yet.
+     * Get an optional for the result data item, which will
+     * be present if the query succeeded and found an item.
+     *
+     * @return The optional present if an item is present.
      */
+    public Optional<DataItem<K, T>> optional() {
+        return Optional.ofNullable(item);
+    }
+
+    /**
+     * Get the resolved item or create a new reference
+     * item.
+     *
+     * @return The item.
+     */
+    public DataItem<K, T> orReference() {
+        K key = key();
+        if (key == null)
+            throw new IllegalStateException("No key was resolved or set in the query");
+        return item != null ? item : (item = datastore.getOrReference(key()));
+    }
+
+    /**
+     * Get the resolved item or create a new one with
+     * the default value.
+     *
+     * @return The item.
+     */
+    public DataItem<K, T> orCreate() {
+        K key = key();
+        if (key == null)
+            throw new IllegalStateException("No key was resolved or set in the query");
+        return item != null ? item : (item = datastore.getOrCreate(key()));
+    }
+
+    /**
+     * Get the resolved item if present or return the given default.
+     *
+     * @param def The default option.
+     * @return The resolved item is present or the given default.
+     */
+    public DataItem<K, T> orElse(DataItem<K, T> def) {
+        return item != null ? item : (item = def);
+    }
+
+    /**
+     * Get the resolved item if present or compute and return
+     * a default value using the given default supplier.
+     *
+     * @param supplier The default supplier.
+     * @return The resolved item is present or the default value.
+     */
+    public DataItem<K, T> orElseGet(Supplier<DataItem<K, T>> supplier) {
+        return item != null ? item : (item = supplier.get());
+    }
+
+    /**
+     * Get the resolved item if present or compute and return
+     * a default value using the given default action.
+     *
+     * @param action The default action.
+     * @return The resolved item is present or the default value.
+     */
+    public DataItem<K, T> orElseCompute(Function<QueryStatus<K, T>, DataItem<K, T>> action) {
+        return item != null ? item : (item = action.apply(this));
+    }
+
+    /**
+     * Get the key of the query/resolved item, this may
+     * be null if the query does not have a key set and is absent,
+     * failed or is not completed yet.
+     */
+    @SuppressWarnings("unchecked")
     public K key() {
-        return item != null ? item.key() : null;
+        if (item != null) return item.key();
+        if (query.hasKey()) return (K) query.getKey();
+        return null;
     }
 
     /**
@@ -274,15 +399,15 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
         return result != null && result.isValue();
     }
 
-    public boolean absent() {
+    public boolean isAbsent() {
         return result != null && !result.isValue();
     }
 
-    public boolean cached() {
+    public boolean wasCached() {
         return result != null && result == QueryResult.CACHED;
     }
 
-    public boolean fetched() {
+    public boolean wasFetched() {
         return result != null && result == QueryResult.FETCHED;
     }
 
