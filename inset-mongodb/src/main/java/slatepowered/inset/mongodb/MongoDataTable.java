@@ -40,7 +40,6 @@ public class MongoDataTable implements DataTable {
         String keyField = output.getSetKeyField();
 
         // create filter for item
-        System.out.println("UpsertReplaceOne with filter: " + Filters.eq(keyField, key) + ", document: " + document);
         collection.replaceOne(Filters.eq(keyField, key), document, new ReplaceOptions().upsert(true));
     }
 
