@@ -5,7 +5,7 @@ import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.codec.EncodeOutput;
 import slatepowered.inset.query.Query;
-import slatepowered.inset.source.DataSourceQueryResult;
+import slatepowered.inset.source.DataSourceFindResult;
 import slatepowered.inset.source.DataTable;
 
 import java.util.Optional;
@@ -231,7 +231,7 @@ public class DataItem<K, T> {
      * @return This.
      */
     public DataItem<K, T> fetchSync() {
-        DataSourceQueryResult queryResult = datastore.getSourceTable()
+        DataSourceFindResult queryResult = datastore.getSourceTable()
                 .findOneSync(Query.byKey(key));
         return decode(queryResult.input()).fetchedNow();
     }

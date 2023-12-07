@@ -6,11 +6,14 @@ import slatepowered.inset.DataManager;
 import slatepowered.inset.cache.DataCache;
 import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.codec.DecodeInput;
+import slatepowered.inset.query.FindAllStatus;
 import slatepowered.inset.query.Query;
-import slatepowered.inset.query.QueryResult;
-import slatepowered.inset.query.QueryStatus;
+import slatepowered.inset.query.FindResult;
+import slatepowered.inset.query.FindStatus;
 import slatepowered.inset.source.DataTable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 
@@ -97,8 +100,10 @@ public class Datastore<K, T> {
      * items. If an item is not loaded it may be ignored by this method
      * and it may return null.
      *
-     * The item will also not be loaded from the database after being returned
+     * The item will also not be fetched from the database after being returned
      * from this method.
+     *
+     * This action is always performed synchronously.
      *
      * @param query The query.
      * @return The item or null if no loaded item is present.
@@ -141,17 +146,17 @@ public class Datastore<K, T> {
      * @return The query status object.
      */
     @SuppressWarnings("unchecked")
-    public QueryStatus<K, T> findOne(Query query) {
+    public FindStatus<K, T> findOne(Query query) {
         DataItem<K, T> cachedItem = findOneCached(query);
         if (cachedItem != null) {
-            return new QueryStatus<>(this, query).completeSuccessfully(QueryResult.CACHED, cachedItem);
+            return new FindStatus<>(this, query).completeSuccessfully(FindResult.CACHED, cachedItem);
         }
 
         query = query.qualify(this);
 
         // asynchronously try to load the item
         // from the datatable
-        QueryStatus<K, T> queryStatus = new QueryStatus<>(this, query);
+        FindStatus<K, T> queryStatus = new FindStatus<>(this, query);
         getSourceTable().findOneAsync(query)
                 .whenComplete((result, throwable) -> {
                     if (throwable != null) {
@@ -161,7 +166,7 @@ public class Datastore<K, T> {
 
                     // check if an item was found
                     if (!result.found()) {
-                        queryStatus.completeSuccessfully(QueryResult.ABSENT, null);
+                        queryStatus.completeSuccessfully(FindResult.ABSENT, null);
                         return;
                     }
 
@@ -175,7 +180,7 @@ public class Datastore<K, T> {
                     DataItem<K, T> item = getOrReference(key);
                     item.decode(input);
                     item.fetchedNow();
-                    queryStatus.completeSuccessfully(QueryResult.FETCHED, item);
+                    queryStatus.completeSuccessfully(FindResult.FETCHED, item);
                 });
         return queryStatus;
     }
@@ -188,8 +193,63 @@ public class Datastore<K, T> {
      * @param key The key.
      * @return This.
      */
-    public QueryStatus<K, T> findOne(K key) {
+    public FindStatus<K, T> findOne(K key) {
         return findOne(Query.byKey(key));
+    }
+
+    /**
+     * Find all cached items matching the given query in the datastore.
+     *
+     * This action is always performed synchronously.
+     *
+     * @param query The filter query.
+     * @return The list of cached items matching the given filter.
+     */
+    public List<DataItem<K, T>> findAllCached(Query query) {
+        // pre-allocate a list with an estimated size
+        int fieldConstraintCount = query.getFieldConstraints().size();
+        List<DataItem<K, T>> list = new ArrayList<>(dataCache.size() / (fieldConstraintCount + 1));
+
+        // iterate over each item and compare the value
+        // with the given query
+        Predicate<T> comparator = fieldConstraintCount > 0 ? dataCodec.getQueryComparator(query) : __ -> true;
+        for (DataItem<K, T> item : dataCache) {
+            if (!item.isPresent()) {
+                continue;
+            }
+
+            if (comparator.test(item.get())) {
+                item.referencedNow();
+                list.add(item);
+            }
+        }
+
+        return list;
+    }
+
+    /**
+     * Find all items matching the given query in the database.
+     *
+     * Note that the aggregation/find operation is never cached and
+     * always references the database, the individual items may be resolved
+     * from the cache or cached though.
+     *
+     * @param query The filter query.
+     * @return The status of the operation.
+     */
+    public FindAllStatus<K, T> findAll(Query query) {
+        FindAllStatus<K, T> status = new FindAllStatus<>(this, query);
+        getSourceTable().findAllAsync(query)
+                .whenComplete((result, throwable) -> {
+                    if (throwable != null) {
+                        status.completeFailed(throwable);
+                        return;
+                    }
+
+                    // 'complete' the operation with the bulk iterable
+                    status.completeSuccessfully(result);
+                });
+        return status;
     }
 
     /**

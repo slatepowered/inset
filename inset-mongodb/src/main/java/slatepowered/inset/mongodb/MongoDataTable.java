@@ -10,10 +10,7 @@ import org.bson.conversions.Bson;
 import slatepowered.inset.bson.DocumentEncodeOutput;
 import slatepowered.inset.codec.EncodeOutput;
 import slatepowered.inset.query.Query;
-import slatepowered.inset.source.DataSource;
-import slatepowered.inset.source.DataSourceException;
-import slatepowered.inset.source.DataSourceQueryResult;
-import slatepowered.inset.source.DataTable;
+import slatepowered.inset.source.*;
 
 /**
  * Abstraction for a MongoDB collection.
@@ -44,9 +41,9 @@ public class MongoDataTable implements DataTable {
     }
 
     @Override
-    public DataSourceQueryResult findOneSync(Query query) throws DataSourceException {
+    public DataSourceFindResult findOneSync(Query query) throws DataSourceException {
         String keyFieldOverride = source.getKeyFieldOverride();
-        Bson filter = MongoQueries.serializeQueryToFindOneFilter(keyFieldOverride, query);
+        Bson filter = MongoQueries.serializeQueryToFindFilter(keyFieldOverride, query);
 
         FindIterable<Document> iterable = collection.find(filter);
         Document result = iterable.first();
@@ -54,6 +51,15 @@ public class MongoDataTable implements DataTable {
         return result != null ?
                 MongoQueries.foundQueryResult(query, keyFieldOverride, result) :
                 MongoQueries.noneQueryResult(query);
+    }
+
+    @Override
+    public DataSourceBulkIterable findAllSync(Query query) throws DataSourceException {
+        String keyFieldOverride = source.getKeyFieldOverride();
+        Bson filter = MongoQueries.serializeQueryToFindFilter(keyFieldOverride, query);
+
+        FindIterable<Document> iterable = collection.find(filter);
+        return MongoQueries.createBulkIterable(keyFieldOverride, query, iterable);
     }
 
 }

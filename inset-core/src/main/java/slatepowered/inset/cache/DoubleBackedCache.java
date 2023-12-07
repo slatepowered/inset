@@ -43,4 +43,12 @@ final class DoubleBackedCache<K, T> implements DataCache<K, T> {
         return list.iterator();
     }
 
+    @Override
+    public int size() {
+        int r;
+        if (map.size() != (r = list.size()))
+            throw new IllegalStateException("Cache count inconsistency across map and list, map.size() = " + map.size() + ", list.size() " + list.size());
+        return r;
+    }
+
 }

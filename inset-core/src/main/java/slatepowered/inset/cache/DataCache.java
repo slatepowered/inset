@@ -41,6 +41,13 @@ public interface DataCache<K, T> extends Iterable<DataItem<K, T>> {
     void remove(DataItem<K, T> item);
 
     /**
+     * Get the count of items in this cache.
+     *
+     * @return The count of cached items.
+     */
+    int size();
+
+    /**
      * A simple, permanent data cache backed by a {@link ConcurrentHashMap} for
      * fast lookup and a {@link Vector} for fast iteration. With no special mechanisms,
      * all values cached will remain until manually cleared.

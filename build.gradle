@@ -30,12 +30,15 @@ afterEvaluate {
     }
 }
 
+version '0.2.0'
+
 subprojects {
     apply plugin: "java"
     apply plugin: "maven-publish"
     apply plugin: "java-library"
 
     group = rootProject.group
+    version = rootProject.version
 
     /* Java Compile Settings */
     compileJava.options.encoding = 'UTF-8'

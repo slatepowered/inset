@@ -7,7 +7,7 @@ import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.datastore.Datastore;
 import slatepowered.inset.mongodb.MongoDataSource;
 import slatepowered.inset.query.Query;
-import slatepowered.inset.query.QueryStatus;
+import slatepowered.inset.query.FindStatus;
 import slatepowered.inset.reflective.Key;
 import slatepowered.inset.reflective.ReflectiveCodecFactory;
 import slatepowered.inset.source.DataTable;
@@ -50,7 +50,7 @@ public class MongoDatastoreExample {
 
         // Load an item by key
         final UUID key = new UUID(393939, 32020032);
-        QueryStatus<UUID, Stats> queryStatus1 = datastore.findOne(Query.byKey(key));
+        FindStatus<UUID, Stats> queryStatus1 = datastore.findOne(Query.byKey(key));
         queryStatus1.then(result /* = queryStatus1 */ -> {
             // This is called if the query succeeds, this doesn't mean
             // it would've found anything it just means no errors occurred

@@ -4,11 +4,11 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Represents the type of result of a query.
+ * Represents the type of result of a find-one query.
  */
 @RequiredArgsConstructor
 @Getter
-public enum QueryResult {
+public enum FindResult {
 
     /**
      * No cached item was found so it was successfully fetched/loaded from the database.

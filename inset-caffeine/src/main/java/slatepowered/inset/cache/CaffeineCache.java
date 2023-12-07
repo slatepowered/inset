@@ -47,6 +47,11 @@ public class CaffeineCache<K, T> implements DataCache<K, T> {
     }
 
     @Override
+    public int size() {
+        return cache.asMap().size();
+    }
+
+    @Override
     public Iterator<DataItem<K, T>> iterator() {
         return cache.asMap().values().iterator(); // this kinda sucks
     }

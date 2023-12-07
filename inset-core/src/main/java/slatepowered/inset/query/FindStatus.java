@@ -10,19 +10,19 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Represents an awaitable query status/result.
+ * Represents an awaitable find-one query status/result.
  *
  * @param <K> The primary key type.
  * @param <T> The data type.
  */
-public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> {
+public class FindStatus<K, T> extends OperationStatus<K, T, FindStatus<K, T>> {
 
     /* Result Fields (set when the query completed) */
-    private volatile QueryResult result;  // The type of result
+    private volatile FindResult result;  // The type of result
     private volatile DataItem<K, T> item; // The data item if successful
     private volatile Object error;        // The error object if it failed
 
-    public QueryStatus(Datastore<K, T> datastore, Query query) {
+    public FindStatus(Datastore<K, T> datastore, Query query) {
         super(datastore, query);
     }
 
@@ -32,7 +32,7 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
      * @param consumer The consumer.
      * @return This.
      */
-    public QueryStatus<K, T> then(Consumer<QueryStatus<K, T>> consumer) {
+    public FindStatus<K, T> then(Consumer<FindStatus<K, T>> consumer) {
         future.whenComplete((status, throwable) -> {
             if (status != null && status.result().isSuccessful()) {
                 try {
@@ -54,7 +54,7 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
      *
      * @return This.
      */
-    public QueryStatus<K, T> thenDefaultIfAbsent() {
+    public FindStatus<K, T> thenDefaultIfAbsent() {
         if (!query.hasKey())
             return this;
 
@@ -75,7 +75,7 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
      *
      * @return This.
      */
-    public QueryStatus<K, T> thenFetchIfCached() {
+    public FindStatus<K, T> thenFetchIfCached() {
         future = future.thenApplyAsync(status -> {
             if (status.wasCached()) {
                 status.item().fetchSync();
@@ -93,7 +93,7 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
      * @param consumer The consumer.
      * @return This.
      */
-    public QueryStatus<K, T> ifPresent(Consumer<QueryStatus<K, T>> consumer) {
+    public FindStatus<K, T> ifPresent(Consumer<FindStatus<K, T>> consumer) {
         if (isPresent()) {
             consumer.accept(this);
         }
@@ -107,7 +107,7 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
      * @param consumer The consumer.
      * @return This.
      */
-    public QueryStatus<K, T> ifAbsent(Consumer<QueryStatus<K, T>> consumer) {
+    public FindStatus<K, T> ifAbsent(Consumer<FindStatus<K, T>> consumer) {
         if (isAbsent()) {
             consumer.accept(this);
         }
@@ -121,7 +121,7 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
      * @param consumer The consumer.
      * @return This.
      */
-    public QueryStatus<K, T> ifPresentUse(Consumer<DataItem<K, T>> consumer) {
+    public FindStatus<K, T> ifPresentUse(Consumer<DataItem<K, T>> consumer) {
         if (isPresent()) {
             consumer.accept(this.item);
         }
@@ -136,7 +136,7 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
      * @param consumer The consumer.
      * @return This.
      */
-    public QueryStatus<K, T> thenUse(Consumer<DataItem<K, T>> consumer) {
+    public FindStatus<K, T> thenUse(Consumer<DataItem<K, T>> consumer) {
         return then(status -> consumer.accept(status.item()));
     }
 
@@ -147,7 +147,7 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
      * @param action The action.
      * @return This.
      */
-    public QueryStatus<K, T> thenApplyAsync(Consumer<QueryStatus<K, T>> action) {
+    public FindStatus<K, T> thenApplyAsync(Consumer<FindStatus<K, T>> action) {
         future = future.thenApplyAsync(status -> {
             action.accept(status);
             return status;
@@ -162,7 +162,7 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
      * @param action The action.
      * @return This.
      */
-    public QueryStatus<K, T> thenApply(Consumer<QueryStatus<K, T>> action) {
+    public FindStatus<K, T> thenApply(Consumer<FindStatus<K, T>> action) {
         future = future.thenApply(status -> {
             action.accept(status);
             return status;
@@ -178,7 +178,7 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
      * @param action The action.
      * @return This.
      */
-    public QueryStatus<K, T> thenApplyIfPresent(Consumer<QueryStatus<K, T>> action) {
+    public FindStatus<K, T> thenApplyIfPresent(Consumer<FindStatus<K, T>> action) {
         future = future.thenApply(status -> {
             if (status.isPresent()) {
                 action.accept(status);
@@ -197,7 +197,7 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
      * @param action The action.
      * @return This.
      */
-    public QueryStatus<K, T> thenApplyIfAbsent(Consumer<QueryStatus<K, T>> action) {
+    public FindStatus<K, T> thenApplyIfAbsent(Consumer<FindStatus<K, T>> action) {
         future = future.thenApply(status -> {
             if (status.isAbsent()) {
                 action.accept(status);
@@ -215,7 +215,7 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
      * @param consumer The consumer.
      * @return This.
      */
-    public QueryStatus<K, T> exceptionally(Consumer<QueryStatus<K, T>> consumer) {
+    public FindStatus<K, T> exceptionally(Consumer<FindStatus<K, T>> consumer) {
         future.whenComplete((status, throwable) -> {
             if (status != null && !status.result().isSuccessful()) {
                 consumer.accept(status);
@@ -228,7 +228,7 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
     /**
      * Get the result type.
      */
-    public QueryResult result() {
+    public FindResult result() {
         return result;
     }
 
@@ -332,7 +332,7 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
      * @param action The default action.
      * @return The resolved item is present or the default value.
      */
-    public DataItem<K, T> orElseCompute(Function<QueryStatus<K, T>, DataItem<K, T>> action) {
+    public DataItem<K, T> orElseCompute(Function<FindStatus<K, T>, DataItem<K, T>> action) {
         return item != null ? item : (item = action.apply(this));
     }
 
@@ -354,8 +354,8 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
      *
      * @return This.
      */
-    public QueryStatus<K, T> fetchSyncIfCached() {
-        if (result == QueryResult.CACHED) {
+    public FindStatus<K, T> fetchSyncIfCached() {
+        if (result == FindResult.CACHED) {
             item.fetchSync();
         }
 
@@ -370,7 +370,7 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
      * @param error The error, should be null if successful.
      * @return This.
      */
-    protected synchronized QueryStatus<K, T> completeInternal(QueryResult result, DataItem<K, T> item, Object error) {
+    protected synchronized FindStatus<K, T> completeInternal(FindResult result, DataItem<K, T> item, Object error) {
         this.completed = true;
         this.result = result;
         this.item = item;
@@ -379,12 +379,12 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
         return this;
     }
 
-    public synchronized QueryStatus<K, T> completeSuccessfully(QueryResult result, DataItem<K, T> item) {
+    public synchronized FindStatus<K, T> completeSuccessfully(FindResult result, DataItem<K, T> item) {
         return completeInternal(result, item, null);
     }
 
-    public synchronized QueryStatus<K, T> completeFailed(Object error) {
-        return completeInternal(QueryResult.FAILED, null, error);
+    public synchronized FindStatus<K, T> completeFailed(Object error) {
+        return completeInternal(FindResult.FAILED, null, error);
     }
 
     public boolean success() {
@@ -404,11 +404,11 @@ public class QueryStatus<K, T> extends OperationStatus<K, T, QueryStatus<K, T>> 
     }
 
     public boolean wasCached() {
-        return result != null && result == QueryResult.CACHED;
+        return result != null && result == FindResult.CACHED;
     }
 
     public boolean wasFetched() {
-        return result != null && result == QueryResult.FETCHED;
+        return result != null && result == FindResult.FETCHED;
     }
 
 }

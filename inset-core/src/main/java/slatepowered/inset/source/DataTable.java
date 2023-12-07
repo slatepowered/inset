@@ -43,7 +43,7 @@ public interface DataTable {
      * @return The result.
      * @throws DataSourceException Any errors that may occur.
      */
-    DataSourceQueryResult findOneSync(Query query) throws DataSourceException;
+    DataSourceFindResult findOneSync(Query query) throws DataSourceException;
 
     /**
      * Find/load one item from the data table asynchronously for the
@@ -52,8 +52,29 @@ public interface DataTable {
      * @param query The query.
      * @return The query result future.
      */
-    default CompletableFuture<DataSourceQueryResult> findOneAsync(final Query query) {
+    default CompletableFuture<DataSourceFindResult> findOneAsync(final Query query) {
         return CompletableFuture.supplyAsync(() -> this.findOneSync(query), getSource().getDataManager().getExecutorService());
+    }
+
+    /**
+     * Find/load multiple items from the data table synchronously for
+     * the given query.
+     *
+     * @param query The query.
+     * @return The result.
+     * @throws DataSourceException Any errors that may occur.
+     */
+    DataSourceBulkIterable findAllSync(Query query) throws DataSourceException;
+
+    /**
+     * Find/load multiple items from the data table asynchronously for
+     * the given query.
+     *
+     * @param query The query.
+     * @return The result.
+     */
+    default CompletableFuture<DataSourceBulkIterable> findAllAsync(final Query query) {
+        return CompletableFuture.supplyAsync(() -> this.findAllSync(query), getSource().getDataManager().getExecutorService());
     }
 
 }

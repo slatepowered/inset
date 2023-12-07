@@ -4,9 +4,9 @@ import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.query.Query;
 
 /**
- * Represents the result of a direct query from a data source.
+ * Represents the result of a direct find-one query from a data source.
  */
-public interface DataSourceQueryResult {
+public interface DataSourceFindResult {
 
     /**
      * The query which was executed and produced this result.

@@ -193,6 +193,44 @@ public interface Query {
         return new Builder();
     }
 
+    static Query all() {
+        return new Query() {
+            // The datastore this query was qualified for
+            Datastore<?, ?> datastore;
+
+            @Override
+            public boolean hasKey() {
+                return false;
+            }
+
+            @Override
+            public Object getKey() {
+                return null;
+            }
+
+            @Override
+            public String getKeyField() {
+                return datastore.getDataCodec().getPrimaryKeyFieldName();
+            }
+
+            @Override
+            public FieldConstraint<?> getConstraint(String name) {
+                return null;
+            }
+
+            @Override
+            public Map<String, FieldConstraint<?>> getFieldConstraints() {
+                return Collections.emptyMap();
+            }
+
+            @Override
+            public Query qualify(Datastore<?, ?> datastore) {
+                this.datastore = datastore;
+                return this;
+            }
+        };
+    }
+
     /**
      * Builds queries with field constraints.
      */
