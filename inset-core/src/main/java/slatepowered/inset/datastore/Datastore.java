@@ -173,7 +173,7 @@ public class Datastore<K, T> {
                     DecodeInput input = result.input();
                     K key = (K) input.getOrReadKey(null, keyClass);
                     if (key == null) {
-                        queryStatus.completeFailed("Query result doesnt contain a primary key");
+                        queryStatus.completeFailed("Query result does not contain a valid primary key");
                         return;
                     }
 
@@ -250,6 +250,27 @@ public class Datastore<K, T> {
                     status.completeSuccessfully(result);
                 });
         return status;
+    }
+
+    /**
+     * Get the key from the given input, reference the data item,
+     * decode the input into the referenced data item and finally
+     * register it was fetched now.
+     *
+     * @param input The input data.
+     * @return The item.
+     */
+    @SuppressWarnings("unchecked")
+    public DataItem<K, T> decodeFetched(DecodeInput input) {
+        K key = (K) input.getOrReadKey(null, getKeyClass());
+        if (key == null) {
+            throw new IllegalArgumentException("Query result does not a valid contain primary key");
+        }
+
+        DataItem<K, T> item = getOrReference(key);
+        item.decode(input);
+        item.fetchedNow();
+        return item;
     }
 
     /**

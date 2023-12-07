@@ -2,9 +2,12 @@ package slatepowered.inset.query;
 
 import lombok.RequiredArgsConstructor;
 import slatepowered.inset.codec.DecodeInput;
+import slatepowered.inset.datastore.DataItem;
+import slatepowered.inset.datastore.Datastore;
 import slatepowered.inset.source.DataSourceBulkIterable;
 
 import java.lang.reflect.Type;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Represents a found item in a {@link FindAllStatus}.
@@ -28,6 +31,13 @@ public abstract class FoundItem<K, T> {
     }
 
     protected Object cachedKey;
+
+    // assert this item has been qualified
+    private FindAllStatus<?, ?> assertQualified() {
+        if (source == null)
+            throw new IllegalStateException("Item has not been qualified yet");
+        return source;
+    }
 
     /**
      * Whether the data of this item was projected and should be
@@ -53,12 +63,55 @@ public abstract class FoundItem<K, T> {
      * @see DecodeInput#getOrReadKey(String, Type)
      * @return The primary key.
      */
-    public Object getKey(String fieldName, Type expectedType) {
+    @SuppressWarnings("unchecked")
+    public K getKey(String fieldName, Type expectedType) {
         if (cachedKey == null) {
             cachedKey = input().getOrReadKey(fieldName, expectedType);
         }
 
-        return cachedKey;
+        return (K) cachedKey;
+    }
+
+    /**
+     * Fetch a data item from the database if this result was partial,
+     * otherwise ensure it is cached.
+     *
+     * @return The data item.
+     */
+    @SuppressWarnings("unchecked")
+    public DataItem<K, T> fetch() {
+        FindAllStatus<?, ?> status = assertQualified();
+        Datastore<K, T> datastore = (Datastore<K, T>) status.getDatastore();
+
+        DecodeInput input = input();
+
+        // if complete there is no need to fetch the
+        // full data item from the database
+        if (!isPartial()) {
+            return datastore.decodeFetched(input);
+        }
+
+        // fetch a new item from the database
+        FindStatus<K, T> findStatus = datastore.findOne(getKey(datastore.getDataCodec().getPrimaryKeyFieldName(), datastore.getKeyClass()))
+                .await();
+        if (findStatus.failed()) {
+            Object error = findStatus.error();
+            Throwable cause = error instanceof Throwable ? findStatus.errorAs() : null;
+            throw new RuntimeException("Error while fetching data item from bulk result" +
+                    (cause == null ? ": " + error : ""), cause);
+        }
+
+        return findStatus.item();
+    }
+
+    /**
+     * Asynchronously fetch a data item from the database if this result was partial,
+     * otherwise ensure it is cached.
+     *
+     * @return The data item.
+     */
+    public CompletableFuture<DataItem<K, T>> fetchAsync() {
+        return CompletableFuture.supplyAsync(this::fetch, assertQualified().getDatastore().getDataManager().getExecutorService());
     }
 
 }
