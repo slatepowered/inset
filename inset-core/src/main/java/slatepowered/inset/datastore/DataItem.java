@@ -8,6 +8,7 @@ import slatepowered.inset.query.Query;
 import slatepowered.inset.source.DataSourceFindResult;
 import slatepowered.inset.source.DataTable;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -265,6 +266,24 @@ public class DataItem<K, T> {
             t = Integer.MAX_VALUE;
         lastFetchTime = (int) t;
         return this;
+    }
+
+    @Override
+    public String toString() {
+        return "DataItem(" + key + " = " + value + ')';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DataItem<?, ?> dataItem = (DataItem<?, ?>) o;
+        return Objects.equals(datastore, dataItem.datastore) && Objects.equals(key, dataItem.key);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(datastore, key);
     }
 
 }

@@ -12,6 +12,8 @@ import slatepowered.inset.codec.EncodeOutput;
 import slatepowered.inset.query.Query;
 import slatepowered.inset.source.*;
 
+import javax.print.Doc;
+
 /**
  * Abstraction for a MongoDB collection.
  */
@@ -56,9 +58,15 @@ public class MongoDataTable implements DataTable {
     @Override
     public DataSourceBulkIterable findAllSync(Query query) throws DataSourceException {
         String keyFieldOverride = source.getKeyFieldOverride();
-        Bson filter = MongoQueries.serializeQueryToFindFilter(keyFieldOverride, query);
+        FindIterable<Document> iterable;
 
-        FindIterable<Document> iterable = collection.find(filter);
+        if (query.fieldConstraintCount() > 0) {
+            Bson filter = MongoQueries.serializeQueryToFindFilter(keyFieldOverride, query);
+            iterable = collection.find(filter);
+        } else {
+            iterable = collection.find();
+        }
+
         return MongoQueries.createBulkIterable(keyFieldOverride, query, iterable);
     }
 

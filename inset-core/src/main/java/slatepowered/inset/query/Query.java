@@ -49,6 +49,15 @@ public interface Query {
     Map<String, FieldConstraint<?>> getFieldConstraints();
 
     /**
+     * Get the number of constrained fields.
+     *
+     * @return The number of field constraints.
+     */
+    default int fieldConstraintCount() {
+        return getFieldConstraints().size();
+    }
+
+    /**
      * Qualifies this query for the given data store.
      *
      * @param datastore The datastore.
@@ -76,6 +85,11 @@ public interface Query {
                     fieldConstraintMap = new HashMap<>();
                     fieldConstraintMap.put(getKeyField(), constraint);
                 }
+            }
+
+            @Override
+            public int fieldConstraintCount() {
+                return 1; // primary key field
             }
 
             @Override
@@ -180,6 +194,11 @@ public interface Query {
             }
 
             @Override
+            public int fieldConstraintCount() {
+                return fieldConstraintMap.size();
+            }
+
+            @Override
             public Query qualify(Datastore<?, ?> datastore) {
                 key = null;
                 hasKey = null;
@@ -221,6 +240,11 @@ public interface Query {
             @Override
             public Map<String, FieldConstraint<?>> getFieldConstraints() {
                 return Collections.emptyMap();
+            }
+
+            @Override
+            public int fieldConstraintCount() {
+                return 0;
             }
 
             @Override

@@ -1,11 +1,13 @@
 package example.slatepowered.inset;
 
+import lombok.ToString;
 import slatepowered.inset.DataManager;
 import slatepowered.inset.cache.DataCache;
 import slatepowered.inset.codec.CodecRegistry;
 import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.datastore.Datastore;
 import slatepowered.inset.mongodb.MongoDataSource;
+import slatepowered.inset.query.FoundItem;
 import slatepowered.inset.query.Query;
 import slatepowered.inset.query.FindStatus;
 import slatepowered.inset.reflective.Key;
@@ -18,6 +20,7 @@ import java.util.concurrent.ForkJoinPool;
 
 public class MongoDatastoreExample {
 
+    @ToString
     public static class Stats {
         @Key
         protected UUID uuid;
@@ -49,7 +52,7 @@ public class MongoDatastoreExample {
                 .build();
 
         // Load an item by key
-        final UUID key = new UUID(393939, 32020032);
+        final UUID key = UUID.randomUUID();
         FindStatus<UUID, Stats> queryStatus1 = datastore.findOne(Query.byKey(key));
         queryStatus1.then(result /* = queryStatus1 */ -> {
             // This is called if the query succeeds, this doesn't mean
@@ -91,6 +94,13 @@ public class MongoDatastoreExample {
         )
                 .then(result -> result.ifPresentUse(item -> System.out.println(item.get().uuid)))
                 .exceptionally(result -> result.errorAs(Throwable.class).printStackTrace());
+
+        datastore.findAll(Query.all())
+                .await()
+                .throwIfFailed()
+                .stream()
+                .map(FoundItem::fetch)
+                .forEach(System.out::println);
 
         dataManager.await();
     }

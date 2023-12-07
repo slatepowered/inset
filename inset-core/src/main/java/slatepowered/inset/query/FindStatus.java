@@ -18,9 +18,8 @@ import java.util.function.Supplier;
 public class FindStatus<K, T> extends OperationStatus<K, T, FindStatus<K, T>> {
 
     /* Result Fields (set when the query completed) */
-    private volatile FindResult result;  // The type of result
+    private volatile FindResult result;   // The type of result
     private volatile DataItem<K, T> item; // The data item if successful
-    private volatile Object error;        // The error object if it failed
 
     public FindStatus(Datastore<K, T> datastore, Query query) {
         super(datastore, query);
@@ -210,52 +209,10 @@ public class FindStatus<K, T> extends OperationStatus<K, T, FindStatus<K, T>> {
     }
 
     /**
-     * When the query fails, call the given consumer.
-     *
-     * @param consumer The consumer.
-     * @return This.
-     */
-    public FindStatus<K, T> exceptionally(Consumer<FindStatus<K, T>> consumer) {
-        future.whenComplete((status, throwable) -> {
-            if (status != null && !status.result().isSuccessful()) {
-                consumer.accept(status);
-            }
-        });
-
-        return this;
-    }
-
-    /**
      * Get the result type.
      */
     public FindResult result() {
         return result;
-    }
-
-    /**
-     * Get the error if the query failed.
-     * This could be a {@link Throwable}, a string, an integer error code, etc.
-     */
-    public Object error() {
-        return error;
-    }
-
-    /**
-     * Get the error as the inferred type if the query failed.
-     * This could be a {@link Throwable}, a string, an integer error code, etc.
-     */
-    @SuppressWarnings("unchecked")
-    public <E> E errorAs() {
-        return (E) error;
-    }
-
-    /**
-     * Get the error as the given type if the query failed.
-     * This could be a {@link Throwable}, a string, an integer error code, etc.
-     */
-    @SuppressWarnings("unchecked")
-    public <E> E errorAs(Class<E> eClass) {
-        return (E) error;
     }
 
     /**
@@ -409,6 +366,11 @@ public class FindStatus<K, T> extends OperationStatus<K, T, FindStatus<K, T>> {
 
     public boolean wasFetched() {
         return result != null && result == FindResult.FETCHED;
+    }
+
+    @Override
+    protected String describeOperation() {
+        return "executing find one query";
     }
 
 }

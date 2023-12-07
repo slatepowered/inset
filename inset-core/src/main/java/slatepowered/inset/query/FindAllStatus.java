@@ -25,11 +25,6 @@ public class FindAllStatus<K, T> extends OperationStatus<K, T, FindAllStatus<K, 
      */
     protected DataSourceBulkIterable iterable;
 
-    /**
-     * Any errors if present, if present this means the operation failed.
-     */
-    protected Object error;
-
     public FindAllStatus(Datastore<K, T> datastore, Query query) {
         super(datastore, query);
     }
@@ -250,34 +245,13 @@ public class FindAllStatus<K, T> extends OperationStatus<K, T, FindAllStatus<K, 
         return iterable.stream().map(this::qualify);
     }
 
-    /**
-     * Get the error if the query failed.
-     * This could be a {@link Throwable}, a string, an integer error code, etc.
-     */
-    public Object error() {
-        return error;
-    }
-
-    /**
-     * Get the error as the inferred type if the query failed.
-     * This could be a {@link Throwable}, a string, an integer error code, etc.
-     */
-    @SuppressWarnings("unchecked")
-    public <E> E errorAs() {
-        return (E) error;
-    }
-
-    /**
-     * Get the error as the given type if the query failed.
-     * This could be a {@link Throwable}, a string, an integer error code, etc.
-     */
-    @SuppressWarnings("unchecked")
-    public <E> E errorAs(Class<E> eClass) {
-        return (E) error;
-    }
-
     public boolean failed() {
         return error != null;
+    }
+
+    @Override
+    protected String describeOperation() {
+        return "executing bulk find";
     }
 
     public boolean success() {

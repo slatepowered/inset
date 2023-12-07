@@ -40,7 +40,7 @@ final class MongoQueries {
         Map<String, FieldConstraint<?>> constraintMap = query.getFieldConstraints();
         final int count = constraintMap.size();
         if (count < 1) {
-            throw new IllegalArgumentException("Query with zero field constraints can not be used to find one item");
+            throw new IllegalArgumentException("A query with zero field constraints can not be used as a filter");
         }
 
         Bson[] bsonArray = new Bson[count];
