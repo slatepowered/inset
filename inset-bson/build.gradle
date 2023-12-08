@@ -1,5 +1,3 @@
-version '1.0.0'
-
 dependencies {
     implementation project(":inset-core")
     implementation 'org.mongodb:bson:3.4.3'

@@ -1,5 +1,3 @@
-version '1.0.0'
-
 java {
     // caffeine only supports as low as java 11 so no
     // caffeine caching on java 8 ig
