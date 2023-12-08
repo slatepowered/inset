@@ -1,6 +1,7 @@
 package slatepowered.inset.source;
 
 import slatepowered.inset.codec.DecodeInput;
+import slatepowered.inset.modifier.Projection;
 import slatepowered.inset.query.FoundItem;
 import slatepowered.inset.query.Query;
 
@@ -48,6 +49,16 @@ public interface DataSourceBulkIterable {
      * @return This.
      */
     DataSourceBulkIterable limit(int limit);
+
+    /**
+     * Apply the given projection to this iterable query, this will cause
+     * the data to be partial so to deserialize full objects it will need
+     * to be fetched from the database.
+     *
+     * @param projection The projection to apply.
+     * @return This.
+     */
+    DataSourceBulkIterable projection(Projection projection);
 
     /**
      * Get the first item in this result set.

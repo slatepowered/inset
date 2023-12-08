@@ -122,13 +122,13 @@ public class Datastore<K, T> {
 
         // iterate over each item and compare the value
         // with the given query
-        Predicate<T> comparator = dataCodec.getQueryComparator(query);
+        Predicate<T> predicate = dataCodec.getFilterPredicate(query);
         for (DataItem<K, T> item : dataCache) {
             if (!item.isPresent()) {
                 continue;
             }
 
-            if (comparator.test(item.get())) {
+            if (predicate.test(item.get())) {
                 item.referencedNow();
                 return item;
             }
@@ -212,13 +212,13 @@ public class Datastore<K, T> {
 
         // iterate over each item and compare the value
         // with the given query
-        Predicate<T> comparator = fieldConstraintCount > 0 ? dataCodec.getQueryComparator(query) : __ -> true;
+        Predicate<T> predicate = fieldConstraintCount > 0 ? dataCodec.getFilterPredicate(query) : __ -> true;
         for (DataItem<K, T> item : dataCache) {
             if (!item.isPresent()) {
                 continue;
             }
 
-            if (comparator.test(item.get())) {
+            if (predicate.test(item.get())) {
                 item.referencedNow();
                 list.add(item);
             }

@@ -2,6 +2,7 @@ package slatepowered.inset.query;
 
 import slatepowered.inset.datastore.Datastore;
 import slatepowered.inset.datastore.OperationStatus;
+import slatepowered.inset.modifier.Projection;
 import slatepowered.inset.source.DataSourceBulkIterable;
 
 import java.util.Collection;
@@ -136,6 +137,19 @@ public class FindAllStatus<K, T> extends OperationStatus<K, T, FindAllStatus<K, 
      */
     public FindAllStatus<K, T> filter(Query query) {
         iterable = iterable.filter(query);
+        return this;
+    }
+
+    /**
+     * Apply the given projection to this iterable query, this will cause
+     * the data to be partial so to deserialize full objects it will need
+     * to be fetched from the database.
+     *
+     * @param projection The projection to apply.
+     * @return This.
+     */
+    public FindAllStatus<K, T> projection(Projection projection) {
+        iterable.projection(projection);
         return this;
     }
 

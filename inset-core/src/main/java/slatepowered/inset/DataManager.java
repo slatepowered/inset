@@ -5,9 +5,9 @@ import lombok.Getter;
 import slatepowered.inset.codec.CodecRegistry;
 import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.datastore.Datastore;
-import slatepowered.inset.source.DataTable;
 
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Manages all resources related to datastores, -sources, etc.
@@ -73,7 +73,7 @@ public class DataManager {
         return Datastore.<K, T>builder()
                 .dataManager(this)
                 .keyClass(kClass)
-                .dataCodec((DataCodec<K, T>) codecRegistry.getCodec(tClass));
+                .dataCodec(codecRegistry.getCodec(tClass).expect(DataCodec.class));
     }
 
 }

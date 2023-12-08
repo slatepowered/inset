@@ -74,7 +74,7 @@ final class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T
 
     @Override
     @SuppressWarnings("rawtypes")
-    public Predicate<T> getQueryComparator(Query query) {
+    public Predicate<T> getFilterPredicate(Query query) {
         int i;
         final Map<String, FieldConstraint<?>> fieldConstraints = query.getFieldConstraints();
         final int constrainedFieldCount = fieldConstraints.size();

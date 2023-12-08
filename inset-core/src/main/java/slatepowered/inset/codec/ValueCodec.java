@@ -9,6 +9,22 @@ package slatepowered.inset.codec;
 public interface ValueCodec<T> {
 
     /**
+     * Expect this instance to be of a specific {@link ValueCodec} super type.
+     *
+     * @param cClass The expected class.
+     * @param <C> The return type.
+     * @return This.
+     */
+    @SuppressWarnings("unchecked")
+    default <C extends ValueCodec<T>> C expect(Class<? super C> cClass) {
+        if (!cClass.isInstance(this)) {
+            throw new IllegalArgumentException("Expected " + cClass.getSimpleName() + ", got " + this.getClass().getSimpleName() + " (maybe you forgot to define a primary key?)");
+        }
+
+        return (C) this;
+    }
+
+    /**
      * Serialize the given value into the given serialization output.
      *
      * @param context The context.

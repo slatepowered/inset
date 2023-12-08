@@ -3,10 +3,13 @@ package slatepowered.inset.mongodb;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Projections;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import slatepowered.inset.bson.DocumentDecodeInput;
 import slatepowered.inset.codec.DecodeInput;
+import slatepowered.inset.modifier.CommonProjection;
+import slatepowered.inset.modifier.Projection;
 import slatepowered.inset.query.FoundItem;
 import slatepowered.inset.query.Query;
 import slatepowered.inset.query.constraint.CommonFieldConstraint;
@@ -131,6 +134,26 @@ final class MongoQueries {
     }
 
     /**
+     * Serialize the given abstract projection to a valid MongoDB/BSON
+     * projection document.
+     *
+     * @param projection The projection object.
+     * @return The BSON projection.
+     */
+    public static Bson serializeProjection(Projection projection) {
+        if (projection instanceof CommonProjection) {
+            CommonProjection commonProjection = (CommonProjection) projection;
+
+            switch (commonProjection.getAction()) {
+                case EXCLUDE: return Projections.exclude(commonProjection.getFieldNames());
+                case INCLUDE: return Projections.include(commonProjection.getFieldNames());
+            }
+        }
+
+        throw new UnsupportedOperationException("Unsupported projection type: " + projection.getClass().getName());
+    }
+
+    /**
      * Creates a new {@link DataSourceBulkIterable} from the given MongoDB
      * result iterable.
      *
@@ -177,6 +200,13 @@ final class MongoQueries {
             // convert the given optional document to a bulk item result
             private Optional<FoundItem<?, ?>> convertNullable(Document document) {
                 return document == null ? Optional.empty() : Optional.of(convert(document));
+            }
+
+            @Override
+            public DataSourceBulkIterable projection(Projection projection) {
+                this.partial = true;
+                iterable.projection(serializeProjection(projection));
+                return this;
             }
 
             @Override

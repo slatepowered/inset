@@ -38,13 +38,13 @@ public interface DataCodec<K, T> extends ValueCodec<T> {
     T createDefault(DataItem<K, T> item);
 
     /**
-     * Build a complex query comparator for the given query,
+     * Build a complex filter predicate for the given query,
      * which should check if any item of type {@code T} matches
      * the given query.
      *
      * @param query The query.
-     * @return The comparator.
+     * @return The predicate.
      */
-    Predicate<T> getQueryComparator(Query query);
+    Predicate<T> getFilterPredicate(Query query);
 
 }
