@@ -3,6 +3,7 @@ package slatepowered.inset.query;
 import slatepowered.inset.datastore.Datastore;
 import slatepowered.inset.datastore.OperationStatus;
 import slatepowered.inset.modifier.Projection;
+import slatepowered.inset.modifier.Sorting;
 import slatepowered.inset.source.DataSourceBulkIterable;
 
 import java.util.Collection;
@@ -150,6 +151,17 @@ public class FindAllStatus<K, T> extends OperationStatus<K, T, FindAllStatus<K, 
      */
     public FindAllStatus<K, T> projection(Projection projection) {
         iterable.projection(projection);
+        return this;
+    }
+
+    /**
+     * Sort this the results of this iterable.
+     *
+     * @param sorting The sorting to apply.
+     * @return This.
+     */
+    public FindAllStatus<K, T> sort(Sorting sorting) {
+        iterable.sort(sorting);
         return this;
     }
 

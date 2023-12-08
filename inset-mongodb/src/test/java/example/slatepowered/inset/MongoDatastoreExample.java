@@ -6,6 +6,7 @@ import slatepowered.inset.cache.DataCache;
 import slatepowered.inset.codec.CodecRegistry;
 import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.datastore.Datastore;
+import slatepowered.inset.modifier.Sorting;
 import slatepowered.inset.mongodb.MongoDataSource;
 import slatepowered.inset.query.FoundItem;
 import slatepowered.inset.query.Query;
@@ -97,6 +98,7 @@ public class MongoDatastoreExample {
 
         datastore.findAll(Query.all())
                 .await()
+                .sort(Sorting.builder().descend("deaths").build())
                 .throwIfFailed()
                 .stream()
                 .map(FoundItem::fetch)

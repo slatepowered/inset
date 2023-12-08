@@ -2,6 +2,7 @@ package slatepowered.inset.source;
 
 import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.modifier.Projection;
+import slatepowered.inset.modifier.Sorting;
 import slatepowered.inset.query.FoundItem;
 import slatepowered.inset.query.Query;
 
@@ -59,6 +60,14 @@ public interface DataSourceBulkIterable {
      * @return This.
      */
     DataSourceBulkIterable projection(Projection projection);
+
+    /**
+     * Sort this the results of this iterable.
+     *
+     * @param sorting The sorting to apply.
+     * @return This.
+     */
+    DataSourceBulkIterable sort(Sorting sorting);
 
     /**
      * Get the first item in this result set.

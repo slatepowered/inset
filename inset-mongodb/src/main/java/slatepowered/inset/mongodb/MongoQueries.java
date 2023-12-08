@@ -4,12 +4,13 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
+import org.bson.BsonDocument;
+import org.bson.BsonInt32;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import slatepowered.inset.bson.DocumentDecodeInput;
 import slatepowered.inset.codec.DecodeInput;
-import slatepowered.inset.modifier.CommonProjection;
-import slatepowered.inset.modifier.Projection;
+import slatepowered.inset.modifier.*;
 import slatepowered.inset.query.FoundItem;
 import slatepowered.inset.query.Query;
 import slatepowered.inset.query.constraint.CommonFieldConstraint;
@@ -154,6 +155,36 @@ final class MongoQueries {
     }
 
     /**
+     * Serialize the given abstract sorting to a valid MongoDB/BSON
+     * sort document.
+     *
+     * @param sorting The sorting object.
+     * @return The BSON sort document.
+     */
+    public static Bson serializeSorting(Sorting sorting) {
+        if (sorting instanceof FieldOrderSorting) {
+            FieldOrderSorting fieldOrderSorting = (FieldOrderSorting) sorting;
+
+            List<String> fieldNames = fieldOrderSorting.getFieldNames();
+            List<FieldOrdering> fieldOrderings = fieldOrderSorting.getFieldOrderings();
+
+            final int size = fieldOrderSorting.size();
+            BsonDocument document = new BsonDocument();
+            for (int i = 0; i < size; i++) {
+                String field = fieldNames.get(i);
+                FieldOrdering ordering = fieldOrderings.get(i);
+
+                int orderInt = ordering == FieldOrdering.ASCENDING ? 1 : -1;
+                document.put(field, new BsonInt32(orderInt));
+            }
+
+            return document;
+        }
+
+        throw new UnsupportedOperationException("Unsupported sorting type: " + sorting.getClass().getName());
+    }
+
+    /**
      * Creates a new {@link DataSourceBulkIterable} from the given MongoDB
      * result iterable.
      *
@@ -206,6 +237,12 @@ final class MongoQueries {
             public DataSourceBulkIterable projection(Projection projection) {
                 this.partial = true;
                 iterable.projection(serializeProjection(projection));
+                return this;
+            }
+
+            @Override
+            public DataSourceBulkIterable sort(Sorting sorting) {
+                iterable.sort(serializeSorting(sorting));
                 return this;
             }
 
