@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Represents a datastore of values of type {@code T} with primary key type {@code K}.
@@ -263,7 +265,32 @@ public class Datastore<K, T> {
      * @return The status of the operation.
      */
     public FindAllStatus<K, T> findAll(Query query) {
+        return findAll(query, false);
+    }
+
+    /**
+     * Find all items matching the given query in the database.
+     *
+     * Note that the aggregation/find operation is never cached if {@code useCaches} is
+     * disabled and always references the database, the individual items may be
+     * resolved from the cache or cached though.
+     *
+     * @param query The filter query.
+     * @param useCaches Whether to include cached items, this has the benefit of
+     *                  always having the latest local changes but can make certain
+     *                  operations on the iterable perform slower.
+     * @return The status of the operation.
+     */
+    public FindAllStatus<K, T> findAll(Query query, boolean useCaches) {
         FindAllStatus<K, T> status = new FindAllStatus<>(this, query);
+
+        // filter cached item stream
+        if (useCaches) {
+            final Predicate<T> filterPredicate = dataCodec.getFilterPredicate(query);
+            Stream<DataItem<K, T>> cachedStream = dataCache.stream().filter(dataItem -> dataItem.isPresent() && filterPredicate.test(dataItem.get()));
+            status.withCached(cachedStream.collect(Collectors.toList()));
+        }
+
         getSourceTable().findAllAsync(query)
                 .whenComplete((result, throwable) -> {
                     if (throwable != null) {
@@ -274,6 +301,7 @@ public class Datastore<K, T> {
                     // 'complete' the operation with the bulk iterable
                     status.completeSuccessfully(result);
                 });
+
         return status;
     }
 

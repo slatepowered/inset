@@ -5,6 +5,7 @@ import slatepowered.inset.datastore.DataItem;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * A thread-safe double backed (by a list and map) implementation of
@@ -41,6 +42,11 @@ final class DoubleBackedCache<K, T> implements DataCache<K, T> {
     @Override
     public Iterator<DataItem<K, T>> iterator() {
         return list.iterator();
+    }
+
+    @Override
+    public Stream<DataItem<K, T>> stream() {
+        return list.stream();
     }
 
     @Override

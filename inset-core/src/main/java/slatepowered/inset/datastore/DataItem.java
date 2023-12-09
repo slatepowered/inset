@@ -4,10 +4,12 @@ import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.codec.EncodeOutput;
+import slatepowered.inset.query.FoundItem;
 import slatepowered.inset.query.Query;
 import slatepowered.inset.source.DataSourceFindResult;
 import slatepowered.inset.source.DataTable;
 
+import java.lang.reflect.Type;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -19,7 +21,7 @@ import java.util.function.Consumer;
  * @param <K> The primary key type.
  * @param <T> The data type.
  */
-public class DataItem<K, T> {
+public class DataItem<K, T> extends FoundItem<K, T> {
 
     public DataItem(Datastore<K, T> datastore, K key) {
         this.datastore = datastore;
@@ -235,6 +237,36 @@ public class DataItem<K, T> {
         DataSourceFindResult queryResult = datastore.getSourceTable()
                 .findOneSync(Query.byKey(key));
         return decode(queryResult.input()).fetchedNow();
+    }
+
+    @Override
+    public boolean isPartial() {
+        return false;
+    }
+
+    @Override
+    public DecodeInput input() {
+        throw new UnsupportedOperationException("TODO: Create decode input for DataItem"); // TODO
+    }
+
+    @Override
+    public K getKey(String fieldName, Type expectedType) {
+        return key;
+    }
+
+    @Override
+    public <V> V getField(String fieldName, Type expectedType) {
+        throw new UnsupportedOperationException("TODO: Get field on DataItem"); // TODO
+    }
+
+    @Override
+    public <V> V project(Class<V> vClass) {
+        return null; // TODO
+    }
+
+    @Override
+    public DataItem<K, T> fetch() {
+        return this;
     }
 
     /**
