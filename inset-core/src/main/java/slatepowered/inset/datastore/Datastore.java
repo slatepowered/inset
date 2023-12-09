@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Getter;
 import slatepowered.inset.DataManager;
 import slatepowered.inset.cache.DataCache;
+import slatepowered.inset.codec.CodecContext;
+import slatepowered.inset.codec.CodecRegistry;
 import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.query.FindAllStatus;
@@ -15,6 +17,7 @@ import slatepowered.inset.source.DataTable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
 
 /**
@@ -46,6 +49,37 @@ public class Datastore<K, T> {
     /** The marshaller for the local data objects. */
     @Getter
     protected final DataCodec<K, T> dataCodec;
+
+    /**
+     * Get the codec registry to be used by this datastore
+     * and it's operations.
+     *
+     * @return The codec registry.
+     */
+    public CodecRegistry getCodecRegistry() {
+        return dataManager.getCodecRegistry();
+    }
+
+    /**
+     * Get the executor service to be used by this datastore
+     * and it's operations.
+     *
+     * @return The executor service.
+     */
+    public ExecutorService getExecutorService() {
+        return dataManager.getExecutorService();
+    }
+
+    /**
+     * Create a new {@link CodecContext} to be utilized
+     * by this datastore and it's operations to decode and encode
+     * data.
+     *
+     * @return The codec context.
+     */
+    public CodecContext newCodecContext() {
+        return new CodecContext(dataManager);
+    }
 
     /**
      * Get or create a reference data item for the given key.
@@ -170,16 +204,7 @@ public class Datastore<K, T> {
                         return;
                     }
 
-                    DecodeInput input = result.input();
-                    K key = (K) input.getOrReadKey(null, keyClass);
-                    if (key == null) {
-                        queryStatus.completeFailed("Query result does not contain a valid primary key");
-                        return;
-                    }
-
-                    DataItem<K, T> item = getOrReference(key);
-                    item.decode(input);
-                    item.fetchedNow();
+                    DataItem<K, T> item = decodeFetched(result.input());
                     queryStatus.completeSuccessfully(FindResult.FETCHED, item);
                 });
         return queryStatus;

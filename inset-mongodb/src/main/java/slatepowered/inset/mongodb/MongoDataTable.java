@@ -52,7 +52,7 @@ public class MongoDataTable implements DataTable {
 
         return result != null ?
                 MongoQueries.foundQueryResult(query, keyFieldOverride, result) :
-                MongoQueries.noneQueryResult(query);
+                MongoQueries.noneQueryResult(query, keyFieldOverride);
     }
 
     @Override

@@ -10,7 +10,7 @@ import java.util.List;
  */
 @RequiredArgsConstructor
 @Getter
-public class CommonProjection {
+public class CommonProjection implements Projection {
 
     /**
      * Specifies the action to perform with the field list operand.

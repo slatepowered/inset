@@ -32,6 +32,14 @@ public class MongoDatastoreExample {
         protected Integer deaths = 0;
     }
 
+    @ToString
+    public static class PartialStats {
+        @Key
+        UUID uuid;
+
+        protected Integer deaths;
+    }
+
     public static void main(String[] args) throws InterruptedException {
         // Create the data manager
         DataManager dataManager = DataManager.builder()
@@ -98,10 +106,11 @@ public class MongoDatastoreExample {
 
         datastore.findAll(Query.all())
                 .await()
+                .projection(PartialStats.class)
                 .sort(Sorting.builder().descend("deaths").build())
                 .throwIfFailed()
                 .stream()
-                .map(FoundItem::fetch)
+                .map(item -> item.project(PartialStats.class))
                 .forEach(System.out::println);
 
         dataManager.await();

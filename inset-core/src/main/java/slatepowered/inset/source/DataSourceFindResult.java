@@ -6,7 +6,7 @@ import slatepowered.inset.query.Query;
 /**
  * Represents the result of a direct find-one query from a data source.
  */
-public interface DataSourceFindResult {
+public interface DataSourceFindResult extends DataSourceOperation {
 
     /**
      * The query which was executed and produced this result.

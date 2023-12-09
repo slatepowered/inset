@@ -1,10 +1,10 @@
 package slatepowered.inset.query;
 
-import lombok.RequiredArgsConstructor;
+import slatepowered.inset.codec.CodecContext;
+import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.datastore.Datastore;
-import slatepowered.inset.source.DataSourceBulkIterable;
 
 import java.lang.reflect.Type;
 import java.util.concurrent.CompletableFuture;
@@ -30,13 +30,26 @@ public abstract class FoundItem<K, T> {
         return (FoundItem<K2, T2>) this;
     }
 
+    protected CodecContext partialCodecContext; // The context used to read from the partial data
+    protected DecodeInput cachedInput;          // The cached input, used by this class to read partial data
     protected Object cachedKey;
 
     // assert this item has been qualified
-    private FindAllStatus<?, ?> assertQualified() {
+    @SuppressWarnings("unchecked")
+    private FindAllStatus<K, T> assertQualified() {
         if (source == null)
             throw new IllegalStateException("Item has not been qualified yet");
-        return source;
+        return (FindAllStatus<K, T>) source;
+    }
+
+    // ensure a codec context for the reading
+    // of partial data exists and return it
+    private CodecContext ensurePartialCodecContext() {
+        if (partialCodecContext == null) {
+            partialCodecContext = assertQualified().getDatastore().newCodecContext();
+        }
+
+        return partialCodecContext;
     }
 
     /**
@@ -56,6 +69,19 @@ public abstract class FoundItem<K, T> {
     public abstract DecodeInput input();
 
     /**
+     * Get and use the cached input or create a new input.
+     *
+     * @return The input.
+     */
+    public DecodeInput getOrCreateInput() {
+        if (cachedInput == null) {
+            cachedInput = input();
+        }
+
+        return cachedInput;
+    }
+
+    /**
      * Get or read the primary key for this data item.
      *
      * @param fieldName The set name for the key field.
@@ -66,10 +92,40 @@ public abstract class FoundItem<K, T> {
     @SuppressWarnings("unchecked")
     public K getKey(String fieldName, Type expectedType) {
         if (cachedKey == null) {
-            cachedKey = input().getOrReadKey(fieldName, expectedType);
+            cachedKey = getOrCreateInput().getOrReadKey(fieldName, expectedType);
         }
 
         return (K) cachedKey;
+    }
+
+    /**
+     * Get or read the given field for this data item.
+     *
+     * @param fieldName The field name.
+     * @param expectedType The type expected for the value.
+     * @see DecodeInput#read(CodecContext, String, Type)
+     * @return The primary key.
+     */
+    @SuppressWarnings("unchecked")
+    public <V> V getField(String fieldName, Type expectedType) {
+        return (V) getOrCreateInput().read(ensurePartialCodecContext(), fieldName, expectedType);
+    }
+
+    /**
+     * Project the potentially partial data onto a new instance of the given
+     * data type.
+     *
+     * @param vClass The data class.
+     * @param <V> The data type.
+     * @return The data instance with the projected data.
+     */
+    public <V> V project(Class<V> vClass) {
+        FindAllStatus<K, T> status = assertQualified();
+        Datastore<K, T> datastore = status.getDatastore();
+
+        DataCodec<K, V> dataCodec = datastore.getCodecRegistry().getCodec(vClass).expect(DataCodec.class);
+        CodecContext context = datastore.newCodecContext();
+        return dataCodec.constructAndDecode(context, input());
     }
 
     /**

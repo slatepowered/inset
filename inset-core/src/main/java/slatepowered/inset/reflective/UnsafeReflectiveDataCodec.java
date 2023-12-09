@@ -4,6 +4,7 @@ import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.codec.DataCodec;
+import slatepowered.inset.modifier.Projection;
 import slatepowered.inset.query.constraint.FieldConstraint;
 import slatepowered.inset.query.Query;
 import slatepowered.veru.misc.Throwables;
@@ -11,6 +12,9 @@ import slatepowered.veru.reflect.UnsafeUtil;
 import sun.misc.Unsafe;
 
 import java.lang.invoke.MethodHandle;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
@@ -125,6 +129,23 @@ final class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T
                 throw new AssertionError(); // unreachable
             }
         };
+    }
+
+    @Override
+    public Projection createExclusiveProjection(String primaryKeyName) {
+        List<String> fields = new ArrayList<>();
+
+        // add applicable data fields
+        for (UnsafeFieldDesc fieldDesc : super.fields) {
+            fields.add(fieldDesc.name);
+        }
+
+        // add primary key field
+        if (primaryKeyName == null)
+            primaryKeyName = primaryKeyField.getName();
+        fields.add(primaryKeyName);
+
+        return Projection.include(fields);
     }
 
 }

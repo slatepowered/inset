@@ -1,13 +1,10 @@
 package slatepowered.inset.source;
 
-import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.modifier.Projection;
 import slatepowered.inset.modifier.Sorting;
 import slatepowered.inset.query.FoundItem;
 import slatepowered.inset.query.Query;
 
-import java.lang.reflect.Type;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -18,7 +15,7 @@ import java.util.stream.Stream;
  * This doesn't have to mean a completed result, it just has to provide
  * a means of retrieving the items returned by a query and modifying the projections.
  */
-public interface DataSourceBulkIterable {
+public interface DataSourceBulkIterable extends DataSourceOperation {
 
     /**
      * Get the query.

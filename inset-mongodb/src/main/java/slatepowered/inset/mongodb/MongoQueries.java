@@ -96,8 +96,13 @@ final class MongoQueries {
         return operand; // todo maybe idk if this is necessary
     }
 
-    public static DataSourceFindResult noneQueryResult(Query query) {
+    public static DataSourceFindResult noneQueryResult(Query query, String keyFieldOverride) {
         return new DataSourceFindResult() {
+            @Override
+            public String getPrimaryKeyFieldOverride() {
+                return keyFieldOverride;
+            }
+
             @Override
             public Query getQuery() {
                 return query;
@@ -117,6 +122,11 @@ final class MongoQueries {
 
     public static DataSourceFindResult foundQueryResult(Query query, String keyFieldOverride, Document document) {
         return new DataSourceFindResult() {
+            @Override
+            public String getPrimaryKeyFieldOverride() {
+                return keyFieldOverride;
+            }
+
             @Override
             public Query getQuery() {
                 return query;
@@ -196,6 +206,11 @@ final class MongoQueries {
                                                             final FindIterable<Document> iterable) {
         MongoCursor<Document> cursor = iterable.cursor();
         return new DataSourceBulkIterable() {
+            @Override
+            public String getPrimaryKeyFieldOverride() {
+                return keyFieldNameOverride;
+            }
+
             // Whether any projections happened causing the
             // data to only be partial.
             boolean partial = false;

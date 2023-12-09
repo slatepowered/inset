@@ -218,7 +218,7 @@ public class DataItem<K, T> {
         }
 
         DataCodec<K, T> myCodec = datastore.getDataCodec();
-        CodecContext context = new CodecContext(datastore.getDataManager());
+        CodecContext context = datastore.newCodecContext();
         T value = myCodec.construct(context, input);
         myCodec.decode(context, value, input);
         this.value = value;

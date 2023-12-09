@@ -1,5 +1,6 @@
 package slatepowered.inset.query;
 
+import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.datastore.Datastore;
 import slatepowered.inset.datastore.OperationStatus;
 import slatepowered.inset.modifier.Projection;
@@ -152,6 +153,19 @@ public class FindAllStatus<K, T> extends OperationStatus<K, T, FindAllStatus<K, 
     public FindAllStatus<K, T> projection(Projection projection) {
         iterable.projection(projection);
         return this;
+    }
+
+    /**
+     * Apply the exclusive projection created from the data codec
+     * of the given data class to this iterable.
+     *
+     * @param vClass The data class.
+     * @return This.
+     */
+    public <V> FindAllStatus<K, T> projection(Class<V> vClass) {
+        DataCodec<K, V> dataCodec = datastore.getCodecRegistry().getCodec(vClass).expect(DataCodec.class);
+        Projection projection = dataCodec.createExclusiveProjection(iterable.getPrimaryKeyFieldOverride());
+        return projection(projection);
     }
 
     /**
