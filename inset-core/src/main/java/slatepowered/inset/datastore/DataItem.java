@@ -285,6 +285,11 @@ public class DataItem<K, T> extends PartialItem<K, T> {
     }
 
     @Override
+    public Optional<DataItem<K, T>> findCached() {
+        return Optional.of(this);
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     protected <V> V projectInterface(ProjectionInterface projectionInterface) {
         if (projectionInterface.getKlass().isInstance(value)) {
@@ -300,7 +305,7 @@ public class DataItem<K, T> extends PartialItem<K, T> {
      *
      * @return The future.
      */
-    public CompletableFuture<DataItem<K, T>> findAsync() {
+    public CompletableFuture<DataItem<K, T>> fetchAsync() {
         return datastore.getSourceTable()
                 .findOneAsync(Query.byKey(key))
                 .thenApply(result -> this.decode(result.input()).fetchedNow());

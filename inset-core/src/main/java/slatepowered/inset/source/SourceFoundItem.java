@@ -6,12 +6,10 @@ import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.datastore.Datastore;
 import slatepowered.inset.internal.ProjectionInterface;
 import slatepowered.inset.operation.Sorting;
-import slatepowered.inset.query.FindAllOperation;
-import slatepowered.inset.query.FindOperation;
-import slatepowered.inset.query.FindResult;
-import slatepowered.inset.query.PartialItem;
+import slatepowered.inset.query.*;
 
 import java.lang.reflect.Type;
+import java.util.Optional;
 
 /**
  * Represents a {@link PartialItem} retrieved from a data source.
@@ -112,6 +110,11 @@ public abstract class SourceFoundItem<K, T> extends PartialItem<K, T> {
         }
 
         return arr;
+    }
+
+    @Override
+    public Optional<DataItem<K, T>> findCached() {
+        return Optional.ofNullable(assertQualified().findOneCached(Query.byKey(getKey())));
     }
 
 }

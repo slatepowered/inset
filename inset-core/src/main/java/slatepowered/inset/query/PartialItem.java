@@ -12,6 +12,7 @@ import slatepowered.inset.operation.Sorting;
 
 import java.lang.reflect.Type;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -114,6 +115,14 @@ public abstract class PartialItem<K, T> {
     public FindOperation<K, T> fetch() {
         return find().thenFetchIfCached();
     }
+
+    /**
+     * Find a cached item for this partial item if present,
+     * otherwise return an empty optional.
+     *
+     * @return The cached item if present.
+     */
+    public abstract Optional<DataItem<K, T>> findCached();
 
     /**
      * Create an array of numbers easily comparable to other numbers
