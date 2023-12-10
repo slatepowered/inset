@@ -31,12 +31,11 @@ public class MongoDatastoreExample {
         protected Integer deaths = 0;
     }
 
-    @ToString
-    public static class PartialStats {
+    public interface PartialStats {
         @Key
-        UUID uuid;
+        UUID uuid();
 
-        protected Integer deaths;
+        Integer deaths();
     }
 
     public static void main(String[] args) throws InterruptedException {
@@ -122,7 +121,8 @@ public class MongoDatastoreExample {
                 .projection(PartialStats.class)
                 .sort(Sorting.builder().descend("deaths").build())
                 .stream()
-                .forEachOrdered(foundItem -> System.out.println(foundItem.fetch()));
+                .map(item -> item.project(PartialStats.class))
+                .forEachOrdered(stats -> System.out.println("UUID " + stats.uuid() + " has " + stats.deaths() + " deaths"));
 
         dataManager.await();
     }

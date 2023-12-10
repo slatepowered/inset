@@ -8,9 +8,12 @@ import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.datastore.Datastore;
 import slatepowered.inset.datastore.OperationStatus;
 import slatepowered.inset.internal.CachedStreams;
+import slatepowered.inset.internal.ProjectionType;
+import slatepowered.inset.internal.ProjectionTypes;
 import slatepowered.inset.operation.Projection;
 import slatepowered.inset.operation.Sorting;
 import slatepowered.inset.source.DataSourceBulkIterable;
+import slatepowered.inset.source.SourceFoundItem;
 import sun.security.util.Cache;
 
 import java.util.Iterator;
@@ -224,8 +227,8 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
      * @return This.
      */
     public <V> FindAllOperation<K, T> projection(Class<V> vClass) {
-        DataCodec<K, V> dataCodec = datastore.getCodecRegistry().getCodec(vClass).expect(DataCodec.class);
-        Projection projection = dataCodec.createExclusiveProjection(iterable.getPrimaryKeyFieldOverride());
+        ProjectionType projectionType = ProjectionTypes.getProjectionType(vClass, datastore);
+        Projection projection = projectionType.createExclusiveProjection(iterable.getPrimaryKeyFieldOverride());
         return projection(projection);
     }
 
@@ -262,7 +265,7 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
     }
 
     // qualify the given item for this query
-    private FoundItem<K, T> qualify(FoundItem<?, ?> item) {
+    private SourceFoundItem<K, T> qualify(SourceFoundItem<?, ?> item) {
         return item.qualify(this);
     }
 
@@ -342,8 +345,8 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
             return stream.collect(Collectors.toList());
         }
 
-        List<? extends FoundItem<K, T>> list = (List<? extends FoundItem<K,T>>) (Object) iterable.list();
-        for (FoundItem<K, T> item : list) {
+        List<SourceFoundItem<K, T>> list = (List<SourceFoundItem<K,T>>) (Object) iterable.list();
+        for (SourceFoundItem<K, T> item : list) {
             this.qualify(item);
         }
 

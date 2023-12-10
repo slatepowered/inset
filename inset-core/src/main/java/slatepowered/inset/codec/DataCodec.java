@@ -1,6 +1,7 @@
 package slatepowered.inset.codec;
 
 import slatepowered.inset.datastore.DataItem;
+import slatepowered.inset.internal.ProjectionType;
 import slatepowered.inset.operation.Projection;
 import slatepowered.inset.query.Query;
 
@@ -13,7 +14,7 @@ import java.util.function.Predicate;
  * @param <K> The key type.
  * @param <T> The data value type.
  */
-public interface DataCodec<K, T> extends ValueCodec<T> {
+public interface DataCodec<K, T> extends ValueCodec<T>, ProjectionType {
 
     /**
      * Retrieve the primary key from the given value if present.
@@ -47,14 +48,5 @@ public interface DataCodec<K, T> extends ValueCodec<T> {
      * @return The predicate.
      */
     Predicate<T> getFilterPredicate(Query query);
-
-    /**
-     * Create a new projection which only includes the fields
-     * applicable to this data.
-     *
-     * @param primaryKeyName The primary key field name override.
-     * @return The projection.
-     */
-    Projection createExclusiveProjection(String primaryKeyName);
 
 }

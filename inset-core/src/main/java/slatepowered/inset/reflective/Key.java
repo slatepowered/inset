@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
  * key for the data object.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.FIELD)
+@Target({ ElementType.FIELD, ElementType.METHOD })
 public @interface Key {
 
 }

@@ -13,7 +13,7 @@ import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.operation.*;
 import slatepowered.inset.query.FoundItem;
 import slatepowered.inset.query.Query;
-import slatepowered.inset.query.SourceFoundItem;
+import slatepowered.inset.source.SourceFoundItem;
 import slatepowered.inset.query.constraint.CommonFieldConstraint;
 import slatepowered.inset.query.constraint.FieldConstraint;
 import slatepowered.inset.source.DataSourceBulkIterable;
@@ -240,12 +240,12 @@ final class MongoQueries {
             }
 
             // convert the given document to a bulk item result
-            private FoundItem<?, ?> convert(Document document) {
+            private SourceFoundItem<?, ?> convert(Document document) {
                 return toBulkItem(document, keyFieldNameOverride, partial);
             }
 
             // convert the given optional document to a bulk item result
-            private Optional<FoundItem<?, ?>> convertNullable(Document document) {
+            private Optional<SourceFoundItem<?, ?>> convertNullable(Document document) {
                 return document == null ? Optional.empty() : Optional.of(convert(document));
             }
 
@@ -263,12 +263,12 @@ final class MongoQueries {
             }
 
             @Override
-            public Optional<FoundItem<?, ?>> first() {
+            public Optional<SourceFoundItem<?, ?>> first() {
                 return convertNullable(iterable.first());
             }
 
             @Override
-            public Optional<FoundItem<?, ?>> next() {
+            public Optional<SourceFoundItem<?, ?>> next() {
                 return convertNullable(cursor.tryNext());
             }
 
@@ -278,8 +278,8 @@ final class MongoQueries {
             }
 
             @Override
-            public List<FoundItem<?, ?>> list() {
-                List<FoundItem<?, ?>> list = new ArrayList<>();
+            public List<SourceFoundItem<?, ?>> list() {
+                List<SourceFoundItem<?, ?>> list = new ArrayList<>();
                 while (cursor.hasNext()) {
                     Document doc = cursor.tryNext();
                     if (doc == null)
@@ -292,7 +292,7 @@ final class MongoQueries {
             }
 
             @Override
-            public Stream<FoundItem<?, ?>> stream() {
+            public Stream<SourceFoundItem<?, ?>> stream() {
                 return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterable.iterator(), Spliterator.ORDERED), false)
                         .filter(Objects::nonNull)
                         .map(this::convert);
@@ -303,9 +303,9 @@ final class MongoQueries {
     /**
      * Convert the given document with the given metadata to a found bulk item.
      */
-    public static FoundItem<?, ?> toBulkItem(Document document,
-                                             String keyFieldOverride,
-                                             boolean partial) {
+    public static SourceFoundItem<?, ?> toBulkItem(Document document,
+                                                   String keyFieldOverride,
+                                                   boolean partial) {
         return new SourceFoundItem<Object, Object>() {
             @Override
             public boolean isPartial() {

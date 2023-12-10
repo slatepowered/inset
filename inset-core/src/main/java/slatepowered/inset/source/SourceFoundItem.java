@@ -1,12 +1,17 @@
-package slatepowered.inset.query;
+package slatepowered.inset.source;
 
 import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.datastore.Datastore;
+import slatepowered.inset.internal.ProjectionInterface;
 import slatepowered.inset.operation.Sorting;
+import slatepowered.inset.query.FindAllOperation;
+import slatepowered.inset.query.FindOperation;
+import slatepowered.inset.query.FoundItem;
 
+import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 
 /**
@@ -17,17 +22,38 @@ import java.lang.reflect.Type;
  */
 public abstract class SourceFoundItem<K, T> extends FoundItem<K, T> {
 
+    /**
+     * The operation status this found item is a part of.
+     *
+     * This is only available after qualified.
+     */
+    protected Datastore<?, ?> source;
+
     protected CodecContext partialCodecContext; // The context used to read from the partial data
     protected K cachedKey; // The cached key object
+
+    @SuppressWarnings("unchecked")
+    public  <K2, T2> SourceFoundItem<K2, T2> qualify(FindAllOperation<K2, T2> source) {
+        this.source = source.getDatastore();
+        return (SourceFoundItem<K2, T2>) this;
+    }
 
     // ensure a codec context for the reading
     // of partial data exists and return it
     private CodecContext ensurePartialCodecContext() {
         if (partialCodecContext == null) {
-            partialCodecContext = assertQualified().getDatastore().newCodecContext();
+            partialCodecContext = assertQualified().newCodecContext();
         }
 
         return partialCodecContext;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    protected final Datastore<K, T> assertQualified() {
+        if (source == null)
+            throw new IllegalStateException("Sourced item is not qualified");
+        return (Datastore<K, T>) source;
     }
 
     @Override
@@ -45,7 +71,7 @@ public abstract class SourceFoundItem<K, T> extends FoundItem<K, T> {
     @Override
     public K getKey() {
         if (cachedKey == null) {
-            Datastore<K, T> datastore = assertQualified().getDatastore();
+            Datastore<K, T> datastore = assertQualified();
             cachedKey = getOrReadKey(datastore.getDataCodec().getPrimaryKeyFieldName(), datastore.getKeyClass());
         }
 
@@ -53,21 +79,9 @@ public abstract class SourceFoundItem<K, T> extends FoundItem<K, T> {
     }
 
     @Override
-    public <V> V project(Class<V> vClass) {
-        FindAllOperation<K, T> status = assertQualified();
-        Datastore<K, T> datastore = status.getDatastore();
-
-        DataCodec<K, V> dataCodec = datastore.getCodecRegistry().getCodec(vClass).expect(DataCodec.class);
-        CodecContext context = datastore.newCodecContext();
-        return dataCodec.constructAndDecode(context, input());
-    }
-
-    @Override
     @SuppressWarnings("unchecked")
     public DataItem<K, T> fetch() {
-        FindAllOperation<?, ?> status = assertQualified();
-        Datastore<K, T> datastore = (Datastore<K, T>) status.getDatastore();
-
+        Datastore<K, T> datastore = assertQualified();
         DecodeInput input = input();
 
         // if complete there is no need to fetch the
@@ -87,6 +101,12 @@ public abstract class SourceFoundItem<K, T> extends FoundItem<K, T> {
         }
 
         return findStatus.item();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    protected <V> V projectInterface(ProjectionInterface projectionInterface) {
+        return (V) projectionInterface.createProxy(this::getKey, this::getField);
     }
 
     @Override

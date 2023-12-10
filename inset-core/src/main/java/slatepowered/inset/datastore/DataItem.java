@@ -1,7 +1,9 @@
 package slatepowered.inset.datastore;
 
 import slatepowered.inset.codec.*;
+import slatepowered.inset.internal.ProjectionInterface;
 import slatepowered.inset.operation.Sorting;
+import slatepowered.inset.query.FindAllOperation;
 import slatepowered.inset.query.FoundItem;
 import slatepowered.inset.query.Query;
 import slatepowered.inset.source.DataSourceFindResult;
@@ -241,6 +243,11 @@ public class DataItem<K, T> extends FoundItem<K, T> {
     }
 
     @Override
+    protected Datastore<K, T> assertQualified() {
+        return this.datastore;
+    }
+
+    @Override
     public boolean isPartial() {
         return false;
     }
@@ -266,13 +273,19 @@ public class DataItem<K, T> extends FoundItem<K, T> {
     }
 
     @Override
-    public <V> V project(Class<V> vClass) {
-        return null; // TODO
+    public DataItem<K, T> fetch() {
+        return this;
     }
 
     @Override
-    public DataItem<K, T> fetch() {
-        return this;
+    @SuppressWarnings("unchecked")
+    protected <V> V projectInterface(ProjectionInterface projectionInterface) {
+        if (projectionInterface.getKlass().isInstance(value)) {
+            return (V) value;
+        }
+
+        final DataCodec<K, T> codec = datastore.getDataCodec();
+        return (V) projectionInterface.createProxy(() -> key, (name, type) -> codec.getField(value, name));
     }
 
     /**

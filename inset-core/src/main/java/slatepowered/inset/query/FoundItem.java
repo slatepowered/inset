@@ -5,10 +5,12 @@ import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.datastore.Datastore;
+import slatepowered.inset.internal.ProjectionInterface;
+import slatepowered.inset.internal.ProjectionType;
+import slatepowered.inset.internal.ProjectionTypes;
 import slatepowered.inset.operation.Sorting;
 
 import java.lang.reflect.Type;
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
@@ -20,30 +22,18 @@ import java.util.concurrent.CompletableFuture;
  */
 public abstract class FoundItem<K, T> {
 
-    /**
-     * The operation status this found item is a part of.
-     *
-     * This is only available after qualified.
-     */
-    protected FindAllOperation<?, ?> source;
-
     protected DecodeInput cachedInput; // The cached input, used by this class to read partial data
     private double[] cachedOrderCoefficients; // The cached order coefficient array
     private Sorting cachedSort; // The ID the cached order coefficient is for
 
-    @SuppressWarnings("unchecked")
-    protected <K2, T2> FoundItem<K2, T2> qualify(FindAllOperation<K2, T2> source) {
-        this.source = source;
-        return (FoundItem<K2, T2>) this;
-    }
-
-    // assert this item has been qualified
-    @SuppressWarnings("unchecked")
-    protected final FindAllOperation<K, T> assertQualified() {
-        if (source == null)
-            throw new IllegalStateException("Item has not been qualified yet");
-        return (FindAllOperation<K, T>) source;
-    }
+    /**
+     * Assert this item has been qualified and return the source of the
+     * item if present.
+     *
+     * @return The source.
+     * @throws IllegalStateException If the item has not been qualified.
+     */
+    protected abstract Datastore<K, T> assertQualified();
 
     /**
      * Whether the data of this item was projected and should be
@@ -91,7 +81,7 @@ public abstract class FoundItem<K, T> {
      * @return The key.
      */
     public K getKey() {
-        Datastore<K, T> datastore = assertQualified().getDatastore();
+        Datastore<K, T> datastore = assertQualified();
         return getOrReadKey(datastore.getDataCodec().getPrimaryKeyFieldName(), datastore.getKeyClass());
     }
 
@@ -104,16 +94,6 @@ public abstract class FoundItem<K, T> {
      * @return The primary key.
      */
     public abstract <V> V getField(String fieldName, Type expectedType);
-
-    /**
-     * Project the potentially partial data onto a new instance of the given
-     * data type.
-     *
-     * @param vClass The data class.
-     * @param <V> The data type.
-     * @return The data instance with the projected data.
-     */
-    public abstract <V> V project(Class<V> vClass);
 
     /**
      * Fetch a data item from the database if this result was partial,
@@ -130,7 +110,7 @@ public abstract class FoundItem<K, T> {
      * @return The data item.
      */
     public CompletableFuture<DataItem<K, T>> fetchAsync() {
-        return CompletableFuture.supplyAsync(this::fetch, assertQualified().getDatastore().getDataManager().getExecutorService());
+        return CompletableFuture.supplyAsync(this::fetch, assertQualified().getDataManager().getExecutorService());
     }
 
     /**
@@ -155,6 +135,44 @@ public abstract class FoundItem<K, T> {
         cachedOrderCoefficients = createFastOrderCoefficients(fields, sorting);
         cachedSort = sorting;
         return cachedOrderCoefficients;
+    }
+
+    /**
+     * Project the potentially partial data onto a new instance of the given
+     * data type.
+     *
+     * @param vClass The data class.
+     * @param <V> The data type.
+     * @return The data instance with the projected data.
+     */
+    @SuppressWarnings("unchecked")
+    public <V> V project(Class<V> vClass) {
+        ProjectionType projectionType = ProjectionTypes.getProjectionType(vClass, assertQualified());
+
+        if (projectionType instanceof ProjectionInterface) {
+            return projectInterface((ProjectionInterface) projectionType);
+        } else if (projectionType instanceof DataCodec) {
+            return projectDataClass((DataCodec<K, ? extends V>) projectionType);
+        }
+
+        throw new UnsupportedOperationException("Unsupported projection type compiled from " + vClass + ": " + projectionType);
+    }
+
+    /**
+     * Project the potentially partial data from this item through the
+     * given projection interface.
+     *
+     * @param projectionInterface The projection interface.
+     * @param <V> The interface type.
+     * @return The interface instance.
+     */
+    protected abstract <V> V projectInterface(ProjectionInterface projectionInterface);
+
+    // project the partial data into the given class
+    protected <V> V projectDataClass(DataCodec<K, V> codec) {
+        Datastore<K, T> datastore = assertQualified();
+        CodecContext context = datastore.newCodecContext();
+        return codec.constructAndDecode(context, input());
     }
 
     @Override
