@@ -21,7 +21,7 @@ import java.util.concurrent.ForkJoinPool;
 public class MongoDatastoreExample {
 
     @ToString
-    public static class Stats {
+    public static class Stats implements PartialStats {
         @Key
         protected UUID uuid;
 
@@ -29,6 +29,16 @@ public class MongoDatastoreExample {
         // lazy to make that work with Unsafe rn
         protected Integer kills = 0;
         protected Integer deaths = 0;
+
+        @Override
+        public UUID uuid() {
+            return uuid;
+        }
+
+        @Override
+        public Integer deaths() {
+            return deaths;
+        }
     }
 
     public interface PartialStats {
@@ -112,7 +122,7 @@ public class MongoDatastoreExample {
                 .forEach(FoundItem::fetch);
 
         // Randomize cache values
-        datastore.getDataCache().forEach(item -> item.get().deaths += (int)(Math.random() * 10));
+        datastore.getDataCache().forEach(item -> item.get().deaths += (int)((Math.random() + 1) * 10));
 
         // Try to get sorted list of items including locally cached values
         datastore.findAll(Query.all(), FindAllOperation.Options.builder().useCaches(true).build())
