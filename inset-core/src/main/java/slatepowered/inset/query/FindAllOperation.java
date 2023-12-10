@@ -2,8 +2,6 @@ package slatepowered.inset.query;
 
 import lombok.Builder;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.datastore.Datastore;
 import slatepowered.inset.datastore.OperationStatus;
@@ -14,7 +12,6 @@ import slatepowered.inset.operation.Projection;
 import slatepowered.inset.operation.Sorting;
 import slatepowered.inset.source.DataSourceBulkIterable;
 import slatepowered.inset.source.SourceFoundItem;
-import sun.security.util.Cache;
 
 import java.util.Iterator;
 import java.util.List;
@@ -63,10 +60,10 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
     /**
      * The stream of items.
      */
-    protected Stream<? extends FoundItem<K, T>> stream;
+    protected Stream<? extends PartialItem<K, T>> stream;
 
     // The cached stream iterator
-    protected Iterator<? extends FoundItem<K, T>> streamIterator;
+    protected Iterator<? extends PartialItem<K, T>> streamIterator;
 
     /**
      * The options passed on this operation.
@@ -80,13 +77,13 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
     }
 
     // update the current stream instance to the given instance
-    private synchronized void updateStream(Stream<? extends FoundItem<K, T>> stream) {
+    private synchronized void updateStream(Stream<? extends PartialItem<K, T>> stream) {
         this.stream = stream;
     }
 
     // ensure the presence of a usable stream iterator to apply
     // to the current output stream, this is a terminal operation
-    private Iterator<? extends FoundItem<K, T>> streamIterator() {
+    private Iterator<? extends PartialItem<K, T>> streamIterator() {
         if (streamIterator == null) {
             this.streamIterator = stream.iterator();
         }
@@ -280,7 +277,7 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
      *
      * @return The item.
      */
-    public Optional<? extends FoundItem<K, T>> next() {
+    public Optional<? extends PartialItem<K, T>> next() {
         return cachedStream != null ?
                 streamIterator().hasNext() ? Optional.of(streamIterator().next()) : Optional.empty() :
                 iterable.next().map(this::qualify);
@@ -296,7 +293,7 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
      *
      * @return The item.
      */
-    public CompletableFuture<Optional<? extends FoundItem<K, T>>> nextAsync() {
+    public CompletableFuture<Optional<? extends PartialItem<K, T>>> nextAsync() {
         return async(this::next);
     }
 
@@ -310,7 +307,7 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
      *
      * @return The item.
      */
-    public Optional<? extends FoundItem<K, T>> first() {
+    public Optional<? extends PartialItem<K, T>> first() {
         return cachedStream != null ?
                 stream.findFirst() :
                 iterable.first().map(this::qualify);
@@ -325,7 +322,7 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
      *
      * @return The item.
      */
-    public CompletableFuture<Optional<? extends FoundItem<K, T>>> firstAsync() {
+    public CompletableFuture<Optional<? extends PartialItem<K, T>>> firstAsync() {
         return async(this::first);
     }
 
@@ -340,7 +337,7 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
      * @return The list of items.
      */
     @SuppressWarnings("unchecked")
-    public List<? extends FoundItem<K, T>> list() {
+    public List<? extends PartialItem<K, T>> list() {
         if (cachedStream != null) {
             return stream.collect(Collectors.toList());
         }
@@ -362,7 +359,7 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
      *
      * @return The list of items.
      */
-    public CompletableFuture<List<? extends FoundItem<K, T>>> listAsync() {
+    public CompletableFuture<List<? extends PartialItem<K, T>>> listAsync() {
         return async(this::list);
     }
 
@@ -374,7 +371,7 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
      *
      * @return The stream of items.
      */
-    public Stream<? extends FoundItem<K, T>> stream() {
+    public Stream<? extends PartialItem<K, T>> stream() {
         return stream;
     }
 
@@ -385,7 +382,7 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
      * @param consumer The consumer.
      * @return This.
      */
-    public FindAllOperation<K, T> peek(Consumer<FoundItem<K, T>> consumer) {
+    public FindAllOperation<K, T> peek(Consumer<PartialItem<K, T>> consumer) {
         stream = stream.peek(consumer);
         return this;
     }
@@ -428,7 +425,7 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
             this.sourceHadAny = iterable.hasNext();
 
             // update stream with iterable items
-            Stream<FoundItem<K, T>> iterableStream = iterable.stream().map(this::qualify);
+            Stream<PartialItem<K, T>> iterableStream = iterable.stream().map(this::qualify);
             updateStream(CachedStreams.zipStreamsDistinct(this.stream, iterableStream));
         }
 

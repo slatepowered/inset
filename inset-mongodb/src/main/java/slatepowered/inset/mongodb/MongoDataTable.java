@@ -70,4 +70,12 @@ public class MongoDataTable implements DataTable {
         return MongoQueries.createBulkIterable(keyFieldOverride, query, iterable);
     }
 
+    @Override
+    public boolean deleteOne(Query query) {
+        String keyFieldOverride = source.getKeyFieldOverride();
+        Bson filter = MongoQueries.serializeQueryToFindFilter(keyFieldOverride, query);
+
+        return collection.deleteOne(filter).getDeletedCount() > 0;
+    }
+
 }

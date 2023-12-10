@@ -15,12 +15,13 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Represents a found item in a {@link FindAllOperation}.
+ * Represents a potentially partial item gotten as a result of
+ * either a cache hit or as a returned item from a data source operation.
  *
  * @param <K> The key type.
  * @param <T> The value type.
  */
-public abstract class FoundItem<K, T> {
+public abstract class PartialItem<K, T> {
 
     protected DecodeInput cachedInput; // The cached input, used by this class to read partial data
     private double[] cachedOrderCoefficients; // The cached order coefficient array
@@ -96,21 +97,22 @@ public abstract class FoundItem<K, T> {
     public abstract <V> V getField(String fieldName, Type expectedType);
 
     /**
-     * Fetch a data item from the database if this result was partial,
+     * Find or fetch a data item from the database if this result was partial,
      * otherwise ensure it is cached.
      *
      * @return The data item.
      */
-    public abstract DataItem<K, T> fetch();
+    public abstract FindOperation<K, T> find();
 
     /**
-     * Asynchronously fetch a data item from the database if this result was partial,
-     * otherwise ensure it is cached.
+     * If this item is complete, synchronize this data with the cache,
+     * otherwise fetch the complete data from the database and update it
+     * in the cache.
      *
      * @return The data item.
      */
-    public CompletableFuture<DataItem<K, T>> fetchAsync() {
-        return CompletableFuture.supplyAsync(this::fetch, assertQualified().getDataManager().getExecutorService());
+    public FindOperation<K, T> fetch() {
+        return find().thenFetchIfCached();
     }
 
     /**
@@ -168,6 +170,28 @@ public abstract class FoundItem<K, T> {
      */
     protected abstract <V> V projectInterface(ProjectionInterface projectionInterface);
 
+    /**
+     * Drop this item from the cache if cached.
+     *
+     * @return This.
+     */
+    public PartialItem<K, T> dispose() {
+        assertQualified().getDataCache().remove(getKey());
+        return this;
+    }
+
+    /**
+     * Delete this item from the database and drop it from the cache.
+     *
+     * @return This.
+     */
+    public PartialItem<K, T> delete() {
+        Datastore<K, T> datastore = assertQualified();
+        datastore.getSourceTable().deleteOne(Query.byKey(getKey()));
+        datastore.getDataCache().remove(getKey());
+        return this;
+    }
+
     // project the partial data into the given class
     protected <V> V projectDataClass(DataCodec<K, V> codec) {
         Datastore<K, T> datastore = assertQualified();
@@ -178,8 +202,8 @@ public abstract class FoundItem<K, T> {
     @Override
     public boolean equals(Object other) {
         if (other == this) return true;
-        if (!(other instanceof FoundItem)) return false;
-        FoundItem<?, ?> otherItem = (FoundItem<?, ?>) other;
+        if (!(other instanceof PartialItem)) return false;
+        PartialItem<?, ?> otherItem = (PartialItem<?, ?>) other;
 
         // compare keys
         return getKey().equals(otherItem.getKey());

@@ -1,7 +1,6 @@
 package slatepowered.inset.source;
 
 import slatepowered.inset.codec.CodecContext;
-import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.datastore.Datastore;
@@ -9,18 +8,18 @@ import slatepowered.inset.internal.ProjectionInterface;
 import slatepowered.inset.operation.Sorting;
 import slatepowered.inset.query.FindAllOperation;
 import slatepowered.inset.query.FindOperation;
-import slatepowered.inset.query.FoundItem;
+import slatepowered.inset.query.FindResult;
+import slatepowered.inset.query.PartialItem;
 
-import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 
 /**
- * Represents a {@link FoundItem} retrieved from a data source.
+ * Represents a {@link PartialItem} retrieved from a data source.
  *
  * @param <K> The key type.
  * @param <T> The value type.
  */
-public abstract class SourceFoundItem<K, T> extends FoundItem<K, T> {
+public abstract class SourceFoundItem<K, T> extends PartialItem<K, T> {
 
     /**
      * The operation status this found item is a part of.
@@ -80,27 +79,18 @@ public abstract class SourceFoundItem<K, T> extends FoundItem<K, T> {
 
     @Override
     @SuppressWarnings("unchecked")
-    public DataItem<K, T> fetch() {
+    public FindOperation<K, T> find() {
         Datastore<K, T> datastore = assertQualified();
-        DecodeInput input = input();
 
         // if complete there is no need to fetch the
         // full data item from the database
         if (!isPartial()) {
-            return datastore.decodeFetched(input);
+            DecodeInput input = input();
+            return new FindOperation<>(datastore, null).completeSuccessfully(FindResult.FETCHED, datastore.decodeFetched(input));
         }
 
         // fetch a new item from the database
-        FindOperation<K, T> findStatus = datastore.findOne(getOrReadKey(datastore.getDataCodec().getPrimaryKeyFieldName(), datastore.getKeyClass()))
-                .await();
-        if (findStatus.failed()) {
-            Object error = findStatus.error();
-            Throwable cause = error instanceof Throwable ? findStatus.errorAs() : null;
-            throw new RuntimeException("Error while fetching data item from bulk result" +
-                    (cause == null ? ": " + error : ""), cause);
-        }
-
-        return findStatus.item();
+        return datastore.findOne(getOrReadKey(datastore.getDataCodec().getPrimaryKeyFieldName(), datastore.getKeyClass()));
     }
 
     @Override

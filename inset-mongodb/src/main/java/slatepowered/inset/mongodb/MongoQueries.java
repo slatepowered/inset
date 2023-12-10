@@ -11,7 +11,6 @@ import org.bson.conversions.Bson;
 import slatepowered.inset.bson.DocumentDecodeInput;
 import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.operation.*;
-import slatepowered.inset.query.FoundItem;
 import slatepowered.inset.query.Query;
 import slatepowered.inset.source.SourceFoundItem;
 import slatepowered.inset.query.constraint.CommonFieldConstraint;
@@ -293,7 +292,7 @@ final class MongoQueries {
 
             @Override
             public Stream<SourceFoundItem<?, ?>> stream() {
-                return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterable.iterator(), Spliterator.ORDERED), false)
+                return StreamSupport.stream(Spliterators.spliteratorUnknownSize(cursor, Spliterator.ORDERED), false)
                         .filter(Objects::nonNull)
                         .map(this::convert);
             }

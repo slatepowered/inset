@@ -42,6 +42,13 @@ public interface DataCache<K, T> extends Iterable<DataItem<K, T>> {
     void remove(DataItem<K, T> item);
 
     /**
+     * Remove the given key from this cache.
+     *
+     * @param key The key.
+     */
+    void remove(K key);
+
+    /**
      * Get the count of items in this cache.
      *
      * @return The count of cached items.

@@ -3,14 +3,14 @@ package slatepowered.inset.datastore;
 import slatepowered.inset.codec.*;
 import slatepowered.inset.internal.ProjectionInterface;
 import slatepowered.inset.operation.Sorting;
-import slatepowered.inset.query.FindAllOperation;
-import slatepowered.inset.query.FoundItem;
+import slatepowered.inset.query.FindOperation;
+import slatepowered.inset.query.FindResult;
+import slatepowered.inset.query.PartialItem;
 import slatepowered.inset.query.Query;
 import slatepowered.inset.source.DataSourceFindResult;
 import slatepowered.inset.source.DataTable;
 
 import java.lang.reflect.Type;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -21,7 +21,7 @@ import java.util.function.Consumer;
  * @param <K> The primary key type.
  * @param <T> The data type.
  */
-public class DataItem<K, T> extends FoundItem<K, T> {
+public class DataItem<K, T> extends PartialItem<K, T> {
 
     public DataItem(Datastore<K, T> datastore, K key) {
         this.datastore = datastore;
@@ -149,8 +149,15 @@ public class DataItem<K, T> extends FoundItem<K, T> {
      *
      * @return This.
      */
+    @Override
     public DataItem<K, T> dispose() {
         datastore.getDataCache().remove(this);
+        return this;
+    }
+
+    @Override
+    public DataItem<K, T> delete() {
+        super.delete();
         return this;
     }
 
@@ -273,8 +280,8 @@ public class DataItem<K, T> extends FoundItem<K, T> {
     }
 
     @Override
-    public DataItem<K, T> fetch() {
-        return this;
+    public FindOperation<K, T> find() {
+        return new FindOperation<>(datastore, null).completeSuccessfully(FindResult.CACHED, this);
     }
 
     @Override
@@ -293,7 +300,7 @@ public class DataItem<K, T> extends FoundItem<K, T> {
      *
      * @return The future.
      */
-    public CompletableFuture<DataItem<K, T>> fetchAsync() {
+    public CompletableFuture<DataItem<K, T>> findAsync() {
         return datastore.getSourceTable()
                 .findOneAsync(Query.byKey(key))
                 .thenApply(result -> this.decode(result.input()).fetchedNow());

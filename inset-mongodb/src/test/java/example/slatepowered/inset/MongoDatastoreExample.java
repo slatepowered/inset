@@ -13,7 +13,6 @@ import slatepowered.inset.reflective.Key;
 import slatepowered.inset.reflective.ReflectiveCodecFactory;
 import slatepowered.inset.source.DataTable;
 
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ForkJoinPool;
@@ -119,7 +118,7 @@ public class MongoDatastoreExample {
                 .await()
                 .limit(7)
                 .stream()
-                .forEach(FoundItem::fetch);
+                .forEach(PartialItem::find);
 
         // Randomize cache values
         datastore.getDataCache().forEach(item -> item.get().deaths += (int)((Math.random() + 1) * 10));

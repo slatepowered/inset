@@ -40,6 +40,12 @@ final class DoubleBackedCache<K, T> implements DataCache<K, T> {
     }
 
     @Override
+    public void remove(K key) {
+        map.remove(key);
+        list.removeIf(item -> item.key().equals(key));
+    }
+
+    @Override
     public Iterator<DataItem<K, T>> iterator() {
         return list.iterator();
     }

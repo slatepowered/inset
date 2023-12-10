@@ -4,9 +4,8 @@ import slatepowered.inset.datastore.Datastore;
 import slatepowered.inset.operation.FieldOrderSorting;
 import slatepowered.inset.operation.FieldOrdering;
 import slatepowered.inset.operation.Sorting;
-import slatepowered.inset.query.FoundItem;
+import slatepowered.inset.query.PartialItem;
 
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
@@ -25,8 +24,8 @@ public final class CachedStreams {
      * @param <T> The value type.
      * @return The stream.
      */
-    public static <K, T> Stream<? extends FoundItem<K, T>> zipStreamsDistinct(Stream<? extends FoundItem<K, T>> priorityStream,
-                                                                              Stream<? extends FoundItem<K, T>> addedStream) {
+    public static <K, T> Stream<? extends PartialItem<K, T>> zipStreamsDistinct(Stream<? extends PartialItem<K, T>> priorityStream,
+                                                                                Stream<? extends PartialItem<K, T>> addedStream) {
         if (priorityStream == null) return addedStream;
         if (addedStream == null) return priorityStream;
         return Stream.concat(priorityStream, addedStream).distinct();
@@ -42,10 +41,10 @@ public final class CachedStreams {
      * @param <K> The key type.
      * @param <T> The value type.
      */
-    public static <K, T> Stream<? extends FoundItem<K, T>> sortStream(Datastore<K, T> datastore,
-                                                                      Stream<? extends FoundItem<K, T>> stream,
-                                                                      Sorting sorting) {
-        Comparator<FoundItem<K, T>> fastComparator = createFastComparator(datastore, sorting);
+    public static <K, T> Stream<? extends PartialItem<K, T>> sortStream(Datastore<K, T> datastore,
+                                                                        Stream<? extends PartialItem<K, T>> stream,
+                                                                        Sorting sorting) {
+        Comparator<PartialItem<K, T>> fastComparator = createFastComparator(datastore, sorting);
         return stream.sorted(fastComparator);
     }
 
@@ -59,8 +58,8 @@ public final class CachedStreams {
      * @param <T> The value type.
      * @return The comparator.
      */
-    public static <K, T> Comparator<FoundItem<K, T>> createFastComparator(final Datastore<K, T> datastore,
-                                                                          final Sorting sorting) {
+    public static <K, T> Comparator<PartialItem<K, T>> createFastComparator(final Datastore<K, T> datastore,
+                                                                            final Sorting sorting) {
         if (!(sorting instanceof FieldOrderSorting)) {
             throw new UnsupportedOperationException("Unsupported sorting type for fast comparator: " + sorting.getClass().getName());
         }

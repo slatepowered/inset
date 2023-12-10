@@ -48,6 +48,11 @@ public class CaffeineCache<K, T> implements DataCache<K, T> {
     }
 
     @Override
+    public void remove(K key) {
+        cache.invalidate(key);
+    }
+
+    @Override
     public int size() {
         return cache.asMap().size();
     }

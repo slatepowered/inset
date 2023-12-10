@@ -77,4 +77,12 @@ public interface DataTable {
         return CompletableFuture.supplyAsync(() -> this.findAllSync(query), getSource().getDataManager().getExecutorService());
     }
 
+    /**
+     * Delete the first item matching the given query.
+     *
+     * @param query THe query.
+     * @return Whether the item was successfully deleted.
+     */
+    boolean deleteOne(Query query);
+
 }

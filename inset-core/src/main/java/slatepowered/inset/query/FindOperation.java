@@ -26,6 +26,26 @@ public class FindOperation<K, T> extends OperationStatus<K, T, FindOperation<K, 
     }
 
     /**
+     * Await completion of this operation, blocking this thread,
+     * then get the data item if present, otherwise return null.
+     *
+     * @return The data item if present.
+     */
+    public DataItem<K, T> awaitItem() {
+        return await().item();
+    }
+
+    /**
+     * Await completion of this operation, blocking this thread,
+     * then get the data item if present, otherwise return an empty optional.
+     *
+     * @return The data item in an optional if present.
+     */
+    public Optional<DataItem<K, T>> awaitOptional() {
+        return await().optional();
+    }
+
+    /**
      * When this query is successfully completed, call the given consumer.
      *
      * @param consumer The consumer.
