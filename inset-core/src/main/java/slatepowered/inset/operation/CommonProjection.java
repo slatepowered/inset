@@ -1,4 +1,4 @@
-package slatepowered.inset.modifier;
+package slatepowered.inset.operation;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

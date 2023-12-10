@@ -15,13 +15,13 @@ import java.util.function.Supplier;
  * @param <K> The primary key type.
  * @param <T> The data type.
  */
-public class FindStatus<K, T> extends OperationStatus<K, T, FindStatus<K, T>> {
+public class FindOperation<K, T> extends OperationStatus<K, T, FindOperation<K, T>> {
 
     /* Result Fields (set when the query completed) */
     private volatile FindResult result;   // The type of result
     private volatile DataItem<K, T> item; // The data item if successful
 
-    public FindStatus(Datastore<K, T> datastore, Query query) {
+    public FindOperation(Datastore<K, T> datastore, Query query) {
         super(datastore, query);
     }
 
@@ -31,7 +31,7 @@ public class FindStatus<K, T> extends OperationStatus<K, T, FindStatus<K, T>> {
      * @param consumer The consumer.
      * @return This.
      */
-    public FindStatus<K, T> then(Consumer<FindStatus<K, T>> consumer) {
+    public FindOperation<K, T> then(Consumer<FindOperation<K, T>> consumer) {
         future.whenComplete((status, throwable) -> {
             if (status != null && status.result().isSuccessful()) {
                 try {
@@ -53,7 +53,7 @@ public class FindStatus<K, T> extends OperationStatus<K, T, FindStatus<K, T>> {
      *
      * @return This.
      */
-    public FindStatus<K, T> thenDefaultIfAbsent() {
+    public FindOperation<K, T> thenDefaultIfAbsent() {
         if (!query.hasKey())
             return this;
 
@@ -74,7 +74,7 @@ public class FindStatus<K, T> extends OperationStatus<K, T, FindStatus<K, T>> {
      *
      * @return This.
      */
-    public FindStatus<K, T> thenFetchIfCached() {
+    public FindOperation<K, T> thenFetchIfCached() {
         future = future.thenApplyAsync(status -> {
             if (status.wasCached()) {
                 status.item().fetchSync();
@@ -92,7 +92,7 @@ public class FindStatus<K, T> extends OperationStatus<K, T, FindStatus<K, T>> {
      * @param consumer The consumer.
      * @return This.
      */
-    public FindStatus<K, T> ifPresent(Consumer<FindStatus<K, T>> consumer) {
+    public FindOperation<K, T> ifPresent(Consumer<FindOperation<K, T>> consumer) {
         if (isPresent()) {
             consumer.accept(this);
         }
@@ -106,7 +106,7 @@ public class FindStatus<K, T> extends OperationStatus<K, T, FindStatus<K, T>> {
      * @param consumer The consumer.
      * @return This.
      */
-    public FindStatus<K, T> ifAbsent(Consumer<FindStatus<K, T>> consumer) {
+    public FindOperation<K, T> ifAbsent(Consumer<FindOperation<K, T>> consumer) {
         if (isAbsent()) {
             consumer.accept(this);
         }
@@ -120,7 +120,7 @@ public class FindStatus<K, T> extends OperationStatus<K, T, FindStatus<K, T>> {
      * @param consumer The consumer.
      * @return This.
      */
-    public FindStatus<K, T> ifPresentUse(Consumer<DataItem<K, T>> consumer) {
+    public FindOperation<K, T> ifPresentUse(Consumer<DataItem<K, T>> consumer) {
         if (isPresent()) {
             consumer.accept(this.item);
         }
@@ -135,7 +135,7 @@ public class FindStatus<K, T> extends OperationStatus<K, T, FindStatus<K, T>> {
      * @param consumer The consumer.
      * @return This.
      */
-    public FindStatus<K, T> thenUse(Consumer<DataItem<K, T>> consumer) {
+    public FindOperation<K, T> thenUse(Consumer<DataItem<K, T>> consumer) {
         return then(status -> consumer.accept(status.item()));
     }
 
@@ -146,7 +146,7 @@ public class FindStatus<K, T> extends OperationStatus<K, T, FindStatus<K, T>> {
      * @param action The action.
      * @return This.
      */
-    public FindStatus<K, T> thenApplyAsync(Consumer<FindStatus<K, T>> action) {
+    public FindOperation<K, T> thenApplyAsync(Consumer<FindOperation<K, T>> action) {
         future = future.thenApplyAsync(status -> {
             action.accept(status);
             return status;
@@ -161,7 +161,7 @@ public class FindStatus<K, T> extends OperationStatus<K, T, FindStatus<K, T>> {
      * @param action The action.
      * @return This.
      */
-    public FindStatus<K, T> thenApply(Consumer<FindStatus<K, T>> action) {
+    public FindOperation<K, T> thenApply(Consumer<FindOperation<K, T>> action) {
         future = future.thenApply(status -> {
             action.accept(status);
             return status;
@@ -177,7 +177,7 @@ public class FindStatus<K, T> extends OperationStatus<K, T, FindStatus<K, T>> {
      * @param action The action.
      * @return This.
      */
-    public FindStatus<K, T> thenApplyIfPresent(Consumer<FindStatus<K, T>> action) {
+    public FindOperation<K, T> thenApplyIfPresent(Consumer<FindOperation<K, T>> action) {
         future = future.thenApply(status -> {
             if (status.isPresent()) {
                 action.accept(status);
@@ -196,7 +196,7 @@ public class FindStatus<K, T> extends OperationStatus<K, T, FindStatus<K, T>> {
      * @param action The action.
      * @return This.
      */
-    public FindStatus<K, T> thenApplyIfAbsent(Consumer<FindStatus<K, T>> action) {
+    public FindOperation<K, T> thenApplyIfAbsent(Consumer<FindOperation<K, T>> action) {
         future = future.thenApply(status -> {
             if (status.isAbsent()) {
                 action.accept(status);
@@ -289,7 +289,7 @@ public class FindStatus<K, T> extends OperationStatus<K, T, FindStatus<K, T>> {
      * @param action The default action.
      * @return The resolved item is present or the default value.
      */
-    public DataItem<K, T> orElseCompute(Function<FindStatus<K, T>, DataItem<K, T>> action) {
+    public DataItem<K, T> orElseCompute(Function<FindOperation<K, T>, DataItem<K, T>> action) {
         return item != null ? item : (item = action.apply(this));
     }
 
@@ -311,7 +311,7 @@ public class FindStatus<K, T> extends OperationStatus<K, T, FindStatus<K, T>> {
      *
      * @return This.
      */
-    public FindStatus<K, T> fetchSyncIfCached() {
+    public FindOperation<K, T> fetchSyncIfCached() {
         if (result == FindResult.CACHED) {
             item.fetchSync();
         }
@@ -327,7 +327,7 @@ public class FindStatus<K, T> extends OperationStatus<K, T, FindStatus<K, T>> {
      * @param error The error, should be null if successful.
      * @return This.
      */
-    protected synchronized FindStatus<K, T> completeInternal(FindResult result, DataItem<K, T> item, Object error) {
+    protected synchronized FindOperation<K, T> completeInternal(FindResult result, DataItem<K, T> item, Object error) {
         this.completed = true;
         this.result = result;
         this.item = item;
@@ -336,11 +336,11 @@ public class FindStatus<K, T> extends OperationStatus<K, T, FindStatus<K, T>> {
         return this;
     }
 
-    public synchronized FindStatus<K, T> completeSuccessfully(FindResult result, DataItem<K, T> item) {
+    public synchronized FindOperation<K, T> completeSuccessfully(FindResult result, DataItem<K, T> item) {
         return completeInternal(result, item, null);
     }
 
-    public synchronized FindStatus<K, T> completeFailed(Object error) {
+    public synchronized FindOperation<K, T> completeFailed(Object error) {
         return completeInternal(FindResult.FAILED, null, error);
     }
 

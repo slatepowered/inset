@@ -1,7 +1,7 @@
 package slatepowered.inset.codec;
 
 import slatepowered.inset.datastore.DataItem;
-import slatepowered.inset.modifier.Projection;
+import slatepowered.inset.operation.Projection;
 import slatepowered.inset.query.Query;
 
 import java.util.function.Predicate;

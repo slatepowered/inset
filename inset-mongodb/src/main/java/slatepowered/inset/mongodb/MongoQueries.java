@@ -10,7 +10,7 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import slatepowered.inset.bson.DocumentDecodeInput;
 import slatepowered.inset.codec.DecodeInput;
-import slatepowered.inset.modifier.*;
+import slatepowered.inset.operation.*;
 import slatepowered.inset.query.FoundItem;
 import slatepowered.inset.query.Query;
 import slatepowered.inset.query.SourceFoundItem;

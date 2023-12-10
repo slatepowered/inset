@@ -5,6 +5,7 @@ import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.datastore.Datastore;
+import slatepowered.inset.operation.Sorting;
 
 import java.lang.reflect.Type;
 
@@ -17,7 +18,7 @@ import java.lang.reflect.Type;
 public abstract class SourceFoundItem<K, T> extends FoundItem<K, T> {
 
     protected CodecContext partialCodecContext; // The context used to read from the partial data
-    protected Object cachedKey;
+    protected K cachedKey; // The cached key object
 
     // ensure a codec context for the reading
     // of partial data exists and return it
@@ -37,17 +38,23 @@ public abstract class SourceFoundItem<K, T> extends FoundItem<K, T> {
 
     @Override
     @SuppressWarnings("unchecked")
-    public K getKey(String fieldName, Type expectedType) {
+    public K getOrReadKey(String fieldName, Type expectedType) {
+        return (K) getOrCreateInput().getOrReadKey(fieldName, expectedType);
+    }
+
+    @Override
+    public K getKey() {
         if (cachedKey == null) {
-            cachedKey = getOrCreateInput().getOrReadKey(fieldName, expectedType);
+            Datastore<K, T> datastore = assertQualified().getDatastore();
+            cachedKey = getOrReadKey(datastore.getDataCodec().getPrimaryKeyFieldName(), datastore.getKeyClass());
         }
 
-        return (K) cachedKey;
+        return cachedKey;
     }
 
     @Override
     public <V> V project(Class<V> vClass) {
-        FindAllStatus<K, T> status = assertQualified();
+        FindAllOperation<K, T> status = assertQualified();
         Datastore<K, T> datastore = status.getDatastore();
 
         DataCodec<K, V> dataCodec = datastore.getCodecRegistry().getCodec(vClass).expect(DataCodec.class);
@@ -58,7 +65,7 @@ public abstract class SourceFoundItem<K, T> extends FoundItem<K, T> {
     @Override
     @SuppressWarnings("unchecked")
     public DataItem<K, T> fetch() {
-        FindAllStatus<?, ?> status = assertQualified();
+        FindAllOperation<?, ?> status = assertQualified();
         Datastore<K, T> datastore = (Datastore<K, T>) status.getDatastore();
 
         DecodeInput input = input();
@@ -70,7 +77,7 @@ public abstract class SourceFoundItem<K, T> extends FoundItem<K, T> {
         }
 
         // fetch a new item from the database
-        FindStatus<K, T> findStatus = datastore.findOne(getKey(datastore.getDataCodec().getPrimaryKeyFieldName(), datastore.getKeyClass()))
+        FindOperation<K, T> findStatus = datastore.findOne(getOrReadKey(datastore.getDataCodec().getPrimaryKeyFieldName(), datastore.getKeyClass()))
                 .await();
         if (findStatus.failed()) {
             Object error = findStatus.error();
@@ -80,6 +87,21 @@ public abstract class SourceFoundItem<K, T> extends FoundItem<K, T> {
         }
 
         return findStatus.item();
+    }
+
+    @Override
+    public double[] createFastOrderCoefficients(String[] fields, Sorting sorting) {
+        final int len = fields.length;
+        final double[] arr = new double[len];
+
+        for (int i = 0; i < len; i++) {
+            String field = fields[i];
+            Object obj = getField(field, Number.class);
+            if (obj instanceof Number)
+                arr[i] = ((Number) obj).doubleValue();
+        }
+
+        return arr;
     }
 
 }

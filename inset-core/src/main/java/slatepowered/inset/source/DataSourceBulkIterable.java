@@ -1,7 +1,7 @@
 package slatepowered.inset.source;
 
-import slatepowered.inset.modifier.Projection;
-import slatepowered.inset.modifier.Sorting;
+import slatepowered.inset.operation.Projection;
+import slatepowered.inset.operation.Sorting;
 import slatepowered.inset.query.FoundItem;
 import slatepowered.inset.query.Query;
 

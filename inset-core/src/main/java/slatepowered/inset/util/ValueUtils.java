@@ -16,7 +16,7 @@ public class ValueUtils {
      * @param value The value.
      * @return The set.
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked" })
     public static Set<Object> ensureSet(Object value) {
         if (value == null) {
             throw new IllegalArgumentException("Expected a collection-like value, got null");

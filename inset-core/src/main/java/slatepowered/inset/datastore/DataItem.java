@@ -1,9 +1,7 @@
 package slatepowered.inset.datastore;
 
-import slatepowered.inset.codec.CodecContext;
-import slatepowered.inset.codec.DataCodec;
-import slatepowered.inset.codec.DecodeInput;
-import slatepowered.inset.codec.EncodeOutput;
+import slatepowered.inset.codec.*;
+import slatepowered.inset.operation.Sorting;
 import slatepowered.inset.query.FoundItem;
 import slatepowered.inset.query.Query;
 import slatepowered.inset.source.DataSourceFindResult;
@@ -61,6 +59,9 @@ public class DataItem<K, T> extends FoundItem<K, T> {
      * as an offset onto the created time of this item.
      */
     protected volatile int lastReferenceTime;
+
+    private double[] cachedOrderCoefficient; // The cached order coefficient array
+    private int currentSortId; // The ID the cached order coefficient is for
 
     /**
      * Get the primary key for this item.
@@ -250,13 +251,18 @@ public class DataItem<K, T> extends FoundItem<K, T> {
     }
 
     @Override
-    public K getKey(String fieldName, Type expectedType) {
+    public K getOrReadKey(String fieldName, Type expectedType) {
+        return key;
+    }
+
+    @Override
+    public K getKey() {
         return key;
     }
 
     @Override
     public <V> V getField(String fieldName, Type expectedType) {
-        throw new UnsupportedOperationException("TODO: Get field on DataItem"); // TODO
+        return value != null ? datastore.getDataCodec().getField(value, fieldName) : null;
     }
 
     @Override
@@ -278,6 +284,22 @@ public class DataItem<K, T> extends FoundItem<K, T> {
         return datastore.getSourceTable()
                 .findOneAsync(Query.byKey(key))
                 .thenApply(result -> this.decode(result.input()).fetchedNow());
+    }
+
+    @Override
+    public double[] createFastOrderCoefficients(String[] fields, Sorting sorting) {
+        final int len = fields.length;
+        final double[] arr = new double[len];
+        final DataCodec<K, T> codec = datastore.getDataCodec();
+
+        for (int i = 0; i < len; i++) {
+            String field = fields[i];
+            Object obj = codec.getField(value, field);
+            if (obj instanceof Number)
+                arr[i] = ((Number) obj).doubleValue();
+        }
+
+        return arr;
     }
 
     // Update the lastReferenceTime to represent the
@@ -303,19 +325,6 @@ public class DataItem<K, T> extends FoundItem<K, T> {
     @Override
     public String toString() {
         return "DataItem(" + key + " = " + value + ')';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        DataItem<?, ?> dataItem = (DataItem<?, ?>) o;
-        return Objects.equals(datastore, dataItem.datastore) && Objects.equals(key, dataItem.key);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(datastore, key);
     }
 
 }

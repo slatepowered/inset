@@ -4,7 +4,7 @@ import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.codec.DataCodec;
-import slatepowered.inset.modifier.Projection;
+import slatepowered.inset.operation.Projection;
 import slatepowered.inset.query.constraint.FieldConstraint;
 import slatepowered.inset.query.Query;
 import slatepowered.veru.misc.Throwables;
@@ -13,7 +13,6 @@ import sun.misc.Unsafe;
 
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;

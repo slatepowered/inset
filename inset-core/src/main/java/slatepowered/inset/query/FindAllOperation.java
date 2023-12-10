@@ -1,14 +1,18 @@
 package slatepowered.inset.query;
 
+import lombok.Builder;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.datastore.Datastore;
 import slatepowered.inset.datastore.OperationStatus;
-import slatepowered.inset.modifier.Projection;
-import slatepowered.inset.modifier.Sorting;
+import slatepowered.inset.internal.CachedStreams;
+import slatepowered.inset.operation.Projection;
+import slatepowered.inset.operation.Sorting;
 import slatepowered.inset.source.DataSourceBulkIterable;
+import sun.security.util.Cache;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -17,7 +21,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 /**
  * The status/result of a {@link Datastore#findAll(Query)} operation.
@@ -25,7 +28,18 @@ import java.util.stream.StreamSupport;
  * @param <K> The data item key type.
  * @param <T> The data item value type.
  */
-public class FindAllStatus<K, T> extends OperationStatus<K, T, FindAllStatus<K, T>> {
+public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperation<K, T>> {
+
+    @Builder(toBuilder = true)
+    @Getter
+    public static class Options {
+        /**
+         * Whether to include cached items, this has the benefit of
+         * always having the latest local changes but can make certain
+         * operations on the iterable perform slower.
+         */
+        protected final boolean useCaches;
+    }
 
     /**
      * The data source result iterable.
@@ -44,12 +58,6 @@ public class FindAllStatus<K, T> extends OperationStatus<K, T, FindAllStatus<K, 
     protected Stream<? extends DataItem<K, T>> cachedStream;
 
     /**
-     * The list of cached items, this will be null if
-     * no cached items are used in this query.
-     */
-    protected List<? extends DataItem<K, T>> cachedItems;
-
-    /**
      * The stream of items.
      */
     protected Stream<? extends FoundItem<K, T>> stream;
@@ -57,12 +65,19 @@ public class FindAllStatus<K, T> extends OperationStatus<K, T, FindAllStatus<K, 
     // The cached stream iterator
     protected Iterator<? extends FoundItem<K, T>> streamIterator;
 
-    public FindAllStatus(Datastore<K, T> datastore, Query query) {
+    /**
+     * The options passed on this operation.
+     */
+    @Getter
+    protected final Options options;
+
+    public FindAllOperation(Datastore<K, T> datastore, Query query, Options options) {
         super(datastore, query);
+        this.options = options;
     }
 
     // update the current stream instance to the given instance
-    private void updateStream(Stream<? extends FoundItem<K, T>> stream) {
+    private synchronized void updateStream(Stream<? extends FoundItem<K, T>> stream) {
         this.stream = stream;
     }
 
@@ -82,7 +97,7 @@ public class FindAllStatus<K, T> extends OperationStatus<K, T, FindAllStatus<K, 
      * @param consumer The consumer.
      * @return This.
      */
-    public FindAllStatus<K, T> then(Consumer<FindAllStatus<K, T>> consumer) {
+    public FindAllOperation<K, T> then(Consumer<FindAllOperation<K, T>> consumer) {
         future.whenComplete((status, throwable) -> {
             if (status != null && status.success()) {
                 try {
@@ -104,7 +119,7 @@ public class FindAllStatus<K, T> extends OperationStatus<K, T, FindAllStatus<K, 
      * @param action The action.
      * @return This.
      */
-    public FindAllStatus<K, T> thenApplyAsync(Consumer<FindAllStatus<K, T>> action) {
+    public FindAllOperation<K, T> thenApplyAsync(Consumer<FindAllOperation<K, T>> action) {
         future = future.thenApplyAsync(status -> {
             action.accept(status);
             return status;
@@ -119,7 +134,7 @@ public class FindAllStatus<K, T> extends OperationStatus<K, T, FindAllStatus<K, 
      * @param action The action.
      * @return This.
      */
-    public FindAllStatus<K, T> thenApply(Consumer<FindAllStatus<K, T>> action) {
+    public FindAllOperation<K, T> thenApply(Consumer<FindAllOperation<K, T>> action) {
         future = future.thenApply(status -> {
             action.accept(status);
             return status;
@@ -134,7 +149,7 @@ public class FindAllStatus<K, T> extends OperationStatus<K, T, FindAllStatus<K, 
      * @param consumer The consumer.
      * @return This.
      */
-    public FindAllStatus<K, T> exceptionally(Consumer<FindAllStatus<K, T>> consumer) {
+    public FindAllOperation<K, T> exceptionally(Consumer<FindAllOperation<K, T>> consumer) {
         future.whenComplete((status, throwable) -> {
             if (status.error != null) {
                 consumer.accept(status);
@@ -159,7 +174,7 @@ public class FindAllStatus<K, T> extends OperationStatus<K, T, FindAllStatus<K, 
      * @param size The batch size.
      * @return This.
      */
-    public FindAllStatus<K, T> batch(int size) {
+    public FindAllOperation<K, T> batch(int size) {
         iterable.batch(size);
         return this;
     }
@@ -170,8 +185,9 @@ public class FindAllStatus<K, T> extends OperationStatus<K, T, FindAllStatus<K, 
      * @param size The limit.
      * @return This.
      */
-    public FindAllStatus<K, T> limit(int size) {
-        stream = stream.limit(size);
+    public FindAllOperation<K, T> limit(int size) {
+        updateStream(stream.limit(size));
+        iterable.limit(size);
         return this;
     }
 
@@ -181,7 +197,7 @@ public class FindAllStatus<K, T> extends OperationStatus<K, T, FindAllStatus<K, 
      * @param query The filter query.
      * @return This.
      */
-    public FindAllStatus<K, T> filter(Query query) {
+    public FindAllOperation<K, T> filter(Query query) {
         if (cachedStream != null) throw new UnsupportedOperationException("Filtering on a partially cached iterable is currently not supported");
         else iterable = iterable.filter(query);
         return this;
@@ -195,7 +211,7 @@ public class FindAllStatus<K, T> extends OperationStatus<K, T, FindAllStatus<K, 
      * @param projection The projection to apply.
      * @return This.
      */
-    public FindAllStatus<K, T> projection(Projection projection) {
+    public FindAllOperation<K, T> projection(Projection projection) {
         iterable.projection(projection);
         return this;
     }
@@ -207,7 +223,7 @@ public class FindAllStatus<K, T> extends OperationStatus<K, T, FindAllStatus<K, 
      * @param vClass The data class.
      * @return This.
      */
-    public <V> FindAllStatus<K, T> projection(Class<V> vClass) {
+    public <V> FindAllOperation<K, T> projection(Class<V> vClass) {
         DataCodec<K, V> dataCodec = datastore.getCodecRegistry().getCodec(vClass).expect(DataCodec.class);
         Projection projection = dataCodec.createExclusiveProjection(iterable.getPrimaryKeyFieldOverride());
         return projection(projection);
@@ -219,24 +235,13 @@ public class FindAllStatus<K, T> extends OperationStatus<K, T, FindAllStatus<K, 
      * @param sorting The sorting to apply.
      * @return This.
      */
-    public FindAllStatus<K, T> sort(Sorting sorting) {
+    public FindAllOperation<K, T> sort(Sorting sorting) {
+        iterable.sort(sorting);
         if (cachedStream != null) {
-            // todo: efficient stream sorting and a (partial) sorting comparator generator
-            throw new UnsupportedOperationException("Sorting on a partially cached iterable is currently unsupported");
-        } else {
-            iterable.sort(sorting);
+            updateStream(CachedStreams.sortStream(datastore, stream, sorting));
         }
 
         return this;
-    }
-
-    /**
-     * Check whether there are/were any items as a result.
-     *
-     * @return If there is any data.
-     */
-    public boolean hasAny() {
-        return cachedItems != null ? !cachedItems.isEmpty() || sourceHadAny : sourceHadAny;
     }
 
     /**
@@ -337,7 +342,7 @@ public class FindAllStatus<K, T> extends OperationStatus<K, T, FindAllStatus<K, 
             return stream.collect(Collectors.toList());
         }
 
-        List<? extends FoundItem<K, T>> list = (List<? extends FoundItem<K,T>>) iterable.list();
+        List<? extends FoundItem<K, T>> list = (List<? extends FoundItem<K,T>>) (Object) iterable.list();
         for (FoundItem<K, T> item : list) {
             this.qualify(item);
         }
@@ -370,6 +375,18 @@ public class FindAllStatus<K, T> extends OperationStatus<K, T, FindAllStatus<K, 
         return stream;
     }
 
+    /**
+     * Execute this consumer for each found item in the stream as a
+     * part of the pipeline.
+     *
+     * @param consumer The consumer.
+     * @return This.
+     */
+    public FindAllOperation<K, T> peek(Consumer<FoundItem<K, T>> consumer) {
+        stream = stream.peek(consumer);
+        return this;
+    }
+
     public boolean failed() {
         return error != null;
     }
@@ -384,26 +401,23 @@ public class FindAllStatus<K, T> extends OperationStatus<K, T, FindAllStatus<K, 
     }
 
     /**
-     * Zip the given list of cached items to the current stream of items.
+     * Zip the given stream of cached items to the current stream of items.
      *
-     * @param list The list of cached items.
+     * @param stream The stream of cached items.
      * @return This.
      */
-    public synchronized FindAllStatus<K, T> withCached(List<? extends DataItem<K, T>> list) {
+    public synchronized FindAllOperation<K, T> withCached(Stream<? extends DataItem<K, T>> stream) {
         if (this.cachedStream != null)
             throw new IllegalStateException("Already has an attached cached stream");
-        this.cachedItems = list;
-        this.cachedStream = list.stream();
-        this.stream = this.stream != null ?
-                Stream.concat(this.stream, cachedStream) :
-                cachedStream;
+        this.cachedStream = stream;
+        updateStream(CachedStreams.zipStreamsDistinct(cachedStream, this.stream));
         return this;
     }
 
     /**
      * Complete this query with the given parameters.
      */
-    protected synchronized FindAllStatus<K, T> completeInternal(DataSourceBulkIterable iterable, Object error) {
+    protected synchronized FindAllOperation<K, T> completeInternal(DataSourceBulkIterable iterable, Object error) {
         this.iterable = iterable;
         this.error = error;
 
@@ -412,18 +426,18 @@ public class FindAllStatus<K, T> extends OperationStatus<K, T, FindAllStatus<K, 
 
             // update stream with iterable items
             Stream<FoundItem<K, T>> iterableStream = iterable.stream().map(this::qualify);
-            updateStream(stream != null ? Stream.concat(stream, iterableStream) : iterableStream);
+            updateStream(CachedStreams.zipStreamsDistinct(this.stream, iterableStream));
         }
 
         completeInternal(this);
         return this;
     }
 
-    public synchronized FindAllStatus<K, T> completeSuccessfully(DataSourceBulkIterable iterable) {
+    public synchronized FindAllOperation<K, T> completeSuccessfully(DataSourceBulkIterable iterable) {
         return completeInternal(iterable, null);
     }
 
-    public synchronized FindAllStatus<K, T> completeFailed(Object error) {
+    public synchronized FindAllOperation<K, T> completeFailed(Object error) {
         return completeInternal(null, error);
     }
 
