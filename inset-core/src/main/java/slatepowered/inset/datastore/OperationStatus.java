@@ -2,7 +2,6 @@ package slatepowered.inset.datastore;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import slatepowered.inset.query.FindStatus;
 import slatepowered.inset.query.Query;
 
 import java.util.concurrent.CompletableFuture;

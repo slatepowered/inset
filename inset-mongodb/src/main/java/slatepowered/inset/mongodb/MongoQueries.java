@@ -10,9 +10,10 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import slatepowered.inset.bson.DocumentDecodeInput;
 import slatepowered.inset.codec.DecodeInput;
-import slatepowered.inset.modifier.*;
+import slatepowered.inset.operation.*;
 import slatepowered.inset.query.FoundItem;
 import slatepowered.inset.query.Query;
+import slatepowered.inset.query.SourceFoundItem;
 import slatepowered.inset.query.constraint.CommonFieldConstraint;
 import slatepowered.inset.query.constraint.FieldConstraint;
 import slatepowered.inset.source.DataSourceBulkIterable;
@@ -305,7 +306,7 @@ final class MongoQueries {
     public static FoundItem<?, ?> toBulkItem(Document document,
                                              String keyFieldOverride,
                                              boolean partial) {
-        return new FoundItem<Object, Object>() {
+        return new SourceFoundItem<Object, Object>() {
             @Override
             public boolean isPartial() {
                 return partial;

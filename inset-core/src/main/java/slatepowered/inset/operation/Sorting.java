@@ -1,4 +1,4 @@
-package slatepowered.inset.modifier;
+package slatepowered.inset.operation;
 
 /**
  * Represents a sorting specification for a set of fields on specific data.

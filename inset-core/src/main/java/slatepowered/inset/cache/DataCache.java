@@ -8,6 +8,7 @@ import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * Provides caching capabilities for data items in datastores with
@@ -46,6 +47,13 @@ public interface DataCache<K, T> extends Iterable<DataItem<K, T>> {
      * @return The count of cached items.
      */
     int size();
+
+    /**
+     * Stream the values in this cache.
+     *
+     * @return The values.
+     */
+    Stream<DataItem<K, T>> stream();
 
     /**
      * A simple, permanent data cache backed by a {@link ConcurrentHashMap} for

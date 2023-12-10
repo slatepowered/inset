@@ -1,4 +1,4 @@
-package slatepowered.inset.modifier;
+package slatepowered.inset.operation;
 
 import java.util.ArrayList;
 import java.util.Arrays;

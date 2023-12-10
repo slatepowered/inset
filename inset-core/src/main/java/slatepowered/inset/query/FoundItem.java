@@ -5,12 +5,15 @@ import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.datastore.Datastore;
+import slatepowered.inset.operation.Sorting;
 
 import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Represents a found item in a {@link FindAllStatus}.
+ * Represents a found item in a {@link FindAllOperation}.
  *
  * @param <K> The key type.
  * @param <T> The value type.
@@ -22,34 +25,24 @@ public abstract class FoundItem<K, T> {
      *
      * This is only available after qualified.
      */
-    protected FindAllStatus<?, ?> source;
+    protected FindAllOperation<?, ?> source;
+
+    protected DecodeInput cachedInput; // The cached input, used by this class to read partial data
+    private double[] cachedOrderCoefficients; // The cached order coefficient array
+    private Sorting cachedSort; // The ID the cached order coefficient is for
 
     @SuppressWarnings("unchecked")
-    protected <K2, T2> FoundItem<K2, T2> qualify(FindAllStatus<K2, T2> source) {
+    protected <K2, T2> FoundItem<K2, T2> qualify(FindAllOperation<K2, T2> source) {
         this.source = source;
         return (FoundItem<K2, T2>) this;
     }
 
-    protected CodecContext partialCodecContext; // The context used to read from the partial data
-    protected DecodeInput cachedInput;          // The cached input, used by this class to read partial data
-    protected Object cachedKey;
-
     // assert this item has been qualified
     @SuppressWarnings("unchecked")
-    private FindAllStatus<K, T> assertQualified() {
+    protected final FindAllOperation<K, T> assertQualified() {
         if (source == null)
             throw new IllegalStateException("Item has not been qualified yet");
-        return (FindAllStatus<K, T>) source;
-    }
-
-    // ensure a codec context for the reading
-    // of partial data exists and return it
-    private CodecContext ensurePartialCodecContext() {
-        if (partialCodecContext == null) {
-            partialCodecContext = assertQualified().getDatastore().newCodecContext();
-        }
-
-        return partialCodecContext;
+        return (FindAllOperation<K, T>) source;
     }
 
     /**
@@ -89,13 +82,17 @@ public abstract class FoundItem<K, T> {
      * @see DecodeInput#getOrReadKey(String, Type)
      * @return The primary key.
      */
-    @SuppressWarnings("unchecked")
-    public K getKey(String fieldName, Type expectedType) {
-        if (cachedKey == null) {
-            cachedKey = getOrCreateInput().getOrReadKey(fieldName, expectedType);
-        }
+    public abstract K getOrReadKey(String fieldName, Type expectedType);
 
-        return (K) cachedKey;
+    /**
+     * Get or read the primary key for this data item when qualified
+     * so the data codec can be used.
+     *
+     * @return The key.
+     */
+    public K getKey() {
+        Datastore<K, T> datastore = assertQualified().getDatastore();
+        return getOrReadKey(datastore.getDataCodec().getPrimaryKeyFieldName(), datastore.getKeyClass());
     }
 
     /**
@@ -106,10 +103,7 @@ public abstract class FoundItem<K, T> {
      * @see DecodeInput#read(CodecContext, String, Type)
      * @return The primary key.
      */
-    @SuppressWarnings("unchecked")
-    public <V> V getField(String fieldName, Type expectedType) {
-        return (V) getOrCreateInput().read(ensurePartialCodecContext(), fieldName, expectedType);
-    }
+    public abstract <V> V getField(String fieldName, Type expectedType);
 
     /**
      * Project the potentially partial data onto a new instance of the given
@@ -119,14 +113,7 @@ public abstract class FoundItem<K, T> {
      * @param <V> The data type.
      * @return The data instance with the projected data.
      */
-    public <V> V project(Class<V> vClass) {
-        FindAllStatus<K, T> status = assertQualified();
-        Datastore<K, T> datastore = status.getDatastore();
-
-        DataCodec<K, V> dataCodec = datastore.getCodecRegistry().getCodec(vClass).expect(DataCodec.class);
-        CodecContext context = datastore.newCodecContext();
-        return dataCodec.constructAndDecode(context, input());
-    }
+    public abstract <V> V project(Class<V> vClass);
 
     /**
      * Fetch a data item from the database if this result was partial,
@@ -134,31 +121,7 @@ public abstract class FoundItem<K, T> {
      *
      * @return The data item.
      */
-    @SuppressWarnings("unchecked")
-    public DataItem<K, T> fetch() {
-        FindAllStatus<?, ?> status = assertQualified();
-        Datastore<K, T> datastore = (Datastore<K, T>) status.getDatastore();
-
-        DecodeInput input = input();
-
-        // if complete there is no need to fetch the
-        // full data item from the database
-        if (!isPartial()) {
-            return datastore.decodeFetched(input);
-        }
-
-        // fetch a new item from the database
-        FindStatus<K, T> findStatus = datastore.findOne(getKey(datastore.getDataCodec().getPrimaryKeyFieldName(), datastore.getKeyClass()))
-                .await();
-        if (findStatus.failed()) {
-            Object error = findStatus.error();
-            Throwable cause = error instanceof Throwable ? findStatus.errorAs() : null;
-            throw new RuntimeException("Error while fetching data item from bulk result" +
-                    (cause == null ? ": " + error : ""), cause);
-        }
-
-        return findStatus.item();
-    }
+    public abstract DataItem<K, T> fetch();
 
     /**
      * Asynchronously fetch a data item from the database if this result was partial,
@@ -168,6 +131,45 @@ public abstract class FoundItem<K, T> {
      */
     public CompletableFuture<DataItem<K, T>> fetchAsync() {
         return CompletableFuture.supplyAsync(this::fetch, assertQualified().getDatastore().getDataManager().getExecutorService());
+    }
+
+    /**
+     * Create an array of numbers easily comparable to other numbers
+     * of the same data which is to represent the order.
+     *
+     * @return The numbers representing the order.
+     */
+    public abstract double[] createFastOrderCoefficients(String[] fields, Sorting sorting);
+
+    /**
+     * Get or create an array of packed number easily comparable to other numbers
+     * of the same data which is to represent the order.
+     *
+     * @return The numbers representing the order.
+     */
+    public double[] getFastOrderCoefficients(String[] fields, Sorting sorting) {
+        if (cachedOrderCoefficients != null && cachedSort == sorting) {
+            return cachedOrderCoefficients;
+        }
+
+        cachedOrderCoefficients = createFastOrderCoefficients(fields, sorting);
+        cachedSort = sorting;
+        return cachedOrderCoefficients;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if (!(other instanceof FoundItem)) return false;
+        FoundItem<?, ?> otherItem = (FoundItem<?, ?>) other;
+
+        // compare keys
+        return getKey().equals(otherItem.getKey());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getKey());
     }
 
 }

@@ -6,15 +6,14 @@ import slatepowered.inset.cache.DataCache;
 import slatepowered.inset.codec.CodecRegistry;
 import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.datastore.Datastore;
-import slatepowered.inset.modifier.Sorting;
+import slatepowered.inset.operation.Sorting;
 import slatepowered.inset.mongodb.MongoDataSource;
-import slatepowered.inset.query.FoundItem;
-import slatepowered.inset.query.Query;
-import slatepowered.inset.query.FindStatus;
+import slatepowered.inset.query.*;
 import slatepowered.inset.reflective.Key;
 import slatepowered.inset.reflective.ReflectiveCodecFactory;
 import slatepowered.inset.source.DataTable;
 
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ForkJoinPool;
@@ -62,14 +61,16 @@ public class MongoDatastoreExample {
 
         // Load an item by key
         final UUID key = UUID.randomUUID();
-        FindStatus<UUID, Stats> queryStatus1 = datastore.findOne(Query.byKey(key));
+        FindOperation<UUID, Stats> queryStatus1 = datastore.findOne(Query.byKey(key));
         queryStatus1.then(result /* = queryStatus1 */ -> {
             // This is called if the query succeeds, this doesn't mean
             // it would've found anything it just means no errors occurred
 
             if (result.isAbsent()) { // No item found in database or locally
-                System.out.println("Could not find item, inserting new item with key: " + key);
-                datastore.getOrCreate(key).ifPresent(stats -> stats.deaths++).saveSync();
+//                System.out.println("Could not find item, inserting new item with key: " + key);
+                datastore.getOrCreate(key).ifPresent(stats -> stats.deaths++)
+//                        .saveSync()
+                        ;
                 return;
             }
 
@@ -101,17 +102,27 @@ public class MongoDatastoreExample {
                 .eq("deaths", 1)
                 .build()
         )
-                .then(result -> result.ifPresentUse(item -> System.out.println(item.get().uuid)))
+                .then(result -> result.ifPresentUse(item -> /* System.out.println(item.get().uuid) */ { }))
                 .exceptionally(result -> result.errorAs(Throwable.class).printStackTrace());
 
+        // Load 7 random items into the cache
         datastore.findAll(Query.all())
                 .await()
+                .limit(7)
+                .stream()
+                .forEach(FoundItem::fetch);
+
+        // Randomize cache values
+        datastore.getDataCache().forEach(item -> item.get().deaths += (int)(Math.random() * 10));
+
+        // Try to get sorted list of items including locally cached values
+        datastore.findAll(Query.all(), FindAllOperation.Options.builder().useCaches(true).build())
+                .await()
+                .throwIfFailed()
                 .projection(PartialStats.class)
                 .sort(Sorting.builder().descend("deaths").build())
-                .throwIfFailed()
                 .stream()
-                .map(item -> item.project(PartialStats.class))
-                .forEach(System.out::println);
+                .forEachOrdered(foundItem -> System.out.println(foundItem.fetch()));
 
         dataManager.await();
     }

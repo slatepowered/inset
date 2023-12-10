@@ -51,6 +51,16 @@ public interface ValueCodec<T> {
      */
     void decode(CodecContext context, T instance, DecodeInput input);
 
+    /**
+     * Get the field on the given instance.
+     *
+     * @param instance The instance.
+     * @param field The field.
+     * @param <V> The field value type.
+     * @return The value of the field or null if absent.
+     */
+    <V> V getField(T instance, String field);
+
     default T constructAndDecode(CodecContext context, DecodeInput input) {
         T instance = construct(context, input);
         decode(context, instance, input);

@@ -1,13 +1,13 @@
 package slatepowered.inset.datastore;
 
-import slatepowered.inset.codec.CodecContext;
-import slatepowered.inset.codec.DataCodec;
-import slatepowered.inset.codec.DecodeInput;
-import slatepowered.inset.codec.EncodeOutput;
+import slatepowered.inset.codec.*;
+import slatepowered.inset.operation.Sorting;
+import slatepowered.inset.query.FoundItem;
 import slatepowered.inset.query.Query;
 import slatepowered.inset.source.DataSourceFindResult;
 import slatepowered.inset.source.DataTable;
 
+import java.lang.reflect.Type;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -19,7 +19,7 @@ import java.util.function.Consumer;
  * @param <K> The primary key type.
  * @param <T> The data type.
  */
-public class DataItem<K, T> {
+public class DataItem<K, T> extends FoundItem<K, T> {
 
     public DataItem(Datastore<K, T> datastore, K key) {
         this.datastore = datastore;
@@ -59,6 +59,9 @@ public class DataItem<K, T> {
      * as an offset onto the created time of this item.
      */
     protected volatile int lastReferenceTime;
+
+    private double[] cachedOrderCoefficient; // The cached order coefficient array
+    private int currentSortId; // The ID the cached order coefficient is for
 
     /**
      * Get the primary key for this item.
@@ -237,6 +240,41 @@ public class DataItem<K, T> {
         return decode(queryResult.input()).fetchedNow();
     }
 
+    @Override
+    public boolean isPartial() {
+        return false;
+    }
+
+    @Override
+    public DecodeInput input() {
+        throw new UnsupportedOperationException("TODO: Create decode input for DataItem"); // TODO
+    }
+
+    @Override
+    public K getOrReadKey(String fieldName, Type expectedType) {
+        return key;
+    }
+
+    @Override
+    public K getKey() {
+        return key;
+    }
+
+    @Override
+    public <V> V getField(String fieldName, Type expectedType) {
+        return value != null ? datastore.getDataCodec().getField(value, fieldName) : null;
+    }
+
+    @Override
+    public <V> V project(Class<V> vClass) {
+        return null; // TODO
+    }
+
+    @Override
+    public DataItem<K, T> fetch() {
+        return this;
+    }
+
     /**
      * Asynchronously fetch and decode the value for this data item.
      *
@@ -246,6 +284,22 @@ public class DataItem<K, T> {
         return datastore.getSourceTable()
                 .findOneAsync(Query.byKey(key))
                 .thenApply(result -> this.decode(result.input()).fetchedNow());
+    }
+
+    @Override
+    public double[] createFastOrderCoefficients(String[] fields, Sorting sorting) {
+        final int len = fields.length;
+        final double[] arr = new double[len];
+        final DataCodec<K, T> codec = datastore.getDataCodec();
+
+        for (int i = 0; i < len; i++) {
+            String field = fields[i];
+            Object obj = codec.getField(value, field);
+            if (obj instanceof Number)
+                arr[i] = ((Number) obj).doubleValue();
+        }
+
+        return arr;
     }
 
     // Update the lastReferenceTime to represent the
@@ -271,19 +325,6 @@ public class DataItem<K, T> {
     @Override
     public String toString() {
         return "DataItem(" + key + " = " + value + ')';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        DataItem<?, ?> dataItem = (DataItem<?, ?>) o;
-        return Objects.equals(datastore, dataItem.datastore) && Objects.equals(key, dataItem.key);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(datastore, key);
     }
 
 }

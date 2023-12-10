@@ -8,10 +8,10 @@ import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.CodecRegistry;
 import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.codec.DecodeInput;
-import slatepowered.inset.query.FindAllStatus;
+import slatepowered.inset.query.FindAllOperation;
 import slatepowered.inset.query.Query;
 import slatepowered.inset.query.FindResult;
-import slatepowered.inset.query.FindStatus;
+import slatepowered.inset.query.FindOperation;
 import slatepowered.inset.source.DataTable;
 
 import java.util.ArrayList;
@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Represents a datastore of values of type {@code T} with primary key type {@code K}.
@@ -180,17 +182,17 @@ public class Datastore<K, T> {
      * @return The query status object.
      */
     @SuppressWarnings("unchecked")
-    public FindStatus<K, T> findOne(Query query) {
+    public FindOperation<K, T> findOne(Query query) {
         DataItem<K, T> cachedItem = findOneCached(query);
         if (cachedItem != null) {
-            return new FindStatus<>(this, query).completeSuccessfully(FindResult.CACHED, cachedItem);
+            return new FindOperation<>(this, query).completeSuccessfully(FindResult.CACHED, cachedItem);
         }
 
         query = query.qualify(this);
 
         // asynchronously try to load the item
         // from the datatable
-        FindStatus<K, T> queryStatus = new FindStatus<>(this, query);
+        FindOperation<K, T> queryStatus = new FindOperation<>(this, query);
         getSourceTable().findOneAsync(query)
                 .whenComplete((result, throwable) -> {
                     if (throwable != null) {
@@ -218,7 +220,7 @@ public class Datastore<K, T> {
      * @param key The key.
      * @return This.
      */
-    public FindStatus<K, T> findOne(K key) {
+    public FindOperation<K, T> findOne(K key) {
         return findOne(Query.byKey(key));
     }
 
@@ -252,6 +254,10 @@ public class Datastore<K, T> {
         return list;
     }
 
+    static final FindAllOperation.Options DEFAULT_FIND_ALL_OPTIONS = FindAllOperation.Options.builder()
+            .useCaches(false)
+            .build();
+
     /**
      * Find all items matching the given query in the database.
      *
@@ -262,8 +268,31 @@ public class Datastore<K, T> {
      * @param query The filter query.
      * @return The status of the operation.
      */
-    public FindAllStatus<K, T> findAll(Query query) {
-        FindAllStatus<K, T> status = new FindAllStatus<>(this, query);
+    public FindAllOperation<K, T> findAll(Query query) {
+        return findAll(query, DEFAULT_FIND_ALL_OPTIONS);
+    }
+
+    /**
+     * Find all items matching the given query in the database.
+     *
+     * Note that the aggregation/find operation is never cached if {@code useCaches} is
+     * disabled and always references the database, the individual items may be
+     * resolved from the cache or cached though.
+     *
+     * @param query The filter query.
+     * @param options The options for this operation.
+     * @return The status of the operation.
+     */
+    public FindAllOperation<K, T> findAll(Query query, FindAllOperation.Options options) {
+        FindAllOperation<K, T> status = new FindAllOperation<>(this, query, options);
+
+        // filter cached item stream
+        if (options.isUseCaches()) {
+            final Predicate<T> filterPredicate = dataCodec.getFilterPredicate(query);
+            Stream<DataItem<K, T>> cachedStream = dataCache.stream().filter(dataItem -> dataItem.isPresent() && filterPredicate.test(dataItem.get()));
+            status.withCached(cachedStream);
+        }
+
         getSourceTable().findAllAsync(query)
                 .whenComplete((result, throwable) -> {
                     if (throwable != null) {
@@ -274,6 +303,7 @@ public class Datastore<K, T> {
                     // 'complete' the operation with the bulk iterable
                     status.completeSuccessfully(result);
                 });
+
         return status;
     }
 
