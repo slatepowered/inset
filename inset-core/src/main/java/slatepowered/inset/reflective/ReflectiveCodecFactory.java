@@ -35,12 +35,7 @@ public final class ReflectiveCodecFactory implements CodecFactory {
             for (Field field : fields) {
                 if (Modifier.isStatic(field.getModifiers()) || Modifier.isTransient(field.getModifiers())) continue;
 
-                // TODO: uhh support primitives but im too lazy rn
-                if (field.getType().isPrimitive()) {
-                    throw new UnsupportedOperationException("Primitive fields in values are not supported yet");
-                }
-
-                UnsafeFieldDesc fieldDesc = new UnsafeFieldDesc(field, field.getName(), UNSAFE.objectFieldOffset(field), field.getGenericType());
+                UnsafeFieldDesc fieldDesc = UnsafeFieldDesc.forField(field);
                 unsafeFields.add(fieldDesc);
 
                 // check for primary key field

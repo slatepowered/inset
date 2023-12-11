@@ -55,12 +55,12 @@ final class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T
         super.decode(context, instance, input);
 
         // decode primary key
-        UNSAFE.putObject(instance, primaryKeyField.offset, input.getOrReadKey(primaryKeyField.name, primaryKeyField.type));
+        primaryKeyField.setFromObject(instance, input.getOrReadKey(primaryKeyField.name, primaryKeyField.type));
     }
 
     @Override
     public K getPrimaryKey(T value) {
-        return (K) UNSAFE.getObject(value, primaryKeyField.offset);
+        return (K) primaryKeyField.getAsObject(value);
     }
 
     @Override
@@ -71,7 +71,7 @@ final class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T
     @Override
     public T createDefault(DataItem<K, T> item) {
         T instance = super.construct(null, null);
-        UNSAFE.putObject(instance, primaryKeyField.offset, item.key());
+        primaryKeyField.setFromObject(instance, item.key());
         return instance;
     }
 

@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.bson.Document;
 import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.DecodeInput;
+import slatepowered.inset.util.ValueUtils;
 import slatepowered.veru.reflect.ReflectUtil;
 
 import java.lang.reflect.Array;
@@ -78,6 +79,14 @@ public class DocumentDecodeInput extends DecodeInput {
 
         /* Primitives */
         else {
+            if (Number.class.isAssignableFrom(expectedClass)) {
+                return ValueUtils.castBoxedNumber((Number) value, expectedClass);
+            }
+
+            if (expectedClass.isPrimitive()) {
+                return ValueUtils.castBoxedPrimitive(value, expectedClass);
+            }
+
             return value;
         }
 

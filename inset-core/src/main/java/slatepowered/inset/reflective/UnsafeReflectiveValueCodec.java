@@ -39,7 +39,7 @@ class UnsafeReflectiveValueCodec<T> implements ValueCodec<T> {
     @Override
     public void encode(CodecContext context, T value, EncodeOutput output) {
         for (UnsafeFieldDesc desc : fields) {
-            Object fieldValue = UNSAFE.getObject(value, desc.offset);
+            Object fieldValue = desc.getAsObject(value);
             output.set(context, desc.name, fieldValue);
         }
     }
@@ -58,7 +58,7 @@ class UnsafeReflectiveValueCodec<T> implements ValueCodec<T> {
     public void decode(CodecContext context, T instance, DecodeInput input) {
         for (UnsafeFieldDesc desc : fields) {
             Object value = input.read(context, desc.name, desc.type);
-            UNSAFE.putObject(instance, desc.offset, value);
+            desc.setFromObject(instance, value);
         }
     }
 

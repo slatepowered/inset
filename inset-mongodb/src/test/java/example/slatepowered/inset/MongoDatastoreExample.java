@@ -13,6 +13,7 @@ import slatepowered.inset.query.*;
 import slatepowered.inset.reflective.Key;
 import slatepowered.inset.reflective.ReflectiveCodecFactory;
 import slatepowered.inset.source.DataTable;
+import slatepowered.veru.reflect.UnsafeUtil;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -49,6 +50,8 @@ public class MongoDatastoreExample {
     }
 
     public static void main(String[] args) throws InterruptedException {
+        long t1 = System.currentTimeMillis();
+
         // Create the data manager
         DataManager dataManager = DataManager.builder()
                 .executorService(ForkJoinPool.commonPool())
@@ -135,6 +138,9 @@ public class MongoDatastoreExample {
                 .forEachOrdered(stats -> System.out.println("UUID " + stats.uuid() + " has " + stats.deaths() + " deaths"));
 
         dataManager.await();
+
+        long t2 = System.currentTimeMillis();
+        System.err.println("[*] Time taken for whole program: " + (t2 - t1) + "ms");
     }
 
 }
