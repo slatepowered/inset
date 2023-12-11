@@ -41,7 +41,7 @@ public class ProjectionInterface implements ProjectionType {
      */
     public Object createProxy(Supplier<Object> keySupplier,
                               BiFunction<String, Type, Object> fieldGetter) {
-        return Proxy.newProxyInstance(ClassLoader.getSystemClassLoader(), new Class[] { klass }, (proxy, method, args) -> {
+        return Proxy.newProxyInstance(klass.getClassLoader(), new Class[] { klass }, (proxy, method, args) -> {
             if (method.isDefault()) {
                 return ReflectUtil.invokeDefault(proxy, method, args);
             }
