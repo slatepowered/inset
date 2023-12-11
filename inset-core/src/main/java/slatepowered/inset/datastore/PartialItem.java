@@ -1,14 +1,14 @@
-package slatepowered.inset.query;
+package slatepowered.inset.datastore;
 
 import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.codec.DecodeInput;
-import slatepowered.inset.datastore.DataItem;
-import slatepowered.inset.datastore.Datastore;
 import slatepowered.inset.internal.ProjectionInterface;
 import slatepowered.inset.internal.ProjectionType;
 import slatepowered.inset.internal.ProjectionTypes;
 import slatepowered.inset.operation.Sorting;
+import slatepowered.inset.query.FindOperation;
+import slatepowered.inset.query.Query;
 
 import java.lang.reflect.Type;
 import java.util.Objects;
@@ -199,6 +199,16 @@ public abstract class PartialItem<K, T> {
         datastore.getSourceTable().deleteOne(Query.byKey(getKey()));
         datastore.getDataCache().remove(getKey());
         return this;
+    }
+
+    /**
+     * Asynchronously delete this item from the database and drop it
+     * from the cache when complete.
+     *
+     * @return The future.
+     */
+    public CompletableFuture<PartialItem<K, T>> deleteAsync() {
+        return CompletableFuture.supplyAsync(this::delete, assertQualified().getExecutorService());
     }
 
     // project the partial data into the given class

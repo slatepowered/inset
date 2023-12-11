@@ -5,7 +5,6 @@ import slatepowered.inset.internal.ProjectionInterface;
 import slatepowered.inset.operation.Sorting;
 import slatepowered.inset.query.FindOperation;
 import slatepowered.inset.query.FindResult;
-import slatepowered.inset.query.PartialItem;
 import slatepowered.inset.query.Query;
 import slatepowered.inset.source.DataSourceFindResult;
 import slatepowered.inset.source.DataTable;
@@ -215,7 +214,7 @@ public class DataItem<K, T> extends PartialItem<K, T> {
      * @return This.
      */
     public CompletableFuture<DataItem<K, T>> saveAsync() {
-        return CompletableFuture.supplyAsync(this::saveSync, datastore.getDataManager().getExecutorService());
+        return CompletableFuture.supplyAsync(this::saveSync, datastore.getExecutorService());
     }
 
     /**

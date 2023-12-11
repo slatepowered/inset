@@ -6,6 +6,7 @@ import slatepowered.inset.cache.DataCache;
 import slatepowered.inset.codec.CodecRegistry;
 import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.datastore.Datastore;
+import slatepowered.inset.datastore.PartialItem;
 import slatepowered.inset.operation.Sorting;
 import slatepowered.inset.mongodb.MongoDataSource;
 import slatepowered.inset.query.*;

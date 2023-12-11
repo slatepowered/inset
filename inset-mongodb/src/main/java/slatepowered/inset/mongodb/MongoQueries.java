@@ -292,9 +292,16 @@ final class MongoQueries {
 
             @Override
             public Stream<SourceFoundItem<?, ?>> stream() {
-                return StreamSupport.stream(Spliterators.spliteratorUnknownSize(cursor, Spliterator.ORDERED), false)
+                return StreamSupport
+                        .stream(Spliterators.spliteratorUnknownSize(cursor, Spliterator.ORDERED), false)
                         .filter(Objects::nonNull)
                         .map(this::convert);
+            }
+
+            @Override
+            public DataSourceBulkIterable skip(int amount) {
+                iterable.skip(amount);
+                return this;
             }
         };
     }

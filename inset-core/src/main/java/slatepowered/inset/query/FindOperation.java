@@ -170,7 +170,7 @@ public class FindOperation<K, T> extends OperationStatus<K, T, FindOperation<K, 
         future = future.thenApplyAsync(status -> {
             action.accept(status);
             return status;
-        }, datastore.getDataManager().getExecutorService());
+        }, datastore.getExecutorService());
         return this;
     }
 

@@ -32,7 +32,7 @@ public interface DataTable {
      * @return The result future.
      */
     default CompletableFuture<Void> replaceOneAsync(final EncodeOutput output) {
-        return CompletableFuture.runAsync(() -> this.replaceOneSync(output), getSource().getDataManager().getExecutorService());
+        return CompletableFuture.runAsync(() -> this.replaceOneSync(output), getSource().getExecutorService());
     }
 
     /**
@@ -53,7 +53,7 @@ public interface DataTable {
      * @return The query result future.
      */
     default CompletableFuture<DataSourceFindResult> findOneAsync(final Query query) {
-        return CompletableFuture.supplyAsync(() -> this.findOneSync(query), getSource().getDataManager().getExecutorService());
+        return CompletableFuture.supplyAsync(() -> this.findOneSync(query), getSource().getExecutorService());
     }
 
     /**
@@ -74,7 +74,7 @@ public interface DataTable {
      * @return The result.
      */
     default CompletableFuture<DataSourceBulkIterable> findAllAsync(final Query query) {
-        return CompletableFuture.supplyAsync(() -> this.findAllSync(query), getSource().getDataManager().getExecutorService());
+        return CompletableFuture.supplyAsync(() -> this.findAllSync(query), getSource().getExecutorService());
     }
 
     /**

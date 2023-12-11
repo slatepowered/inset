@@ -4,6 +4,7 @@ import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.datastore.Datastore;
+import slatepowered.inset.datastore.PartialItem;
 import slatepowered.inset.internal.ProjectionInterface;
 import slatepowered.inset.operation.Sorting;
 import slatepowered.inset.query.*;

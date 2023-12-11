@@ -102,4 +102,11 @@ public interface DataSourceBulkIterable extends DataSourceOperation {
      */
     Stream<SourceFoundItem<?, ?>> stream();
 
+    /**
+     * Skip the given amount of items.
+     *
+     * @param amount The amount.
+     */
+    DataSourceBulkIterable skip(int amount);
+
 }

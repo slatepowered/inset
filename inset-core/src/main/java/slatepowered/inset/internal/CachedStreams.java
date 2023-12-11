@@ -4,7 +4,7 @@ import slatepowered.inset.datastore.Datastore;
 import slatepowered.inset.operation.FieldOrderSorting;
 import slatepowered.inset.operation.FieldOrdering;
 import slatepowered.inset.operation.Sorting;
-import slatepowered.inset.query.PartialItem;
+import slatepowered.inset.datastore.PartialItem;
 
 import java.util.Comparator;
 import java.util.List;
@@ -35,16 +35,24 @@ public final class CachedStreams {
      * Sort a partially cached stream according to the given sorting in the
      * context of the given datastore.
      *
+     * @param <K> The key type.
+     * @param <T> The value type.
      * @param datastore The datastore.
      * @param stream The partially cached stream.
      * @param sorting The sorting.
-     * @param <K> The key type.
-     * @param <T> The value type.
+     * @param cachedStream The cached stream.
+     * @param iterableStream The iterable result stream.
      */
-    public static <K, T> Stream<? extends PartialItem<K, T>> sortStream(Datastore<K, T> datastore,
-                                                                        Stream<? extends PartialItem<K, T>> stream,
-                                                                        Sorting sorting) {
-        Comparator<PartialItem<K, T>> fastComparator = createFastComparator(datastore, sorting);
+    public static <K, T> Stream<? extends PartialItem<K, T>> sortPartialStream(Datastore<K, T> datastore,
+                                                                               Stream<? extends PartialItem<K, T>> stream,
+                                                                               Sorting sorting,
+                                                                               Stream<? extends PartialItem<K, T>> cachedStream,
+                                                                               Stream<? extends PartialItem<K, T>> iterableStream) {
+        final Comparator<PartialItem<K, T>> fastComparator = createFastComparator(datastore, sorting);
+
+        // TODO: this is slow and inefficient, preferably, since the iterable
+        //  stream has been sorted server side, sort the cached stream and combine
+        //  the two sorted streams removing duplicates, i assume that would be faster
         return stream.sorted(fastComparator);
     }
 

@@ -5,6 +5,7 @@ import lombok.Getter;
 import slatepowered.inset.datastore.DataItem;
 import slatepowered.inset.datastore.Datastore;
 import slatepowered.inset.datastore.OperationStatus;
+import slatepowered.inset.datastore.PartialItem;
 import slatepowered.inset.internal.CachedStreams;
 import slatepowered.inset.internal.ProjectionType;
 import slatepowered.inset.internal.ProjectionTypes;
@@ -56,6 +57,11 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
      * no cached items are used in this query.
      */
     protected Stream<? extends DataItem<K, T>> cachedStream;
+
+    /**
+     * THe stream of items as a result of the data source iterable.
+     */
+    protected Stream<? extends PartialItem<K, T>> iterableStream;
 
     /**
      * The stream of items.
@@ -123,7 +129,7 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
         future = future.thenApplyAsync(status -> {
             action.accept(status);
             return status;
-        }, datastore.getDataManager().getExecutorService());
+        }, datastore.getExecutorService());
         return this;
     }
 
@@ -238,9 +244,24 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
     public FindAllOperation<K, T> sort(Sorting sorting) {
         iterable.sort(sorting);
         if (cachedStream != null) {
-            updateStream(CachedStreams.sortStream(datastore, stream, sorting));
+            updateStream(CachedStreams.sortPartialStream(
+                    datastore, stream,
+                    sorting,
+                    cachedStream, iterableStream));
         }
 
+        return this;
+    }
+
+    /**
+     * Skip the given amount of items found by this operation.
+     *
+     * @param amount The amount.
+     * @return This.
+     */
+    public FindAllOperation<K, T> skip(int amount) {
+        if (cachedStream != null) stream = stream.skip(amount);
+        else iterable.skip(amount);
         return this;
     }
 
@@ -258,7 +279,7 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
 
     // asynchronously execute the given function
     private <A> CompletableFuture<A> async(Supplier<A> supplier) {
-        return CompletableFuture.supplyAsync(supplier, datastore.getDataManager().getExecutorService());
+        return CompletableFuture.supplyAsync(supplier, datastore.getExecutorService());
     }
 
     // qualify the given item for this query
@@ -426,6 +447,7 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
 
             // update stream with iterable items
             Stream<PartialItem<K, T>> iterableStream = iterable.stream().map(this::qualify);
+            this.iterableStream = iterableStream;
             updateStream(CachedStreams.zipStreamsDistinct(this.stream, iterableStream));
         }
 
