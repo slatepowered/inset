@@ -12,7 +12,7 @@ import slatepowered.inset.internal.ProjectionTypes;
 import slatepowered.inset.operation.Projection;
 import slatepowered.inset.operation.Sorting;
 import slatepowered.inset.source.DataSourceBulkIterable;
-import slatepowered.inset.source.SourceFoundItem;
+import slatepowered.inset.source.SourcedItem;
 
 import java.util.Iterator;
 import java.util.List;
@@ -283,7 +283,7 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
     }
 
     // qualify the given item for this query
-    private SourceFoundItem<K, T> qualify(SourceFoundItem<?, ?> item) {
+    private SourcedItem<K, T> qualify(SourcedItem<?, ?> item) {
         return item.qualify(this);
     }
 
@@ -363,8 +363,8 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
             return stream.collect(Collectors.toList());
         }
 
-        List<SourceFoundItem<K, T>> list = (List<SourceFoundItem<K,T>>) (Object) iterable.list();
-        for (SourceFoundItem<K, T> item : list) {
+        List<SourcedItem<K, T>> list = (List<SourcedItem<K,T>>) (Object) iterable.list();
+        for (SourcedItem<K, T> item : list) {
             this.qualify(item);
         }
 

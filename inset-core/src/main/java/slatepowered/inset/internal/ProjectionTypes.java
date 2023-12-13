@@ -65,7 +65,7 @@ public final class ProjectionTypes {
      */
     @SuppressWarnings("unchecked")
     public static <K, T, V> ProjectionType getProjectionType(Class<V> klass, Datastore<K, T> datastore) {
-        ProjectionType projectionType = null;
+        ProjectionType projectionType;
 
         // check for projection interface
         if (klass.isInterface()) {

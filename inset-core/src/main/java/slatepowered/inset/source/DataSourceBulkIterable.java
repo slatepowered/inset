@@ -70,7 +70,7 @@ public interface DataSourceBulkIterable extends DataSourceOperation {
      *
      * @return The first item or empty if absent.
      */
-    Optional<SourceFoundItem<?, ?>> first();
+    Optional<SourcedItem<?, ?>> first();
 
     /**
      * Get the next item in this result set.
@@ -79,7 +79,7 @@ public interface DataSourceBulkIterable extends DataSourceOperation {
      *
      * @return The next item.
      */
-    Optional<SourceFoundItem<?, ?>> next();
+    Optional<SourcedItem<?, ?>> next();
 
     /**
      * Check whether there is another item.
@@ -93,14 +93,14 @@ public interface DataSourceBulkIterable extends DataSourceOperation {
      *
      * @return The list of items.
      */
-    List<SourceFoundItem<?, ?>> list();
+    List<SourcedItem<?, ?>> list();
 
     /**
      * Stream all items in this result set.
      *
      * @return The stream.
      */
-    Stream<SourceFoundItem<?, ?>> stream();
+    Stream<SourcedItem<?, ?>> stream();
 
     /**
      * Skip the given amount of items.

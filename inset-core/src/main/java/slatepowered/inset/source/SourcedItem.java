@@ -18,7 +18,7 @@ import java.util.Optional;
  * @param <K> The key type.
  * @param <T> The value type.
  */
-public abstract class SourceFoundItem<K, T> extends PartialItem<K, T> {
+public abstract class SourcedItem<K, T> extends PartialItem<K, T> {
 
     /**
      * The operation status this found item is a part of.
@@ -31,9 +31,9 @@ public abstract class SourceFoundItem<K, T> extends PartialItem<K, T> {
     protected K cachedKey; // The cached key object
 
     @SuppressWarnings("unchecked")
-    public  <K2, T2> SourceFoundItem<K2, T2> qualify(FindAllOperation<K2, T2> source) {
+    public  <K2, T2> SourcedItem<K2, T2> qualify(FindAllOperation<K2, T2> source) {
         this.source = source.getDatastore();
-        return (SourceFoundItem<K2, T2>) this;
+        return (SourcedItem<K2, T2>) this;
     }
 
     // ensure a codec context for the reading
