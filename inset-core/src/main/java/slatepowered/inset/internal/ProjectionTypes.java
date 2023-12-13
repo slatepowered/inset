@@ -2,12 +2,10 @@ package slatepowered.inset.internal;
 
 import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.datastore.Datastore;
-import slatepowered.inset.operation.Projection;
 import slatepowered.inset.reflective.Key;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,6 +14,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * Support with projection-defining interfaces.
  */
 public final class ProjectionTypes {
+
+    private ProjectionTypes() { throw new UnsupportedOperationException("Utility class"); }
 
     /**
      * All compiled projection interfaces.

@@ -8,7 +8,9 @@ import java.util.Set;
 /**
  * Helpers/utilities for (query) values.
  */
-public class ValueUtils {
+public final class ValueUtils {
+
+    private ValueUtils() { throw new UnsupportedOperationException("Utility class"); }
 
     /**
      * Convert all known types of collection-like object to a set.

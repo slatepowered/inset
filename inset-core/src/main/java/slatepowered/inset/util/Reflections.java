@@ -9,6 +9,8 @@ import java.lang.reflect.Method;
  */
 public final class Reflections {
 
+    private Reflections() { throw new UnsupportedOperationException("Utility class"); }
+
     // Common methods
     public static final Method METHOD_OBJECT_EQUALS = getMethod(Object.class, "equals");
     public static final Method METHOD_OBJECT_TOSTRING = getMethod(Object.class, "toString");

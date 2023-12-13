@@ -15,6 +15,8 @@ import java.util.stream.Stream;
  */
 public final class CachedStreams {
 
+    private CachedStreams() { throw new UnsupportedOperationException("Utility class"); }
+
     /**
      * Combine the given streams into one exclusive stream (no duplicates)
      *
