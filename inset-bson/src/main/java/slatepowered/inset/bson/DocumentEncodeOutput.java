@@ -46,10 +46,10 @@ public class DocumentEncodeOutput extends EncodeOutput {
                 list.add(encodeValue(context, o));
             return list;
         } else if (value instanceof Map) {
-            // todo: im too lazy to do this rn but like when are
-            //  u going to put a whole map in your database which is
-            //  basically a map
-            throw new UnsupportedOperationException("im too lazy to implement this right now");
+            Map map = (Map) value;
+            Map<Object, Object> convertedMap = new HashMap<>();
+            map.forEach((key, val) -> convertedMap.put(encodeValue(context, key), encodeValue(context, val)));
+            return convertedMap;
         }
 
         /* Primitives */

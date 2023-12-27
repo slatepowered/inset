@@ -1,6 +1,7 @@
 package example.slatepowered.inset;
 
 import lombok.ToString;
+import org.junit.jupiter.api.Test;
 import slatepowered.inset.DataManager;
 import slatepowered.inset.cache.DataCache;
 import slatepowered.inset.codec.CodecRegistry;
@@ -15,6 +16,7 @@ import slatepowered.inset.reflective.ReflectiveCodecFactory;
 import slatepowered.inset.source.DataTable;
 import slatepowered.veru.reflect.UnsafeUtil;
 
+import java.net.URI;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ForkJoinPool;

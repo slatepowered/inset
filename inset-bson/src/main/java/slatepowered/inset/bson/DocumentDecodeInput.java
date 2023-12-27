@@ -12,7 +12,9 @@ import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Reads data from a {@link Document} input.
@@ -47,8 +49,32 @@ public class DocumentDecodeInput extends DecodeInput {
                 throw new IllegalArgumentException("Document contains non-primitive value for key field");
             }
 
+            Document doc = (Document) value;
+
+            // check for map
+            if (Map.class.isAssignableFrom(expectedClass)) {
+                // check for parameter types
+                Type expectedKeyType;
+                Type expectedValueType;
+                if (expectedType instanceof ParameterizedType) {
+                    expectedKeyType = ((ParameterizedType)expectedType).getActualTypeArguments()[0];
+                    expectedValueType = ((ParameterizedType)expectedType).getActualTypeArguments()[0];
+                } else {
+                    expectedKeyType = Object.class;
+                    expectedValueType = Object.class;
+                }
+
+                Map map = new HashMap();
+                doc.forEach((k, v) -> map.put(
+                        decodeDocumentValue(context, k, expectedKeyType),
+                        decodeDocumentValue(context, v, expectedValueType)
+                ));
+
+                return map;
+            }
+
             // decode nested object
-            DocumentDecodeInput input = new DocumentDecodeInput(keyFieldOverride, (Document) value);
+            DocumentDecodeInput input = new DocumentDecodeInput(keyFieldOverride, doc);
             return context.findCodec(expectedClass).constructAndDecode(context, input);
         } else if (value instanceof List) {
             if (context == null) {
@@ -75,6 +101,27 @@ public class DocumentDecodeInput extends DecodeInput {
             }
 
             return isArrayExpected ? newList : newList.toArray((Object[]) Array.newInstance(ReflectUtil.getClassForType(expectedElementType), list.size()));
+        } else if (value instanceof Map) {
+            Map map = (Map) value;
+
+            // check for parameter types
+            Type expectedKeyType;
+            Type expectedValueType;
+            if (Map.class.isAssignableFrom(expectedClass) && expectedType instanceof ParameterizedType) {
+                expectedKeyType = ((ParameterizedType)expectedType).getActualTypeArguments()[0];
+                expectedValueType = ((ParameterizedType)expectedType).getActualTypeArguments()[0];
+            } else {
+                expectedKeyType = Object.class;
+                expectedValueType = Object.class;
+            }
+
+            Map convertedMap = new HashMap();
+            map.forEach((k, v) -> convertedMap.put(
+                    decodeDocumentValue(context, k, expectedKeyType),
+                    decodeDocumentValue(context, v, expectedValueType)
+            ));
+
+            return convertedMap;
         }
 
         /* Primitives */
