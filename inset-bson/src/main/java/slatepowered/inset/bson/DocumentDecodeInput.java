@@ -58,7 +58,7 @@ public class DocumentDecodeInput extends DecodeInput {
                 Type expectedValueType;
                 if (expectedType instanceof ParameterizedType) {
                     expectedKeyType = ((ParameterizedType)expectedType).getActualTypeArguments()[0];
-                    expectedValueType = ((ParameterizedType)expectedType).getActualTypeArguments()[0];
+                    expectedValueType = ((ParameterizedType)expectedType).getActualTypeArguments()[1];
                 } else {
                     expectedKeyType = Object.class;
                     expectedValueType = Object.class;
@@ -109,7 +109,7 @@ public class DocumentDecodeInput extends DecodeInput {
             Type expectedValueType;
             if (Map.class.isAssignableFrom(expectedClass) && expectedType instanceof ParameterizedType) {
                 expectedKeyType = ((ParameterizedType)expectedType).getActualTypeArguments()[0];
-                expectedValueType = ((ParameterizedType)expectedType).getActualTypeArguments()[0];
+                expectedValueType = ((ParameterizedType)expectedType).getActualTypeArguments()[1];
             } else {
                 expectedKeyType = Object.class;
                 expectedValueType = Object.class;
