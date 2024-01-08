@@ -98,6 +98,9 @@ subprojects {
 
         testCompileOnly 'org.projectlombok:lombok:1.18.30'
         testAnnotationProcessor 'org.projectlombok:lombok:1.18.30'
+
+        /* Libraries */
+        implementation 'com.github.slatepowered.veru:veru-java8:f7496e6'
     }
 
     /* JUnit */
