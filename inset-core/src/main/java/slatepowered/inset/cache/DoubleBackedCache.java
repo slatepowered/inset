@@ -67,7 +67,10 @@ final class DoubleBackedCache<K, T> implements DataCache<K, T> {
     @Override
     public void removeAll(Predicate<DataItem<K, T>> predicate) {
         Iterator<DataItem<K, T>> iterator = list.iterator();
-        for (DataItem<K, T> item = iterator.next(); iterator.hasNext(); item = iterator.next()) {
+        DataItem<K, T> item;
+        while (iterator.hasNext()) {
+            item = iterator.next();
+
             if (predicate.test(item)) {
                 iterator.remove();
                 map.remove(item.key());

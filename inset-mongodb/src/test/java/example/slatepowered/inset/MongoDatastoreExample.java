@@ -20,6 +20,7 @@ import java.net.URI;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ForkJoinPool;
+import java.util.stream.Collectors;
 
 public class MongoDatastoreExample {
 
@@ -140,8 +141,10 @@ public class MongoDatastoreExample {
                 .forEachOrdered(stats -> System.out.println("UUID " + stats.uuid() + " has " + stats.deaths() + " deaths"));
 
         // Remove all items in the database
-        datastore.deleteAll(Query.builder().less("deaths", 2).build())
-                .then(op -> System.out.println("Deleted " + op.getDeleteCount() + " items"));
+        System.out.println(datastore.getDataCache().stream().collect(Collectors.toList()));
+        datastore.deleteAll(Query.all())
+                .then(op -> System.out.println("Deleted " + op.getDeleteCount() + " items"))
+                .then(__ -> System.out.println(datastore.getDataCache().stream().collect(Collectors.toList())));
 
         dataManager.await();
 
