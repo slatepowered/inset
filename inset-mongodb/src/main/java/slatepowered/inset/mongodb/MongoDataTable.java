@@ -80,10 +80,16 @@ public class MongoDataTable implements DataTable {
 
     @Override
     public long deleteAll(Query query) {
-        String keyFieldOverride = source.getKeyFieldOverride();
-        Bson filter = MongoQueries.serializeQueryToFindFilter(keyFieldOverride, query);
+        if (query.fieldConstraintCount() > 0) {
+            String keyFieldOverride = source.getKeyFieldOverride();
+            Bson filter = MongoQueries.serializeQueryToFindFilter(keyFieldOverride, query);
 
-        return collection.deleteMany(filter).getDeletedCount();
+            return collection.deleteMany(filter).getDeletedCount();
+        } else {
+            long count = collection.countDocuments();
+            collection.drop();
+            return count;
+        }
     }
 
 }

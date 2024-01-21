@@ -3,13 +3,7 @@ package slatepowered.inset.operation;
 import lombok.Getter;
 import slatepowered.inset.datastore.Datastore;
 import slatepowered.inset.datastore.OperationStatus;
-import slatepowered.inset.datastore.PartialItem;
-import slatepowered.inset.internal.CachedStreams;
-import slatepowered.inset.query.FindAllOperation;
 import slatepowered.inset.query.Query;
-import slatepowered.inset.source.DataSourceBulkIterable;
-
-import java.util.stream.Stream;
 
 /**
  * Describes the deletion of all items in a datastore matching a certain filter.
