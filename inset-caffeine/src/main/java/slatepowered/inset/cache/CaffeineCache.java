@@ -7,6 +7,7 @@ import slatepowered.inset.datastore.DataItem;
 
 import java.util.Iterator;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -60,6 +61,11 @@ public class CaffeineCache<K, T> implements DataCache<K, T> {
     @Override
     public Stream<DataItem<K, T>> stream() {
         return cache.asMap().values().stream();
+    }
+
+    @Override
+    public void removeAll(Predicate<DataItem<K, T>> predicate) {
+        throw new UnsupportedOperationException("todo");
     }
 
     @Override

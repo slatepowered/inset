@@ -82,7 +82,8 @@ public class MongoDatastoreExample {
 
             if (result.isAbsent()) { // No item found in database or locally
 //                System.out.println("Could not find item, inserting new item with key: " + key);
-                datastore.getOrCreate(key).ifPresent(stats -> stats.deaths++)
+                datastore.getOrCreate(key)
+                        .ifPresent(stats -> stats.deaths = (int)(Math.random() * 10))
                         .saveSync()
                         ;
                 return;
@@ -122,12 +123,11 @@ public class MongoDatastoreExample {
         // Load 7 random items into the cache
         datastore.findAll(Query.all())
                 .await()
-                .limit(7)
                 .stream()
                 .forEach(PartialItem::find);
 
         // Randomize cache values
-        datastore.getDataCache().forEach(item -> item.get().deaths += (int)((Math.random() + 1) * 10));
+//        datastore.getDataCache().forEach(item -> item.get().deaths += (int)((Math.random() + 1) * 10));
 
         // Try to get sorted list of items including locally cached values
         datastore.findAll(Query.all(), FindAllOperation.Options.builder().useCaches(true).build())
