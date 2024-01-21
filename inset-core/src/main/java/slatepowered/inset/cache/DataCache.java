@@ -8,6 +8,7 @@ import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -61,6 +62,22 @@ public interface DataCache<K, T> extends Iterable<DataItem<K, T>> {
      * @return The values.
      */
     Stream<DataItem<K, T>> stream();
+
+    /**
+     * Remove all items in this cache matching the given predicate.
+     *
+     * @param predicate The predicate.
+     */
+    void removeAll(Predicate<DataItem<K, T>> predicate);
+
+    /**
+     * Remove all items in this cache matching the given predicate.
+     *
+     * @param predicate The predicate.
+     */
+    default void removeIf(Predicate<T> predicate) {
+        removeAll(item -> predicate.test(item.get()));
+    }
 
     /**
      * A simple, permanent data cache backed by a {@link ConcurrentHashMap} for

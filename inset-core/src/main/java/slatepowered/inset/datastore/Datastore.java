@@ -8,6 +8,7 @@ import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.CodecRegistry;
 import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.codec.DecodeInput;
+import slatepowered.inset.operation.DeleteAllOperation;
 import slatepowered.inset.query.FindAllOperation;
 import slatepowered.inset.query.Query;
 import slatepowered.inset.query.FindResult;
@@ -19,7 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -305,6 +305,30 @@ public class Datastore<K, T> {
                 });
 
         return status;
+    }
+
+    /**
+     * Find all items matching the given query and drop them from the cache,
+     * then instruct the database or other remote data storage to delete
+     * all items matching the given query.
+     *
+     * @param query The query.
+     * @return The operation status.
+     */
+    public DeleteAllOperation<K, T> deleteAll(Query query) {
+        DeleteAllOperation<K, T> operation = new DeleteAllOperation<>(this, query);
+
+        // enqueue the deletion in the database
+        sourceTable.deleteAllAsync(query).whenComplete((count, throwable) -> {
+            operation.completeDataTableOperation(throwable, count);
+        });
+
+        // drop cached items
+        final Predicate<T> filterPredicate = dataCodec.getFilterPredicate(query);
+        dataCache.removeIf(filterPredicate);
+        operation.completeCacheClear();
+
+        return operation;
     }
 
     /**

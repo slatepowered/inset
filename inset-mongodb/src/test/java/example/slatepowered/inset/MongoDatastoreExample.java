@@ -83,7 +83,7 @@ public class MongoDatastoreExample {
             if (result.isAbsent()) { // No item found in database or locally
 //                System.out.println("Could not find item, inserting new item with key: " + key);
                 datastore.getOrCreate(key).ifPresent(stats -> stats.deaths++)
-//                        .saveSync()
+                        .saveSync()
                         ;
                 return;
             }
@@ -138,6 +138,10 @@ public class MongoDatastoreExample {
                 .stream()
                 .map(item -> item.project(PartialStats.class))
                 .forEachOrdered(stats -> System.out.println("UUID " + stats.uuid() + " has " + stats.deaths() + " deaths"));
+
+        // Remove all items in the database
+        datastore.deleteAll(Query.builder().less("deaths", 2).build())
+                .then(op -> System.out.println("Deleted " + op.getDeleteCount() + " items"));
 
         dataManager.await();
 

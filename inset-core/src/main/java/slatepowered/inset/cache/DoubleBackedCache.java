@@ -5,6 +5,7 @@ import slatepowered.inset.datastore.DataItem;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -61,6 +62,17 @@ final class DoubleBackedCache<K, T> implements DataCache<K, T> {
         if (map.size() != (r = list.size()))
             throw new IllegalStateException("Cache count inconsistency across map and list, map.size() = " + map.size() + ", list.size() " + list.size());
         return r;
+    }
+
+    @Override
+    public void removeAll(Predicate<DataItem<K, T>> predicate) {
+        Iterator<DataItem<K, T>> iterator = list.iterator();
+        for (DataItem<K, T> item = iterator.next(); iterator.hasNext(); item = iterator.next()) {
+            if (predicate.test(item)) {
+                iterator.remove();
+                map.remove(item.key());
+            }
+        }
     }
 
 }

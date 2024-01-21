@@ -85,4 +85,32 @@ public interface DataTable {
      */
     boolean deleteOne(Query query);
 
+    /**
+     * Asynchronously delete the first item matching the given query.
+     *
+     * @param query THe query.
+     * @return Future returning whether the item was successfully deleted.
+     */
+    default CompletableFuture<Boolean> deleteOneAsync(Query query) {
+        return CompletableFuture.supplyAsync(() -> this.deleteOne(query), getSource().getExecutorService());
+    }
+
+    /**
+     * Delete all items matching the given query.
+     *
+     * @param query The query.
+     * @return The count of deleted items.
+     */
+    long deleteAll(Query query);
+
+    /**
+     * Asynchronously delete all items matching the given query.
+     *
+     * @param query The query.
+     * @return Future returning the count of deleted items.
+     */
+    default CompletableFuture<Long> deleteAllAsync(Query query) {
+        return CompletableFuture.supplyAsync(() -> this.deleteAll(query), getSource().getExecutorService());
+    }
+
 }

@@ -2,6 +2,7 @@ package slatepowered.inset.datastore;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import slatepowered.inset.query.FindAllOperation;
 import slatepowered.inset.query.Query;
 
 import java.util.concurrent.CompletableFuture;
@@ -185,6 +186,58 @@ public abstract class OperationStatus<K, T, R extends OperationStatus<K, T, ?>> 
             throw new RuntimeException("Error while "  + describeOperation() +
                     (cause == null ? ": " + error : ""), cause);
         }
+
+        return castThis();
+    }
+
+    /**
+     * When this query is successfully completed, call the given consumer.
+     *
+     * @param consumer The consumer.
+     * @return This.
+     */
+    public R then(Consumer<R> consumer) {
+        future.whenComplete((status, throwable) -> {
+            if (status != null && !status.failed()) {
+                try {
+                    consumer.accept(status);
+                } catch (Throwable t) {
+                    System.err.println("Error while processing query result");
+                    t.printStackTrace();
+                }
+            }
+        });
+
+        return castThis();
+    }
+
+    /**
+     * Add a new asynchronous action to be executed when the previous
+     * stage of this query finishes successfully.
+     *
+     * @param action The action.
+     * @return This.
+     */
+    public R thenApplyAsync(Consumer<R> action) {
+        future = future.thenApplyAsync(status -> {
+            action.accept(status);
+            return status;
+        }, datastore.getExecutorService());
+        return castThis();
+    }
+
+    /**
+     * Add a new synchronous action to be executed when the previous
+     * stage of this query finishes successfully.
+     *
+     * @param action The action.
+     * @return This.
+     */
+    public R thenApply(Consumer<R> action) {
+        future = future.thenApply(status -> {
+            action.accept(status);
+            return status;
+        });
 
         return castThis();
     }
