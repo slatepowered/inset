@@ -117,7 +117,7 @@ final class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T
         return value -> {
             try {
                 for (int n = 0; n < constrainedFieldCount; n++) {
-                    if (!orderedConstrained[n].test(UNSAFE.getObject(value, orderedFields[n].offset))) {
+                    if (!orderedConstrained[n].test(orderedFields[n].getAsObject(value))) {
                         return false;
                     }
                 }
