@@ -67,7 +67,7 @@ class UnsafeReflectiveValueCodec<T> implements ValueCodec<T> {
         UnsafeFieldDesc fieldDesc = fieldMap.get(field);
         if (fieldDesc == null)
             throw new IllegalArgumentException("No field by name `" + field + "` on " + tClass);
-        return (V) UNSAFE.getObject(instance, fieldDesc.offset);
+        return (V) fieldDesc.getAsObject(instance);
     }
 
 }

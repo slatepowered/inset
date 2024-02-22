@@ -319,6 +319,7 @@ public class DataItem<K, T> extends PartialItem<K, T> {
         for (int i = 0; i < len; i++) {
             String field = fields[i];
             Object obj = codec.getField(value, field);
+
             if (obj instanceof Number)
                 arr[i] = ((Number) obj).doubleValue();
         }
