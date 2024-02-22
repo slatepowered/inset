@@ -113,7 +113,7 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
      * @return This.
      */
     public FindAllOperation<K, T> batch(int size) {
-        iterable.batch(size);
+        iterable = iterable.batch(size);
         return this;
     }
 
@@ -125,7 +125,7 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
      */
     public FindAllOperation<K, T> limit(int size) {
         updateStream(stream.limit(size));
-        iterable.limit(size);
+        iterable = iterable.limit(size);
         return this;
     }
 
@@ -150,7 +150,7 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
      * @return This.
      */
     public FindAllOperation<K, T> projection(Projection projection) {
-        iterable.projection(projection);
+        iterable = iterable.projection(projection);
         return this;
     }
 
@@ -174,7 +174,7 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
      * @return This.
      */
     public FindAllOperation<K, T> sort(Sorting sorting) {
-        iterable.sort(sorting);
+        iterable = iterable.sort(sorting);
         if (cachedStream != null) {
             updateStream(CachedStreams.sortPartialStream(
                     datastore, stream,
@@ -193,7 +193,7 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
      */
     public FindAllOperation<K, T> skip(int amount) {
         if (cachedStream != null) stream = stream.skip(amount);
-        else iterable.skip(amount);
+        else iterable = iterable.skip(amount);
         return this;
     }
 
