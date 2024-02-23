@@ -38,14 +38,22 @@ public class DocumentDecodeInput extends DecodeInput {
             return value;
         }
 
+        /* Convert floating point numbers */
+        if (
+                expectedClass == Float.class || expectedClass == Double.class ||
+                expectedClass == float.class || expectedClass == double.class
+        ) {
+            return Double.longBitsToDouble(Long.parseLong(value));
+        }
+
         /* Convert boxed numbers */
         if (Number.class.isAssignableFrom(expectedClass)) {
-            return ValueUtils.castBoxedNumber(Double.parseDouble(value), expectedClass);
+            return ValueUtils.castBoxedNumber(Long.parseLong(value), expectedClass);
         }
 
         /* Convert primitive numbers */
         if (expectedClass.isPrimitive()) {
-            return ValueUtils.castBoxedPrimitive(Double.parseDouble(value), expectedClass);
+            return ValueUtils.castBoxedPrimitive(Long.parseLong(value), expectedClass);
         }
 
         throw new IllegalArgumentException("Got unsupported map key type to decode: " + value.getClass());

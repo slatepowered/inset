@@ -35,8 +35,12 @@ public class DocumentEncodeOutput extends EncodeOutput {
             return (String) value;
         }
 
+        if (value instanceof Float || value instanceof Double) {
+            return String.valueOf(Double.doubleToRawLongBits(((Number)value).doubleValue()));
+        }
+
         if (value instanceof Number) {
-            return String.valueOf(((Number)value).doubleValue());
+            return String.valueOf(((Number)value).longValue());
         }
 
         throw new IllegalArgumentException("Got unsupported value type to encode as map key: " + value.getClass());
