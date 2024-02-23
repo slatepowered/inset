@@ -34,6 +34,9 @@ public class DocumentDecodeInput extends DecodeInput {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private Object decodeDocumentKey(CodecContext context, String value, Type expectedType) {
         Class<?> expectedClass = ReflectUtil.getClassForType(expectedType);
+        if (expectedClass == String.class) {
+            return value;
+        }
 
         /* Convert boxed numbers */
         if (Number.class.isAssignableFrom(expectedClass)) {

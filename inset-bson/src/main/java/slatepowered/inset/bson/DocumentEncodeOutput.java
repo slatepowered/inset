@@ -31,6 +31,10 @@ public class DocumentEncodeOutput extends EncodeOutput {
             return "\0";
         }
 
+        if (value instanceof String) {
+            return (String) value;
+        }
+
         if (value instanceof Number) {
             return String.valueOf(((Number)value).doubleValue());
         }
