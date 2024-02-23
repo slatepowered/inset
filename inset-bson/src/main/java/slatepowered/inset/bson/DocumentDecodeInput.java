@@ -30,6 +30,24 @@ public class DocumentDecodeInput extends DecodeInput {
      */
     final Document document;
 
+    // decodes a map-valid key retrieved from a bson document
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private Object decodeDocumentKey(CodecContext context, String value, Type expectedType) {
+        Class<?> expectedClass = ReflectUtil.getClassForType(expectedType);
+
+        /* Convert boxed numbers */
+        if (Number.class.isAssignableFrom(expectedClass)) {
+            return ValueUtils.castBoxedNumber(Double.parseDouble(value), expectedClass);
+        }
+
+        /* Convert primitive numbers */
+        if (expectedClass.isPrimitive()) {
+            return ValueUtils.castBoxedPrimitive(Double.parseDouble(value), expectedClass);
+        }
+
+        throw new IllegalArgumentException("Got unsupported map key type to decode: " + value.getClass());
+    }
+
     // decodes a value retrieved from a bson document
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private Object decodeDocumentValue(CodecContext context, Object value, Type expectedType) {
@@ -66,7 +84,7 @@ public class DocumentDecodeInput extends DecodeInput {
 
                 Map map = new HashMap();
                 doc.forEach((k, v) -> map.put(
-                        decodeDocumentValue(context, k, expectedKeyType),
+                        decodeDocumentKey(context, k, expectedKeyType),
                         decodeDocumentValue(context, v, expectedValueType)
                 ));
 
@@ -117,7 +135,7 @@ public class DocumentDecodeInput extends DecodeInput {
 
             Map convertedMap = new HashMap();
             map.forEach((k, v) -> convertedMap.put(
-                    decodeDocumentValue(context, k, expectedKeyType),
+                    decodeDocumentKey(context, (String) k, expectedKeyType),
                     decodeDocumentValue(context, v, expectedValueType)
             ));
 

@@ -23,6 +23,21 @@ public class DocumentEncodeOutput extends EncodeOutput {
      */
     protected final Document outputDocument;
 
+    // encode the given value to a bson supported document key (string)
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private String encodeValueToMapKey(CodecContext context, Object value) {
+        /* Null */
+        if (value == null) {
+            return "\0";
+        }
+
+        if (value instanceof Number) {
+            return String.valueOf(((Number)value).doubleValue());
+        }
+
+        throw new IllegalArgumentException("Got unsupported value type to encode as map key: " + value.getClass());
+    }
+
     // encode the given value to a bson supported document value
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private Object encodeValue(CodecContext context, Object value) {
@@ -38,17 +53,23 @@ public class DocumentEncodeOutput extends EncodeOutput {
             Object[] outArr = new Object[l];
             for (int i = 0; i < l; i++)
                 outArr[i] = encodeValue(context, arr[i]);
+
             return outArr;
         } else if (value instanceof Collection) {
             Collection collection = (Collection<?>) value;
             List list = new ArrayList<>();
             for (Object o : collection)
                 list.add(encodeValue(context, o));
+
             return list;
         } else if (value instanceof Map) {
             Map map = (Map) value;
             Map<Object, Object> convertedMap = new HashMap<>();
-            map.forEach((key, val) -> convertedMap.put(encodeValue(context, key), encodeValue(context, val)));
+            map.forEach((key, val) -> convertedMap.put(
+                    encodeValueToMapKey(context, key),
+                    encodeValue(context, val))
+            );
+
             return convertedMap;
         }
 
