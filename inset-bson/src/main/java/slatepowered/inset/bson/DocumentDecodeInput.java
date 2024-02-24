@@ -105,6 +105,36 @@ public class DocumentDecodeInput extends DecodeInput {
             // decode nested object
             DocumentDecodeInput input = new DocumentDecodeInput(keyFieldOverride, doc);
             return context.findCodec(expectedClass).constructAndDecode(context, input);
+        } else if (value instanceof List && Map.class.isAssignableFrom(expectedClass)) {
+            List<List> encodedMap = (List<List>) value;
+
+            /*
+             * Maps are encoded as arrays with each entry being a pair of key and value
+             * represented in BSON as another array:
+             *
+             * { a = 6, b = 7 }
+             * becomes
+             * [ ["a", 6], ["b", 7] ]
+             */
+
+            // check for parameter types
+            Type expectedKeyType;
+            Type expectedValueType;
+            if (Map.class.isAssignableFrom(expectedClass) && expectedType instanceof ParameterizedType) {
+                expectedKeyType = ((ParameterizedType)expectedType).getActualTypeArguments()[0];
+                expectedValueType = ((ParameterizedType)expectedType).getActualTypeArguments()[1];
+            } else {
+                expectedKeyType = Object.class;
+                expectedValueType = Object.class;
+            }
+
+            Map convertedMap = new HashMap();
+            encodedMap.forEach(pair -> convertedMap.put(
+                    decodeDocumentValue(context, pair.get(0), expectedKeyType),  // key
+                    decodeDocumentValue(context, pair.get(1), expectedValueType) // value
+            ));
+
+            return convertedMap;
         } else if (value instanceof List) {
             if (context == null) {
                 throw new IllegalArgumentException("Document contains non-primitive value for key field");
@@ -130,27 +160,6 @@ public class DocumentDecodeInput extends DecodeInput {
             }
 
             return isArrayExpected ? newList : newList.toArray((Object[]) Array.newInstance(ReflectUtil.getClassForType(expectedElementType), list.size()));
-        } else if (value instanceof Map) {
-            Map map = (Map) value;
-
-            // check for parameter types
-            Type expectedKeyType;
-            Type expectedValueType;
-            if (Map.class.isAssignableFrom(expectedClass) && expectedType instanceof ParameterizedType) {
-                expectedKeyType = ((ParameterizedType)expectedType).getActualTypeArguments()[0];
-                expectedValueType = ((ParameterizedType)expectedType).getActualTypeArguments()[1];
-            } else {
-                expectedKeyType = Object.class;
-                expectedValueType = Object.class;
-            }
-
-            Map convertedMap = new HashMap();
-            map.forEach((k, v) -> convertedMap.put(
-                    decodeDocumentKey(context, (String) k, expectedKeyType),
-                    decodeDocumentValue(context, v, expectedValueType)
-            ));
-
-            return convertedMap;
         }
 
         /* Primitives */

@@ -23,29 +23,6 @@ public class DocumentEncodeOutput extends EncodeOutput {
      */
     protected final Document outputDocument;
 
-    // encode the given value to a bson supported document key (string)
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    private String encodeValueToMapKey(CodecContext context, Object value) {
-        /* Null */
-        if (value == null) {
-            return "\0";
-        }
-
-        if (value instanceof String) {
-            return (String) value;
-        }
-
-        if (value instanceof Float || value instanceof Double) {
-            return String.valueOf(Double.doubleToRawLongBits(((Number)value).doubleValue()));
-        }
-
-        if (value instanceof Number) {
-            return String.valueOf(((Number)value).longValue());
-        }
-
-        throw new IllegalArgumentException("Got unsupported value type to encode as map key: " + value.getClass());
-    }
-
     // encode the given value to a bson supported document value
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private Object encodeValue(CodecContext context, Object value) {
@@ -71,12 +48,22 @@ public class DocumentEncodeOutput extends EncodeOutput {
 
             return list;
         } else if (value instanceof Map) {
+            /*
+             * Maps are encoded as arrays with each entry being a pair of key and value
+             * represented in BSON as another array:
+             *
+             * { a = 6, b = 7 }
+             * becomes
+             * [ ["a", 6], ["b", 7] ]
+             */
+
             Map map = (Map) value;
-            Map<Object, Object> convertedMap = new HashMap<>();
-            map.forEach((key, val) -> convertedMap.put(
-                    encodeValueToMapKey(context, key),
-                    encodeValue(context, val))
-            );
+            List convertedMap = new ArrayList();
+
+            map.forEach((k, v) -> convertedMap.add(new Object[] {
+                    encodeValue(context, k),
+                    encodeValue(context, v)
+            }));
 
             return convertedMap;
         }
