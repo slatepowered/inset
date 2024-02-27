@@ -3,9 +3,11 @@ package slatepowered.inset.bson;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.bson.*;
+import org.bson.codecs.UuidCodec;
 import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.EncodeOutput;
 
+import java.lang.reflect.Modifier;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -17,6 +19,23 @@ import java.util.*;
 @Getter
 public class DocumentEncodeOutput extends EncodeOutput {
 
+    protected static final Map<Class<?>, Boolean> classesWithAbstractParents = new WeakHashMap<>();
+
+    protected static boolean hasAbstractParents(Class<?> klass) {
+        Boolean result = classesWithAbstractParents.get(klass);
+        if (result != null) {
+            return result;
+        }
+
+        for (Class<?> kl = klass; kl != Object.class; kl = kl.getSuperclass()) {
+            if (Modifier.isAbstract(kl.getModifiers())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /*
      * TODO: EXPORT EVERYTHING AS BSON VALUES TO SAVE MEMORY AND PERFORMANCE
      *  THIS SHOULD BE SIMPLE BC WE ARE ALREADY ENCODING ALL COMPLEX DATA STRUCTURES
@@ -26,37 +45,52 @@ public class DocumentEncodeOutput extends EncodeOutput {
      * CAN BE ENCODED DIRECTLY INTO A BSON MEMORY REPRESENTATION WITHOUT HAVING TO GO THROUGH MONGO CODECS
      */
 
+    /*
+     * CRITERIA FOR A TARGET CLASS NAME TO BE WRITTEN:
+     * - class has ABSTRACT parents
+     */
+
+    static final UuidCodec UUID_CODEC = new UuidCodec(UuidRepresentation.STANDARD);
+
     protected final String keyFieldOverride;
 
     /**
      * The output document to write to.
      */
-    protected final Document outputDocument;
+    protected final BsonDocument outputDocument;
+
+    // check if the class name of an object of the given
+    // class should be written to the database
+    private boolean shouldWriteClassName(Class<?> klass) {
+        return hasAbstractParents(klass);
+    }
 
     // encode the given value to a bson supported document value
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    private Object encodeValue(CodecContext context, Object value) {
+    private BsonValue encodeValue(CodecContext context, Object value, Class<?> baseType) {
         /* Null */
         if (value == null) {
-            return null;
+            return new BsonNull();
         }
 
         /* Complex Types */
-        else if (value.getClass().isArray()) {
+        else if (value.getClass().isEnum()) {
+            return new BsonString(((Enum)value).name()); // encode as name
+        } else if (value.getClass().isArray()) {
             Object[] arr = (Object[]) value;
             int l = arr.length;
-            Object[] outArr = new Object[l];
+            BsonArray outArr = new BsonArray(new ArrayList<>(l));
             for (int i = 0; i < l; i++)
-                outArr[i] = encodeValue(context, arr[i]);
+                outArr.set(i, encodeValue(context, arr[i], null));
 
             return outArr;
         } else if (value instanceof Collection) {
             Collection collection = (Collection<?>) value;
-            List list = new ArrayList<>();
+            BsonArray outArr = new BsonArray(new ArrayList<>(collection.size()));
             for (Object o : collection)
-                list.add(encodeValue(context, o));
+                outArr.add(encodeValue(context, o, null));
 
-            return list;
+            return outArr;
         } else if (value instanceof Map) {
             /*
              * Maps are encoded as arrays with each entry being a pair of key and value
@@ -68,12 +102,12 @@ public class DocumentEncodeOutput extends EncodeOutput {
              */
 
             Map map = (Map) value;
-            List convertedMap = new ArrayList();
+            BsonArray convertedMap = new BsonArray(new ArrayList<>(map.size()));
 
-            map.forEach((k, v) -> convertedMap.add(Arrays.asList(
-                    encodeValue(context, k),
-                    encodeValue(context, v)
-            )));
+            map.forEach((k, v) -> convertedMap.add(new BsonArray(Arrays.asList(
+                    encodeValue(context, k, null),
+                    encodeValue(context, v, null)
+            ))));
 
             return convertedMap;
         }
@@ -87,29 +121,54 @@ public class DocumentEncodeOutput extends EncodeOutput {
         else if (value instanceof Date) return new BsonDateTime(((Date)value).getTime());
         else if (value instanceof OffsetDateTime) return new BsonDateTime(((OffsetDateTime)value).toInstant().toEpochMilli());
         else if (value instanceof Instant) return new BsonDateTime(((Instant)value).toEpochMilli());
-        else if (value instanceof UUID) return value; // TODO
-        else if (value instanceof BsonValue) return value;
+        else if (value instanceof UUID) return encodeUUID((UUID) value);
+        else if (value instanceof BsonValue) return (BsonValue) value;
 
         /* Objects */
         else {
-            Document document = new Document();
+            Class<?> klass = value.getClass();
+
+            BsonDocument document = new BsonDocument();
             DocumentEncodeOutput output = new DocumentEncodeOutput(keyFieldOverride, document);
-            context.findCodec((Class<Object>) value.getClass()).encode(context, value, output);
+            context.findCodec((Class<Object>) klass).encode(context, value, output);
+
+            if (shouldWriteClassName(klass)) {
+                document.put("$class", new BsonString(klass.getName()));
+            }
+
             return document;
         }
 
 //        throw new IllegalArgumentException("Got unsupported value type to encode: " + value.getClass());
     }
 
+    private static void writeLongToArrayBigEndian(final byte[] bytes, final int offset, final long x) {
+        bytes[offset + 7] = (byte) (0xFFL & (x));
+        bytes[offset + 6] = (byte) (0xFFL & (x >> 8));
+        bytes[offset + 5] = (byte) (0xFFL & (x >> 16));
+        bytes[offset + 4] = (byte) (0xFFL & (x >> 24));
+        bytes[offset + 3] = (byte) (0xFFL & (x >> 32));
+        bytes[offset + 2] = (byte) (0xFFL & (x >> 40));
+        bytes[offset + 1] = (byte) (0xFFL & (x >> 48));
+        bytes[offset] = (byte) (0xFFL & (x >> 56));
+    }
+
+    private static BsonValue encodeUUID(UUID uuid) {
+        byte[] binaryData = new byte[16];
+        writeLongToArrayBigEndian(binaryData, 0, uuid.getMostSignificantBits());
+        writeLongToArrayBigEndian(binaryData, 8, uuid.getLeastSignificantBits());
+        return new BsonBinary(BsonBinarySubType.UUID_STANDARD, binaryData);
+    }
+
     @Override
     protected void registerKey(CodecContext context, String name, Object key) {
         setKeyField = keyFieldOverride != null ? keyFieldOverride : setKeyField;
-        outputDocument.append(setKeyField, encodeValue(context, key));
+        outputDocument.append(setKeyField, encodeValue(context, key, null));
     }
 
     @Override
     public void set(CodecContext context, String field, Object value) {
-        outputDocument.append(field, encodeValue(context, value));
+        outputDocument.append(field, encodeValue(context, value, null));
     }
 
 }

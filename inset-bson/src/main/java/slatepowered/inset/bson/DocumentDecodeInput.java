@@ -3,12 +3,15 @@ package slatepowered.inset.bson;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.bson.Document;
+import org.bson.UuidRepresentation;
 import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.DecodeInput;
+import slatepowered.inset.util.Reflections;
 import slatepowered.inset.util.ValueUtils;
 import slatepowered.veru.reflect.ReflectUtil;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -69,6 +72,17 @@ public class DocumentDecodeInput extends DecodeInput {
 
         Class<?> expectedClass = ReflectUtil.getClassForType(expectedType);
 
+        if (expectedClass.isEnum() && value instanceof String) {
+            String str = (String) value;
+            for (Object constant : expectedClass.getEnumConstants()) {
+                if (((Enum)constant).name().equalsIgnoreCase(str)) {
+                    return constant;
+                }
+            }
+
+            throw new IllegalArgumentException("Could not resolve `" + value + "` to an enum value of " + expectedClass);
+        }
+
         /* Complex objects */
         //  only support primitives if context is
         //  null, because this is only ever used to decode
@@ -103,6 +117,14 @@ public class DocumentDecodeInput extends DecodeInput {
             }
 
             // decode nested object
+            String className = doc.getString("$class");
+            if (className != null) {
+                // decode with an alternate target type
+                Class<?> klass = Reflections.findClass(className);
+                DocumentDecodeInput input = new DocumentDecodeInput(keyFieldOverride, doc);
+                return context.findCodec(klass).constructAndDecode(context, input);
+            }
+
             DocumentDecodeInput input = new DocumentDecodeInput(keyFieldOverride, doc);
             return context.findCodec(expectedClass).constructAndDecode(context, input);
         } else if (value instanceof List && Map.class.isAssignableFrom(expectedClass)) {

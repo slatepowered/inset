@@ -6,6 +6,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import lombok.*;
+import org.bson.BsonDocument;
 import org.bson.Document;
 import org.bson.UuidRepresentation;
 import slatepowered.inset.DataManager;
@@ -58,7 +59,7 @@ public class MongoDataSource implements DataSource {
     public EncodeOutput createDocumentSerializationOutput() {
         return new DocumentEncodeOutput(
                 keyFieldOverride,
-                new Document()
+                new BsonDocument()
         );
     }
 
