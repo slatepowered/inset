@@ -67,6 +67,7 @@ public class MongoDataSource implements DataSource {
     public DataTable table(String name) {
         return dataTableMap.computeIfAbsent(name, __ -> new MongoDataTable(
                 this,
+                database.getCollection(name, BsonDocument.class),
                 database.getCollection(name)
         ));
     }
