@@ -81,7 +81,7 @@ public class DocumentEncodeOutput extends EncodeOutput {
             int l = Array.getLength(value);
             BsonArray outArr = new BsonArray(new ArrayList<>(l));
             for (int i = 0; i < l; i++)
-                outArr.set(i, encodeValue(context, Array.get(value, i), null));
+                outArr.add(i, encodeValue(context, Array.get(value, i), null));
 
             return outArr;
         } else if (value instanceof Collection) {
