@@ -117,7 +117,7 @@ public class DocumentDecodeInput extends DecodeInput {
             }
 
             // decode nested object
-            String className = doc.getString("$class");
+            String className = doc.getString(BsonCodecs.CLASS_NAME_FIELD);
             if (className != null) {
                 // decode with an alternate target type
                 Class<?> klass = Reflections.findClass(className);

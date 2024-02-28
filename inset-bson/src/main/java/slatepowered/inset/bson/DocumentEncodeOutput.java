@@ -133,7 +133,7 @@ public class DocumentEncodeOutput extends EncodeOutput {
             context.findCodec((Class<Object>) klass).encode(context, value, output);
 
             if (shouldWriteClassName(klass)) {
-                document.put("$class", new BsonString(klass.getName()));
+                document.put(BsonCodecs.CLASS_NAME_FIELD, new BsonString(klass.getName()));
             }
 
             return document;
