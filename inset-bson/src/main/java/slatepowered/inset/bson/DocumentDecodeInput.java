@@ -169,7 +169,16 @@ public class DocumentDecodeInput extends DecodeInput {
                 expectedElementType = ((ParameterizedType)expectedType).getActualTypeArguments()[0];
             } else if (expectedClass.isArray()) {
                 expectedElementType = expectedClass.getComponentType();
-                isArrayExpected = true;
+
+                List list = (List) value;
+                final int length = list.size();
+                Object array = Array.newInstance(expectedClass.getComponentType(), length);
+
+                for (int i = 0; i < length; i++) {
+                    Array.set(array, i, decodeDocumentValue(context, value, expectedElementType));
+                }
+
+                return array;
             }
 
             // decode list

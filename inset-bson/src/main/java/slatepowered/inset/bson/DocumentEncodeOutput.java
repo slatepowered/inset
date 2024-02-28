@@ -7,6 +7,7 @@ import org.bson.codecs.UuidCodec;
 import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.EncodeOutput;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -77,11 +78,10 @@ public class DocumentEncodeOutput extends EncodeOutput {
         else if (value.getClass().isEnum()) {
             return new BsonString(((Enum)value).name()); // encode as name
         } else if (value.getClass().isArray()) {
-            Object[] arr = (Object[]) value;
-            int l = arr.length;
+            int l = Array.getLength(value);
             BsonArray outArr = new BsonArray(new ArrayList<>(l));
             for (int i = 0; i < l; i++)
-                outArr.set(i, encodeValue(context, arr[i], null));
+                outArr.set(i, encodeValue(context, Array.get(value, i), null));
 
             return outArr;
         } else if (value instanceof Collection) {
