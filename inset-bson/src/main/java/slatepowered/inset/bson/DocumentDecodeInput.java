@@ -65,12 +65,20 @@ public class DocumentDecodeInput extends DecodeInput {
     // decodes a value retrieved from a bson document
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private Object decodeDocumentValue(CodecContext context, Object value, Type expectedType) {
+        Class<?> expectedClass = ReflectUtil.getClassForType(expectedType);
+
         /* Null */
         if (value == null) {
+            if (List.class.isAssignableFrom(expectedClass)) {
+                return new ArrayList<>();
+            } else if (Map.class.isAssignableFrom(expectedClass)) {
+                return new HashMap<>();
+            } else if (expectedClass.isArray()) {
+                return Array.newInstance(expectedClass.getComponentType(), 0);
+            }
+
             return null;
         }
-
-        Class<?> expectedClass = ReflectUtil.getClassForType(expectedType);
 
         if (expectedClass.isEnum() && value instanceof String) {
             String str = (String) value;
