@@ -202,7 +202,7 @@ public class Datastore<K, T> {
 
                     // check if an item was found
                     if (!result.found()) {
-                        queryStatus.completeSuccessfully(FindResult.ABSENT, null);
+                        queryStatus.completeSuccessfully(FindResult.ABSENT, new DataItem<>(this, null));
                         return;
                     }
 

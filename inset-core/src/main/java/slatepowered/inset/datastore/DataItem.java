@@ -74,10 +74,10 @@ public class DataItem<K, T> extends PartialItem<K, T> {
     }
 
     /**
-     * Get whether this item has a value present.
+     * Get whether this item has a key and value present.
      */
     public boolean isPresent() {
-        return value != null;
+        return key != null && value != null;
     }
 
     /**
