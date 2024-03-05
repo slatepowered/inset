@@ -47,6 +47,12 @@ final class DoubleBackedCache<K, T> implements DataCache<K, T> {
     }
 
     @Override
+    public void put(DataItem<K, T> item) {
+        list.add(item);
+        map.put(item.key(), item);
+    }
+
+    @Override
     public Iterator<DataItem<K, T>> iterator() {
         return list.iterator();
     }
