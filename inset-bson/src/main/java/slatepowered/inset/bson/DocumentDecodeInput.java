@@ -170,13 +170,9 @@ public class DocumentDecodeInput extends DecodeInput {
                 throw new IllegalArgumentException("Document contains non-primitive value for key field");
             }
 
-            // try to find accurate element type
-            boolean isArrayExpected = false;
-            Type expectedElementType = Object.class;
-            if (expectedType instanceof ParameterizedType) {
-                expectedElementType = ((ParameterizedType)expectedType).getActualTypeArguments()[0];
-            } else if (expectedClass.isArray()) {
-                expectedElementType = expectedClass.getComponentType();
+            // check if we expect an array
+            if (expectedClass.isArray()) {
+                Type expectedElementType = expectedClass.getComponentType();
 
                 List list = (List) value;
                 final int length = list.size();
@@ -189,6 +185,12 @@ public class DocumentDecodeInput extends DecodeInput {
                 return array;
             }
 
+            // try to find accurate element type
+            Type expectedElementType = Object.class;
+            if (expectedType instanceof ParameterizedType) {
+                expectedElementType = ((ParameterizedType)expectedType).getActualTypeArguments()[0];
+            }
+
             // decode list
             List list = (List) value;
             final int length = list.size();
@@ -198,7 +200,7 @@ public class DocumentDecodeInput extends DecodeInput {
                 newList.add(decodeDocumentValue(context, list.get(i), expectedElementType));
             }
 
-            return isArrayExpected ? newList : newList.toArray((Object[]) Array.newInstance(ReflectUtil.getClassForType(expectedElementType), list.size()));
+            return newList;
         }
 
         /* Primitives */
