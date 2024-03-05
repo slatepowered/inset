@@ -161,6 +161,18 @@ public class DataItem<K, T> extends PartialItem<K, T> {
     }
 
     /**
+     * Inserts this item into the datastore's cache.
+     */
+    public DataItem<K, T> insert() {
+        if (key == null) {
+            throw new IllegalStateException("Attempt to insert data item into cache without a primary key");
+        }
+
+        datastore.getDataCache().put(this);
+        return this;
+    }
+
+    /**
      * Create a new default value for this item if the value is absent.
      *
      * @return This.

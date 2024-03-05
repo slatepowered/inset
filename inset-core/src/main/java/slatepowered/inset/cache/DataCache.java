@@ -50,6 +50,14 @@ public interface DataCache<K, T> extends Iterable<DataItem<K, T>> {
     void remove(K key);
 
     /**
+     * Insert the given data item into the cache by it's key.
+     * Requires the item to have a non-null key.
+     *
+     * @param item The item.
+     */
+    void put(DataItem<K, T> item);
+
+    /**
      * Get the count of items in this cache.
      *
      * @return The count of cached items.

@@ -236,10 +236,9 @@ public class FindOperation<K, T> extends OperationStatus<K, T, FindOperation<K, 
     }
 
     /**
-     * Get the result data item.
+     * Get the resulting data item.
      *
-     * If the data was absent, a cache item is still created for future
-     * reference so this will only be null if the query failed.
+     * This will be null if the query failed or the data was absent.
      */
     public DataItem<K, T> item() {
         return item;
@@ -279,6 +278,24 @@ public class FindOperation<K, T> extends OperationStatus<K, T, FindOperation<K, 
         if (key == null)
             throw new IllegalStateException("No key was resolved or set in the query");
         return item != null ? item : (item = datastore.getOrCreate(key()));
+    }
+
+    /**
+     * If an item is present, meaning the query succeeded and has a result
+     * it will be returned, otherwise a dummy empty item is created.
+     *
+     * If the query had a primary key present, it will be used as the key
+     * to the data item, otherwise the item will not have a key.
+     *
+     * The primary difference with {@link #orReference()} is that this will
+     * not insert the item into the cache by default.
+     *
+     * @return The item.
+     */
+    @SuppressWarnings("unchecked")
+    public DataItem<K, T> orEmpty() {
+        K key = query.hasKey() ? (K) query.getKey() : null;
+        return item != null ? item : new DataItem<>(datastore, key);
     }
 
     /**
