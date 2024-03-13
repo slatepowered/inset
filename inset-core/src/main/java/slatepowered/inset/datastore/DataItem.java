@@ -37,7 +37,7 @@ public class DataItem<K, T> extends PartialItem<K, T> {
     /**
      * The primary key.
      */
-    private final K key;
+    private K key;
 
     /**
      * The loaded value, null if absent.
@@ -74,6 +74,24 @@ public class DataItem<K, T> extends PartialItem<K, T> {
     }
 
     /**
+     * DANGEROUS: Migrate this data item to the given new key.
+     *
+     * @param newKey The new key.
+     * @return This.
+     */
+    public synchronized DataItem<K, T> migrate(K newKey) {
+        // remove old traces
+        delete();
+
+        // set new key
+        this.key = newKey;
+        insert();
+        saveSync();
+
+        return this;
+    }
+
+    /**
      * Get whether this item has a key and value present.
      */
     public boolean isPresent() {
@@ -101,6 +119,17 @@ public class DataItem<K, T> extends PartialItem<K, T> {
      */
     public T get() {
         return value;
+    }
+
+    /**
+     * Set the value contained by this data item.
+     *
+     * @param value The value.
+     * @return This.
+     */
+    public synchronized DataItem<K, T> set(T value) {
+        this.value = value;
+        return this;
     }
 
     /**
