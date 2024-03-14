@@ -188,8 +188,6 @@ public class Datastore<K, T> {
             return new FindOperation<>(this, query).completeSuccessfully(FindResult.CACHED, cachedItem);
         }
 
-        System.out.println("could not find cached item, querying database");
-
         query = query.qualify(this);
 
         // asynchronously try to load the item
@@ -197,7 +195,6 @@ public class Datastore<K, T> {
         FindOperation<K, T> queryStatus = new FindOperation<>(this, query);
         getSourceTable().findOneAsync(query)
                 .whenComplete((result, throwable) -> {
-                    System.out.println("query completed with result(" + result + ") throwable(" + throwable + ")");
                     if (throwable != null) {
                         queryStatus.completeFailed(throwable);
                         return;
@@ -205,18 +202,13 @@ public class Datastore<K, T> {
 
                     // check if an item was found
                     if (!result.found()) {
-                        System.out.println("item was absent");
                         queryStatus.completeSuccessfully(FindResult.ABSENT, null);
                         return;
                     }
 
-                    System.out.println("decoding fetched item");
                     DataItem<K, T> item = decodeFetched(result.input());
-                    System.out.println("decoding finished, completing query with result");
                     queryStatus.completeSuccessfully(FindResult.FETCHED, item);
                 });
-
-        System.out.println("query scheduled");
 
         return queryStatus;
     }
@@ -350,14 +342,12 @@ public class Datastore<K, T> {
      */
     @SuppressWarnings("unchecked")
     public DataItem<K, T> decodeFetched(DecodeInput input) {
-        System.out.println("reading key from input");
         K key = (K) input.getOrReadKey(null, getKeyClass());
         if (key == null) {
             throw new IllegalArgumentException("Query result does not a valid contain primary key");
         }
 
         DataItem<K, T> item = getOrReference(key);
-        System.out.println("decoding value from item with key(" + key + ")");
         item.decode(input);
         item.fetchedNow();
         return item;

@@ -66,7 +66,6 @@ public class DocumentDecodeInput extends DecodeInput {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private Object decodeDocumentValue(CodecContext context, Object value, Type expectedType) {
         Class<?> expectedClass = ReflectUtil.getClassForType(expectedType);
-        System.out.println("decoding value " + value + " with expected type " + expectedType);
 
         /* Null */
         if (value == null) {

@@ -266,16 +266,12 @@ public class DataItem<K, T> extends PartialItem<K, T> {
      */
     public DataItem<K, T> decode(DecodeInput input) {
         if (input == null) {
-            System.out.println("no data input to decode from");
             return this;
         }
 
-        System.out.println("starting decode process");
         DataCodec<K, T> myCodec = datastore.getDataCodec();
         CodecContext context = datastore.newCodecContext();
-        System.out.println("constructing instance");
         T value = myCodec.construct(context, input);
-        System.out.println("decoding instance");
         myCodec.decode(context, value, input);
         this.value = value;
 
