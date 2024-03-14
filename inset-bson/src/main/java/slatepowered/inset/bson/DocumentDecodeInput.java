@@ -80,6 +80,7 @@ public class DocumentDecodeInput extends DecodeInput {
             return null;
         }
 
+        // simple enum class
         if (expectedClass.isEnum() && value instanceof String) {
             String str = (String) value;
             for (Object constant : expectedClass.getEnumConstants()) {
@@ -89,6 +90,23 @@ public class DocumentDecodeInput extends DecodeInput {
             }
 
             throw new IllegalArgumentException("Could not resolve `" + value + "` to an enum value of " + expectedClass);
+        }
+
+        // complex enum declaration
+        if (BsonCodecs.shouldWriteClassName(expectedClass) && value instanceof String) {
+            String[] strings = ((String) value).split(":");
+            String enumDeclClassName = strings[0];
+            String enumConstantName = strings[1];
+
+            Class<?> enumDeclClass = Reflections.findClass(enumDeclClassName);
+
+            for (Object constant : expectedClass.getEnumConstants()) {
+                if (((Enum)constant).name().equalsIgnoreCase(enumConstantName)) {
+                    return constant;
+                }
+            }
+
+            throw new IllegalArgumentException("Could not resolve `" + value + "` to an enum value of " + enumDeclClass);
         }
 
         /* Complex objects */

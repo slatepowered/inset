@@ -13,29 +13,14 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.*;
 
+import static slatepowered.inset.bson.BsonCodecs.shouldWriteClassName;
+
 /**
  * Writes data to a {@link Document} input.
  */
 @RequiredArgsConstructor
 @Getter
 public class DocumentEncodeOutput extends EncodeOutput {
-
-    protected static final Map<Class<?>, Boolean> classesWithAbstractParents = new WeakHashMap<>();
-
-    protected static boolean hasAbstractParents(Class<?> klass) {
-        Boolean result = classesWithAbstractParents.get(klass);
-        if (result != null) {
-            return result;
-        }
-
-        for (Class<?> kl = klass; kl != Object.class; kl = kl.getSuperclass()) {
-            if (Modifier.isAbstract(kl.getModifiers())) {
-                return true;
-            }
-        }
-
-        return false;
-    }
 
     /*
      * TODO: EXPORT EVERYTHING AS BSON VALUES TO SAVE MEMORY AND PERFORMANCE
@@ -60,12 +45,6 @@ public class DocumentEncodeOutput extends EncodeOutput {
      */
     protected final BsonDocument outputDocument;
 
-    // check if the class name of an object of the given
-    // class should be written to the database
-    private boolean shouldWriteClassName(Class<?> klass) {
-        return hasAbstractParents(klass);
-    }
-
     // encode the given value to a bson supported document value
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private BsonValue encodeValue(CodecContext context, Object value, Class<?> baseType) {
@@ -75,9 +54,13 @@ public class DocumentEncodeOutput extends EncodeOutput {
         }
 
         /* Complex Types */
-        else if (value.getClass().isEnum()) {
-            return new BsonString(((Enum)value).name()); // encode as name
-        } else if (value.getClass().isArray()) {
+        Class<?> klass = value.getClass();
+        if (Enum.class.isAssignableFrom(klass)) {
+            Class<?> enumDeclClass = klass.isEnum() ? klass : klass.getDeclaringClass();
+            return shouldWriteClassName(klass) ?
+                    new BsonString(enumDeclClass.getName() + ":" + ((Enum)value).name()) : /* encode as class:name */
+                    new BsonString(((Enum)value).name()); /* encode as name */
+        } else if (klass.isArray()) {
             int l = Array.getLength(value);
             BsonArray outArr = new BsonArray(new ArrayList<>(l));
             for (int i = 0; i < l; i++)
@@ -126,7 +109,7 @@ public class DocumentEncodeOutput extends EncodeOutput {
 
         /* Objects */
         else {
-            Class<?> klass = value.getClass();
+            klass = value.getClass();
 
             BsonDocument document = new BsonDocument();
             DocumentEncodeOutput output = new DocumentEncodeOutput(keyFieldOverride, document);
