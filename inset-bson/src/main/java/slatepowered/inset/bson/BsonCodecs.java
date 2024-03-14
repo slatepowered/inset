@@ -17,7 +17,11 @@ public final class BsonCodecs {
     protected static final Map<Class<?>, Boolean> classesWithAbstractParents = new WeakHashMap<>();
 
     protected static boolean hasAbstractParentsOrIsAbstract(Class<?> klass) {
-        if (Modifier.isAbstract(klass.getModifiers()) || klass.getInterfaces().length != 0) {
+        if (
+                klass == Object.class ||
+                Modifier.isAbstract(klass.getModifiers()) ||
+                klass.getInterfaces().length != 0
+        ) {
             return true;
         }
 
@@ -26,13 +30,7 @@ public final class BsonCodecs {
             return result;
         }
 
-        for (Class<?> kl = klass; kl != Object.class; kl = kl.getSuperclass()) {
-            if (hasAbstractParentsOrIsAbstract(kl)) {
-                return true;
-            }
-        }
-
-        return false;
+        return hasAbstractParentsOrIsAbstract(klass.getSuperclass());
     }
 
     // check if the class name of an object of the given
