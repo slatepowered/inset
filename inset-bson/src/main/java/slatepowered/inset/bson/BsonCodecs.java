@@ -18,7 +18,6 @@ public final class BsonCodecs {
 
     protected static boolean hasAbstractParentsOrIsAbstract(Class<?> klass) {
         if (
-                klass == Object.class ||
                 Modifier.isAbstract(klass.getModifiers()) ||
                 klass.getInterfaces().length != 0
         ) {
@@ -30,7 +29,9 @@ public final class BsonCodecs {
             return result;
         }
 
-        return hasAbstractParentsOrIsAbstract(klass.getSuperclass());
+        Class<?> superclass = klass.getSuperclass();
+        return superclass != null && superclass != Object.class &&
+                hasAbstractParentsOrIsAbstract(klass.getSuperclass());
     }
 
     // check if the class name of an object of the given
