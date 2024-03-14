@@ -56,7 +56,9 @@ class UnsafeReflectiveValueCodec<T> implements ValueCodec<T> {
 
     @Override
     public void decode(CodecContext context, T instance, DecodeInput input) {
+        System.out.println("decoding values for instance of " + tClass + " unsafe-reflectively");
         for (UnsafeFieldDesc desc : fields) {
+            System.out.println("reading field " + desc.name + " with offset " + desc.offset + " and ptype " + desc.type);
             Object value = input.read(context, desc.name, desc.type);
             desc.setFromObject(instance, value);
         }
