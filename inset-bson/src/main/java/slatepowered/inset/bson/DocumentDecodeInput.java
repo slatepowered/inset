@@ -81,6 +81,11 @@ public class DocumentDecodeInput extends DecodeInput {
             return null;
         }
 
+        // primitives which can represent complex definitions
+        if (expectedClass.isInstance(value)) {
+            return value;
+        }
+
         // simple enum class
         if (expectedClass.isEnum() && value instanceof String) {
             String str = (String) value;
