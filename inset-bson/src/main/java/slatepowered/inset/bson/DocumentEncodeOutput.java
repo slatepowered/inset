@@ -56,7 +56,7 @@ public class DocumentEncodeOutput extends EncodeOutput {
         /* Complex Types */
         Class<?> klass = value.getClass();
         if (Enum.class.isAssignableFrom(klass)) {
-            Class<?> enumDeclClass = klass.isEnum() ? klass : klass.getDeclaringClass();
+            Class<?> enumDeclClass = klass.isEnum() ? klass : klass.getSuperclass();
             return shouldWriteClassName(klass) ?
                     new BsonString(enumDeclClass.getName() + ":" + ((Enum)value).name()) : /* encode as class:name */
                     new BsonString(((Enum)value).name()); /* encode as name */
