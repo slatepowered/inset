@@ -88,7 +88,8 @@ final class UnsafeFieldDesc {
     }
 
     public static UnsafeFieldDesc forField(Field field) {
-        return new UnsafeFieldDesc(field, field.getName(), UNSAFE.objectFieldOffset(field), field.getGenericType(), getPrimitiveType(field.getType()));
+        SerializedName fieldNameAnnotation = field.getAnnotation(SerializedName.class);
+        return new UnsafeFieldDesc(field, fieldNameAnnotation != null ? fieldNameAnnotation.value() : field.getName(), UNSAFE.objectFieldOffset(field), field.getGenericType(), getPrimitiveType(field.getType()));
     }
 
 }

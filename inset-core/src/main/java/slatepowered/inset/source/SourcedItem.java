@@ -95,7 +95,7 @@ public abstract class SourcedItem<K, T> extends PartialItem<K, T> {
     @Override
     @SuppressWarnings("unchecked")
     protected <V> V projectInterface(ProjectionInterface projectionInterface) {
-        return (V) projectionInterface.createProxy(this::getKey, this::getField);
+        return (V) projectionInterface.createProxy(this::getKey, (__, serializedName, expectedType) -> getField(serializedName, expectedType));
     }
 
     @Override

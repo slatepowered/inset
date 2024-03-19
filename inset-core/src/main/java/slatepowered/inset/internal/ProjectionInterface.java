@@ -4,19 +4,28 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import slatepowered.inset.operation.Projection;
 import slatepowered.inset.util.Reflections;
+import slatepowered.veru.functional.TriFunction;
 import slatepowered.veru.reflect.ReflectUtil;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 @RequiredArgsConstructor
 @Getter
 public class ProjectionInterface implements ProjectionType {
+
+    @FunctionalInterface
+    public interface FieldGetter {
+        Object getField(String runtimeName, String serializedName,
+                        Type expectedType);
+    }
 
     /**
      * The interface class.
@@ -34,12 +43,17 @@ public class ProjectionInterface implements ProjectionType {
     protected final List<Method> fieldMethods;
 
     /**
+     * All field names by the method.
+     */
+    protected final Map<Method, String> namesByMethod = new HashMap<>();
+
+    /**
      * Create a new proxy for this interface with the given parameters.
      *
      * @return The proxy instance.
      */
     public Object createProxy(Supplier<Object> keySupplier,
-                              BiFunction<String, Type, Object> fieldGetter) {
+                              FieldGetter fieldGetter) {
         return Proxy.newProxyInstance(klass.getClassLoader(), new Class[] { klass }, (proxy, method, args) -> {
             if (method.isDefault()) {
                 return ReflectUtil.invokeDefault(proxy, method, args);
@@ -57,7 +71,9 @@ public class ProjectionInterface implements ProjectionType {
                 return keySupplier.get().hashCode();
             }
 
-            return fieldGetter.apply(method.getName(), method.getGenericReturnType());
+            String runtimeName = method.getName();
+            String nameOverride = namesByMethod.get(method);
+            return fieldGetter.getField(runtimeName, nameOverride != null ? nameOverride : method.getName(), method.getGenericReturnType());
         });
     }
 

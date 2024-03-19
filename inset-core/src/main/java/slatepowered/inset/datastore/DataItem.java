@@ -337,7 +337,7 @@ public class DataItem<K, T> extends PartialItem<K, T> {
         }
 
         final DataCodec<K, T> codec = datastore.getDataCodec();
-        return (V) projectionInterface.createProxy(() -> key, (name, type) -> codec.getField(value, name));
+        return (V) projectionInterface.createProxy(() -> key, (runtimeName, __, type) -> codec.getField(value, runtimeName));
     }
 
     /**
