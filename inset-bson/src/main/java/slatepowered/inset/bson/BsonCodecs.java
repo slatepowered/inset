@@ -18,6 +18,7 @@ public final class BsonCodecs {
 
     protected static boolean hasAbstractParentsOrIsAbstract(Class<?> klass) {
         if (
+                klass.isInterface() ||
                 Modifier.isAbstract(klass.getModifiers()) ||
                 klass.getInterfaces().length != 0
         ) {
