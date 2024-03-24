@@ -67,6 +67,8 @@ public class DocumentDecodeInput extends DecodeInput {
     private Object decodeDocumentValue(CodecContext context, Object value, Type expectedType) {
         Class<?> expectedClass = ReflectUtil.getClassForType(expectedType);
 
+        System.out.println(" decoding docval encoded(" + value + ") encodedType(" + (value != null ? value.getClass() : "null") + ") expected(" + expectedType + ") shouldWriteClassName(" + BsonCodecs.shouldWriteClassName(expectedClass) + ")");
+
         /* Null */
         if (value == null) {
             if (List.class.isAssignableFrom(expectedClass)) {
@@ -146,6 +148,7 @@ public class DocumentDecodeInput extends DecodeInput {
             List newList = new ArrayList(length);
 
             for (int i = 0; i < length; i++) {
+                System.out.println("  list(" + i + ")");
                 newList.add(decodeDocumentValue(context, list.get(i), expectedElementType));
             }
 
@@ -171,6 +174,7 @@ public class DocumentDecodeInput extends DecodeInput {
 
         // complex enum declaration
         if (BsonCodecs.shouldWriteClassName(expectedClass) && value instanceof String) {
+            System.out.println("  COMPLEX ENUM DECL");
             String[] strings = ((String) value).split(":");
             String enumDeclClassName = strings[0];
             String enumConstantName = strings[1];
