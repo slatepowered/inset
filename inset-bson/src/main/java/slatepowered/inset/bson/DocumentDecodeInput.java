@@ -67,9 +67,6 @@ public class DocumentDecodeInput extends DecodeInput {
     private Object decodeDocumentValue(CodecContext context, Object value, Type expectedType) {
         Class<?> expectedClass = ReflectUtil.getClassForType(expectedType);
 
-        System.out.println(" decoding docval encoded(" + value + ") encodedType(" + (value != null ? value.getClass() : "null") + ") expected(" + expectedType + ") shouldWriteClassName(" + BsonCodecs.shouldWriteClassName(expectedClass) + ")");
-
-        /* Null */
         if (value == null) {
             if (List.class.isAssignableFrom(expectedClass)) {
                 return new ArrayList<>();
@@ -148,7 +145,6 @@ public class DocumentDecodeInput extends DecodeInput {
             List newList = new ArrayList(length);
 
             for (int i = 0; i < length; i++) {
-                System.out.println("  list(" + i + ")");
                 newList.add(decodeDocumentValue(context, list.get(i), expectedElementType));
             }
 
@@ -174,24 +170,18 @@ public class DocumentDecodeInput extends DecodeInput {
 
         // complex enum declaration
         if (BsonCodecs.shouldWriteClassName(expectedClass) && value instanceof String) {
-            System.out.println("  COMPLEX ENUM DECL");
             String[] strings = ((String) value).split(":");
             String enumDeclClassName = strings[0];
             String enumConstantName = strings[1];
-            System.out.println("      a");
 
             Class<?> enumDeclClass = Reflections.findClass(enumDeclClassName);
-            System.out.println("      b");
 
             for (Object constant : enumDeclClass.getEnumConstants()) {
-                System.out.println("   checking const " + constant);
                 if (((Enum)constant).name().equalsIgnoreCase(enumConstantName)) {
-                    System.out.println("    yep !! !! !! !! !!");
                     return constant;
                 }
             }
 
-            System.out.println("no enum constant ???");
             throw new IllegalArgumentException("Could not resolve `" + value + "` to an enum value of " + enumDeclClass);
         }
 
@@ -259,11 +249,8 @@ public class DocumentDecodeInput extends DecodeInput {
 
     @Override
     public Object read(CodecContext context, String field, Type expectedType) {
-        System.out.println("reading value field(" + field + ") expectedType(" + expectedType + ")");
         Object value = document.get(field);
-        Object decoded = decodeDocumentValue(context, value, expectedType);
-        System.out.println("decoded value(" + decoded + ") from bson encoded(" + value + ")");
-        return decoded;
+        return decodeDocumentValue(context, value, expectedType);
     }
 
     @Override
