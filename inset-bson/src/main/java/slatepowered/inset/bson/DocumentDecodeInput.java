@@ -67,6 +67,8 @@ public class DocumentDecodeInput extends DecodeInput {
     private Object decodeDocumentValue(CodecContext context, Object value, Type expectedType) {
         Class<?> expectedClass = ReflectUtil.getClassForType(expectedType);
 
+        System.out.println("decoding expectedClass(" + expectedClass + ")");
+
         /* Null */
         if (value == null) {
             if (List.class.isAssignableFrom(expectedClass)) {
@@ -84,6 +86,7 @@ public class DocumentDecodeInput extends DecodeInput {
         if (expectedClass.isInstance(value)) {
             return value;
         }
+        System.out.println("a");
 
         // simple enum class
         if (expectedClass.isEnum() && value instanceof String) {
@@ -96,6 +99,7 @@ public class DocumentDecodeInput extends DecodeInput {
 
             throw new IllegalArgumentException("Could not resolve `" + value + "` to an enum value of " + expectedClass);
         }
+        System.out.println("b");
 
         // complex enum declaration
         if (BsonCodecs.shouldWriteClassName(expectedClass) && value instanceof String) {
@@ -113,6 +117,7 @@ public class DocumentDecodeInput extends DecodeInput {
 
             throw new IllegalArgumentException("Could not resolve `" + value + "` to an enum value of " + enumDeclClass);
         }
+        System.out.println("c");
 
         /* Complex objects */
         //  only support primitives if context is
@@ -124,6 +129,8 @@ public class DocumentDecodeInput extends DecodeInput {
             }
 
             Document doc = (Document) value;
+
+            System.out.println("d");
 
             // check for map
             if (Map.class.isAssignableFrom(expectedClass)) {
@@ -147,6 +154,8 @@ public class DocumentDecodeInput extends DecodeInput {
                 return map;
             }
 
+            System.out.println("e");
+
             // decode nested object
             String className = doc.getString(BsonCodecs.CLASS_NAME_FIELD);
             if (className != null) {
@@ -156,6 +165,7 @@ public class DocumentDecodeInput extends DecodeInput {
                 return context.findCodec(klass).constructAndDecode(context, input);
             }
 
+            System.out.println("decoding expectedClass(" + expectedClass + "), no defined __class");
             DocumentDecodeInput input = new DocumentDecodeInput(keyFieldOverride, doc);
             return context.findCodec(expectedClass).constructAndDecode(context, input);
         } else if (value instanceof List && Map.class.isAssignableFrom(expectedClass)) {
