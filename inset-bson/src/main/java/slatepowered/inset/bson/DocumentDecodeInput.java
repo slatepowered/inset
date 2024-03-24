@@ -67,8 +67,6 @@ public class DocumentDecodeInput extends DecodeInput {
     private Object decodeDocumentValue(CodecContext context, Object value, Type expectedType) {
         Class<?> expectedClass = ReflectUtil.getClassForType(expectedType);
 
-        System.out.println("decoding expectedClass(" + expectedClass + ")");
-
         /* Null */
         if (value == null) {
             if (List.class.isAssignableFrom(expectedClass)) {
@@ -82,123 +80,9 @@ public class DocumentDecodeInput extends DecodeInput {
             return null;
         }
 
-        // primitives which can represent complex definitions
-        if (expectedClass.isInstance(value)) {
-            return value;
-        }
-        System.out.println("a");
-
-        // simple enum class
-        if (expectedClass.isEnum() && value instanceof String) {
-            String str = (String) value;
-            for (Object constant : expectedClass.getEnumConstants()) {
-                if (((Enum)constant).name().equalsIgnoreCase(str)) {
-                    return constant;
-                }
-            }
-
-            throw new IllegalArgumentException("Could not resolve `" + value + "` to an enum value of " + expectedClass);
-        }
-        System.out.println("b");
-
-        // complex enum declaration
-        if (BsonCodecs.shouldWriteClassName(expectedClass) && value instanceof String) {
-            String[] strings = ((String) value).split(":");
-            String enumDeclClassName = strings[0];
-            String enumConstantName = strings[1];
-
-            Class<?> enumDeclClass = Reflections.findClass(enumDeclClassName);
-
-            for (Object constant : expectedClass.getEnumConstants()) {
-                if (((Enum)constant).name().equalsIgnoreCase(enumConstantName)) {
-                    return constant;
-                }
-            }
-
-            throw new IllegalArgumentException("Could not resolve `" + value + "` to an enum value of " + enumDeclClass);
-        }
-        System.out.println("c");
-
-        /* Complex objects */
-        //  only support primitives if context is
-        //  null, because this is only ever used to decode
-        //  the primary key field
-        if (value instanceof Document) {
-            if (context == null) {
-                throw new IllegalArgumentException("Document contains non-primitive value for key field");
-            }
-
-            Document doc = (Document) value;
-
-            System.out.println("d");
-
-            // check for map
-            if (Map.class.isAssignableFrom(expectedClass)) {
-                // check for parameter types
-                Type expectedKeyType;
-                Type expectedValueType;
-                if (expectedType instanceof ParameterizedType) {
-                    expectedKeyType = ((ParameterizedType)expectedType).getActualTypeArguments()[0];
-                    expectedValueType = ((ParameterizedType)expectedType).getActualTypeArguments()[1];
-                } else {
-                    expectedKeyType = Object.class;
-                    expectedValueType = Object.class;
-                }
-
-                Map map = new HashMap();
-                doc.forEach((k, v) -> map.put(
-                        decodeDocumentKey(context, k, expectedKeyType),
-                        decodeDocumentValue(context, v, expectedValueType)
-                ));
-
-                return map;
-            }
-
-            System.out.println("e");
-
-            // decode nested object
-            String className = doc.getString(BsonCodecs.CLASS_NAME_FIELD);
-            if (className != null) {
-                // decode with an alternate target type
-                Class<?> klass = Reflections.findClass(className);
-                DocumentDecodeInput input = new DocumentDecodeInput(keyFieldOverride, doc);
-                return context.findCodec(klass).constructAndDecode(context, input);
-            }
-
-            System.out.println("decoding expectedClass(" + expectedClass + "), no defined __class");
-            DocumentDecodeInput input = new DocumentDecodeInput(keyFieldOverride, doc);
-            return context.findCodec(expectedClass).constructAndDecode(context, input);
-        } else if (value instanceof List && Map.class.isAssignableFrom(expectedClass)) {
-            List<List> encodedMap = (List<List>) value;
-
-            /*
-             * Maps are encoded as arrays with each entry being a pair of key and value
-             * represented in BSON as another array:
-             *
-             * { a = 6, b = 7 }
-             * becomes
-             * [ ["a", 6], ["b", 7] ]
-             */
-
-            // check for parameter types
-            Type expectedKeyType;
-            Type expectedValueType;
-            if (Map.class.isAssignableFrom(expectedClass) && expectedType instanceof ParameterizedType) {
-                expectedKeyType = ((ParameterizedType)expectedType).getActualTypeArguments()[0];
-                expectedValueType = ((ParameterizedType)expectedType).getActualTypeArguments()[1];
-            } else {
-                expectedKeyType = Object.class;
-                expectedValueType = Object.class;
-            }
-
-            Map convertedMap = new HashMap();
-            encodedMap.forEach(pair -> convertedMap.put(
-                    decodeDocumentValue(context, pair.get(0), expectedKeyType),  // key
-                    decodeDocumentValue(context, pair.get(1), expectedValueType) // value
-            ));
-
-            return convertedMap;
-        } else if (value instanceof List) {
+        // check for list value before checking for direct primitives
+        // because it is the only collection type generated by bson
+        if (value instanceof List) {
             if (context == null) {
                 throw new IllegalArgumentException("Document contains non-primitive value for key field");
             }
@@ -234,6 +118,116 @@ public class DocumentDecodeInput extends DecodeInput {
             }
 
             return newList;
+        }
+
+        // primitives which can represent complex definitions
+        if (expectedClass.isInstance(value)) {
+            return value;
+        }
+
+        // simple enum class
+        if (expectedClass.isEnum() && value instanceof String) {
+            String str = (String) value;
+            for (Object constant : expectedClass.getEnumConstants()) {
+                if (((Enum)constant).name().equalsIgnoreCase(str)) {
+                    return constant;
+                }
+            }
+
+            throw new IllegalArgumentException("Could not resolve `" + value + "` to an enum value of " + expectedClass);
+        }
+
+        // complex enum declaration
+        if (BsonCodecs.shouldWriteClassName(expectedClass) && value instanceof String) {
+            String[] strings = ((String) value).split(":");
+            String enumDeclClassName = strings[0];
+            String enumConstantName = strings[1];
+
+            Class<?> enumDeclClass = Reflections.findClass(enumDeclClassName);
+
+            for (Object constant : expectedClass.getEnumConstants()) {
+                if (((Enum)constant).name().equalsIgnoreCase(enumConstantName)) {
+                    return constant;
+                }
+            }
+
+            throw new IllegalArgumentException("Could not resolve `" + value + "` to an enum value of " + enumDeclClass);
+        }
+
+        /* Complex objects */
+        //  only support primitives if context is
+        //  null, because this is only ever used to decode
+        //  the primary key field
+        if (value instanceof Document) {
+            if (context == null) {
+                throw new IllegalArgumentException("Document contains non-primitive value for key field");
+            }
+
+            Document doc = (Document) value;
+
+            // check for map
+            if (Map.class.isAssignableFrom(expectedClass)) {
+                // check for parameter types
+                Type expectedKeyType;
+                Type expectedValueType;
+                if (expectedType instanceof ParameterizedType) {
+                    expectedKeyType = ((ParameterizedType)expectedType).getActualTypeArguments()[0];
+                    expectedValueType = ((ParameterizedType)expectedType).getActualTypeArguments()[1];
+                } else {
+                    expectedKeyType = Object.class;
+                    expectedValueType = Object.class;
+                }
+
+                Map map = new HashMap();
+                doc.forEach((k, v) -> map.put(
+                        decodeDocumentKey(context, k, expectedKeyType),
+                        decodeDocumentValue(context, v, expectedValueType)
+                ));
+
+                return map;
+            }
+
+            // decode nested object
+            String className = doc.getString(BsonCodecs.CLASS_NAME_FIELD);
+            if (className != null) {
+                // decode with an alternate target type
+                Class<?> klass = Reflections.findClass(className);
+                DocumentDecodeInput input = new DocumentDecodeInput(keyFieldOverride, doc);
+                return context.findCodec(klass).constructAndDecode(context, input);
+            }
+
+            DocumentDecodeInput input = new DocumentDecodeInput(keyFieldOverride, doc);
+            return context.findCodec(expectedClass).constructAndDecode(context, input);
+        } else if (value instanceof List && Map.class.isAssignableFrom(expectedClass)) {
+            List<List> encodedMap = (List<List>) value;
+
+            /*
+             * Maps are encoded as arrays with each entry being a pair of key and value
+             * represented in BSON as another array:
+             *
+             * { a = 6, b = 7 }
+             * becomes
+             * [ ["a", 6], ["b", 7] ]
+             */
+
+            // check for parameter types
+            Type expectedKeyType;
+            Type expectedValueType;
+            if (Map.class.isAssignableFrom(expectedClass) && expectedType instanceof ParameterizedType) {
+                expectedKeyType = ((ParameterizedType)expectedType).getActualTypeArguments()[0];
+                expectedValueType = ((ParameterizedType)expectedType).getActualTypeArguments()[1];
+            } else {
+                expectedKeyType = Object.class;
+                expectedValueType = Object.class;
+            }
+
+            Map convertedMap = new HashMap();
+            encodedMap.forEach(pair -> convertedMap.put(
+                    decodeDocumentValue(context, pair.get(0), expectedKeyType),  // key
+                    decodeDocumentValue(context, pair.get(1), expectedValueType) // value
+            ));
+
+            return convertedMap;
         }
 
         /* Primitives */
