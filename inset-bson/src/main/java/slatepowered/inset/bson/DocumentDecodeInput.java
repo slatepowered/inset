@@ -191,6 +191,7 @@ public class DocumentDecodeInput extends DecodeInput {
                 }
             }
 
+            System.out.println("no enum constant ???");
             throw new IllegalArgumentException("Could not resolve `" + value + "` to an enum value of " + enumDeclClass);
         }
 
