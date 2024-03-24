@@ -183,7 +183,7 @@ public class DocumentDecodeInput extends DecodeInput {
             Class<?> enumDeclClass = Reflections.findClass(enumDeclClassName);
             System.out.println("      b");
 
-            for (Object constant : expectedClass.getEnumConstants()) {
+            for (Object constant : enumDeclClass.getEnumConstants()) {
                 System.out.println("   checking const " + constant);
                 if (((Enum)constant).name().equalsIgnoreCase(enumConstantName)) {
                     System.out.println("    yep !! !! !! !! !!");
