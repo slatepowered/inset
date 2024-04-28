@@ -12,8 +12,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Creates reflective value and data codecs.
@@ -28,7 +27,9 @@ public final class ReflectiveCodecFactory implements CodecFactory {
     public <T> ValueCodec<T> create(CodecRegistry registry, Class<T> klass) {
         try {
             List<UnsafeFieldDesc> unsafeFields = new ArrayList<>();
-            Field[] fields = klass.getDeclaredFields();
+            Set<Field> fields = new HashSet<>();
+            fields.addAll(Arrays.asList(klass.getFields()));
+            fields.addAll(Arrays.asList(klass.getDeclaredFields()));
 
             UnsafeFieldDesc primaryKeyField = null; // Data for data codecs: primary key field
 
