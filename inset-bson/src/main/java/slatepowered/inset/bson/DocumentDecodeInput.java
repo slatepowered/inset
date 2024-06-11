@@ -159,6 +159,23 @@ public class DocumentDecodeInput extends DecodeInput {
         // simple enum class
         if (expectedClass.isEnum() && value instanceof String) {
             String str = (String) value;
+
+            if (str.contains(":")) {
+                String[] strings = ((String) value).split(":");
+                String enumDeclClassName = strings[0];
+                String enumConstantName = strings[1];
+
+                Class<?> enumDeclClass = Reflections.findClass(enumDeclClassName);
+
+                for (Object constant : enumDeclClass.getEnumConstants()) {
+                    if (((Enum)constant).name().equalsIgnoreCase(enumConstantName)) {
+                        return constant;
+                    }
+                }
+
+                throw new IllegalArgumentException("Could not resolve `" + value + "` to an enum value of " + enumDeclClass);
+            }
+
             for (Object constant : expectedClass.getEnumConstants()) {
                 if (((Enum)constant).name().equalsIgnoreCase(str)) {
                     return constant;

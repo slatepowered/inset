@@ -17,11 +17,14 @@ public final class BsonCodecs {
     protected static final Map<Class<?>, Boolean> classesWithAbstractParents = new WeakHashMap<>();
 
     protected static boolean hasAbstractParentsOrIsAbstract(Class<?> klass) {
-        if (
+        if ((
                 klass.isInterface() ||
                 Modifier.isAbstract(klass.getModifiers()) ||
                 klass.getInterfaces().length != 0
-        ) {
+        ) && (
+                // Special classes
+                klass != Enum.class
+        )) {
             return true;
         }
 
@@ -38,7 +41,8 @@ public final class BsonCodecs {
     // check if the class name of an object of the given
     // class should be written to the database
     protected static boolean shouldWriteClassName(Class<?> klass) {
-        return hasAbstractParentsOrIsAbstract(klass);
+        return !Modifier.isFinal(klass.getModifiers()) &&
+                hasAbstractParentsOrIsAbstract(klass);
     }
 
     protected static boolean writeClassNameIfNeeded(Document document, Class<?> klass) {
