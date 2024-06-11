@@ -41,6 +41,7 @@ public class MongoDataSource implements DataSource {
     private final DataManager dataManager;
 
     // The MongoDB database instance
+    @Getter
     private final MongoDatabase database;
 
     // All created data tables

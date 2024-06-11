@@ -18,6 +18,18 @@ public interface DataTable {
     DataSource getSource();
 
     /**
+     * Synchronously try and drop this data table from the database.
+     */
+    void drop();
+
+    /**
+     * Asynchronously try and drop this data table from the database.
+     */
+    default CompletableFuture<Void> dropAsync() {
+        return CompletableFuture.runAsync(this::drop, getSource().getExecutorService());
+    }
+
+    /**
      * Synchronously update the given output data in the data table.
      *
      * @param output The output data.

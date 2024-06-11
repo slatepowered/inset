@@ -4,6 +4,7 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.ReplaceOptions;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.bson.BsonDocument;
 import org.bson.Document;
@@ -19,6 +20,7 @@ import javax.print.Doc;
  * Abstraction for a MongoDB collection.
  */
 @RequiredArgsConstructor
+@Getter
 public class MongoDataTable implements DataTable {
 
     // The MongoDB data source
@@ -31,6 +33,11 @@ public class MongoDataTable implements DataTable {
     @Override
     public DataSource getSource() {
         return source;
+    }
+
+    @Override
+    public void drop() {
+        collection.drop();
     }
 
     @Override
