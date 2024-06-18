@@ -3,12 +3,20 @@ package slatepowered.inset.source;
 import slatepowered.inset.DataManager;
 import slatepowered.inset.codec.EncodeOutput;
 
+import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 
 /**
  * Represents a type of data storage.
  */
 public interface DataSource {
+
+    /**
+     * Get all opened tables on this data source.
+     *
+     * @return The collection of data tables.
+     */
+    Collection<? extends DataTable> allTables();
 
     /**
      * Get the executor service to use for scheduling operations

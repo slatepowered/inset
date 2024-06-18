@@ -16,6 +16,7 @@ import slatepowered.inset.source.DataSource;
 import slatepowered.inset.source.DataTable;
 import slatepowered.veru.functional.ThrowingSupplier;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -46,6 +47,10 @@ public class MongoDataSource implements DataSource {
 
     // All created data tables
     private final Map<String, MongoDataTable> dataTableMap = new HashMap<>();
+
+    public Collection<MongoDataTable> allTables() {
+        return dataTableMap.values();
+    }
 
     @Getter
     @Setter

@@ -6,6 +6,8 @@ import slatepowered.inset.codec.CodecRegistry;
 import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.datastore.Datastore;
 
+import java.lang.ref.WeakReference;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
