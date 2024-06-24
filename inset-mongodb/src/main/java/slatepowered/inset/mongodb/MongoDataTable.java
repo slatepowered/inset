@@ -54,7 +54,7 @@ public class MongoDataTable implements DataTable {
     @Override
     public DataSourceFindResult findOneSync(Query query) throws DataSourceException {
         String keyFieldOverride = source.getKeyFieldOverride();
-        Bson filter = MongoQueries.serializeQueryToFindFilter(keyFieldOverride, query);
+        Bson filter = MongoQueries.serializeQueryToFindFilter(query.getDatastore().getDataCodec(), keyFieldOverride, query);
 
         FindIterable<Document> iterable = collection.find(filter);
         Document result = iterable.first();
@@ -70,7 +70,7 @@ public class MongoDataTable implements DataTable {
         FindIterable<Document> iterable;
 
         if (query.fieldConstraintCount() > 0) {
-            Bson filter = MongoQueries.serializeQueryToFindFilter(keyFieldOverride, query);
+            Bson filter = MongoQueries.serializeQueryToFindFilter(query.getDatastore().getDataCodec(), keyFieldOverride, query);
             iterable = collection.find(filter);
         } else {
             iterable = collection.find();
@@ -82,7 +82,7 @@ public class MongoDataTable implements DataTable {
     @Override
     public boolean deleteOne(Query query) {
         String keyFieldOverride = source.getKeyFieldOverride();
-        Bson filter = MongoQueries.serializeQueryToFindFilter(keyFieldOverride, query);
+        Bson filter = MongoQueries.serializeQueryToFindFilter(query.getDatastore().getDataCodec(), keyFieldOverride, query);
 
         return collection.deleteOne(filter).getDeletedCount() > 0;
     }
@@ -91,7 +91,7 @@ public class MongoDataTable implements DataTable {
     public long deleteAll(Query query) {
         if (query.fieldConstraintCount() > 0) {
             String keyFieldOverride = source.getKeyFieldOverride();
-            Bson filter = MongoQueries.serializeQueryToFindFilter(keyFieldOverride, query);
+            Bson filter = MongoQueries.serializeQueryToFindFilter(query.getDatastore().getDataCodec(), keyFieldOverride, query);
 
             return collection.deleteMany(filter).getDeletedCount();
         } else {
