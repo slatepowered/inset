@@ -27,7 +27,7 @@ final class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T
     private static UnsafeFieldDesc[] removePrimaryKeyFieldFromDefaultCodecFieldArray(UnsafeFieldDesc[] arr, String name) {
         int i = 0;
         for (; i < arr.length; i++)
-            if (arr[i].name.equals(name))
+            if (arr[i].serializedName.equals(name))
                 break;
 
         UnsafeFieldDesc[] result = new UnsafeFieldDesc[arr.length - 1];
@@ -45,7 +45,7 @@ final class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T
     final UnsafeFieldDesc primaryKeyField;
 
     public UnsafeReflectiveDataCodec(Class<T> tClass, UnsafeFieldDesc[] fields, MethodHandle constructor, UnsafeFieldDesc primaryKeyField) {
-        super(tClass, removePrimaryKeyFieldFromDefaultCodecFieldArray(fields, primaryKeyField.name), constructor);
+        super(tClass, removePrimaryKeyFieldFromDefaultCodecFieldArray(fields, primaryKeyField.serializedName), constructor);
         this.allFields = fields;
         this.primaryKeyField = primaryKeyField;
     }
@@ -55,7 +55,7 @@ final class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T
         super.decode(context, instance, input);
 
         // decode primary key
-        primaryKeyField.setFromObject(instance, input.getOrReadKey(primaryKeyField.name, primaryKeyField.type));
+        primaryKeyField.setFromObject(instance, input.getOrReadKey(primaryKeyField.serializedName, primaryKeyField.type));
     }
 
     @Override
@@ -65,7 +65,7 @@ final class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T
 
     @Override
     public String getPrimaryKeyFieldName() {
-        return primaryKeyField.name;
+        return primaryKeyField.serializedName;
     }
 
     @Override
@@ -95,7 +95,7 @@ final class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T
             UnsafeFieldDesc fieldDesc;
             UnsafeFieldDesc theField = null;
             for (int j = allFields.length - 1; j >= 0; j--) {
-                if ((fieldDesc = allFields[j]).name.equals(fieldName)) {
+                if ((fieldDesc = allFields[j]).serializedName.equals(fieldName)) {
                     theField = fieldDesc;
                     break;
                 }
@@ -136,12 +136,12 @@ final class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T
 
         // add applicable data fields
         for (UnsafeFieldDesc fieldDesc : super.fields) {
-            fields.add(fieldDesc.name);
+            fields.add(fieldDesc.serializedName);
         }
 
         // add primary key field
         if (primaryKeyName == null)
-            primaryKeyName = primaryKeyField.getName();
+            primaryKeyName = primaryKeyField.getSerializedName();
         fields.add(primaryKeyName);
 
         return Projection.include(fields);

@@ -9,6 +9,7 @@ import org.bson.BsonInt32;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import slatepowered.inset.bson.DocumentDecodeInput;
+import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.operation.*;
 import slatepowered.inset.query.Query;
@@ -34,7 +35,7 @@ final class MongoQueries {
      * @param query The query.
      * @return The filter BSON.
      */
-    public static Bson serializeQueryToFindFilter(String keyFieldNameOverride, Query query) {
+    public static Bson serializeQueryToFindFilter(DataCodec<?, ?> codec, String keyFieldNameOverride, Query query) {
         // check for primary key
         if (query.hasKey()) {
             String keyField = keyFieldNameOverride != null ? keyFieldNameOverride : query.getKeyField();
@@ -50,7 +51,7 @@ final class MongoQueries {
         Bson[] bsonArray = new Bson[count];
         int i = 0;
         for (Map.Entry<String, FieldConstraint<?>> entry : constraintMap.entrySet()) {
-            bsonArray[i] = constraintToBson(entry.getKey(), entry.getValue());
+            bsonArray[i] = constraintToBson(codec.toSerializedName(entry.getKey()), entry.getValue());
             i++;
         }
 
@@ -171,7 +172,7 @@ final class MongoQueries {
      * @param sorting The sorting object.
      * @return The BSON sort document.
      */
-    public static Bson serializeSorting(Sorting sorting) {
+    public static Bson serializeSorting(DataCodec<?, ?> codec, Sorting sorting) {
         if (sorting instanceof FieldOrderSorting) {
             FieldOrderSorting fieldOrderSorting = (FieldOrderSorting) sorting;
 
@@ -182,6 +183,7 @@ final class MongoQueries {
             BsonDocument document = new BsonDocument();
             for (int i = 0; i < size; i++) {
                 String field = fieldNames.get(i);
+                field = codec.toSerializedName(field); // resolve serialized name
                 FieldOrdering ordering = fieldOrderings.get(i);
 
                 int orderInt = ordering == FieldOrdering.ASCENDING ? 1 : -1;
@@ -228,7 +230,7 @@ final class MongoQueries {
 
             @Override
             public DataSourceBulkIterable filter(Query query) {
-                iterable.filter(serializeQueryToFindFilter(keyFieldNameOverride, query));
+                iterable.filter(serializeQueryToFindFilter(getQuery().getDatastore().getDataCodec(), keyFieldNameOverride, query));
                 return this;
             }
 
@@ -257,7 +259,7 @@ final class MongoQueries {
 
             @Override
             public DataSourceBulkIterable sort(Sorting sorting) {
-                iterable.sort(serializeSorting(sorting));
+                iterable.sort(serializeSorting(getQuery().getDatastore().getDataCodec(), sorting));
                 return this;
             }
 

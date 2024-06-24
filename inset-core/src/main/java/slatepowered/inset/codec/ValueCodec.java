@@ -67,4 +67,17 @@ public interface ValueCodec<T> {
         return instance;
     }
 
+    /**
+     * Find the serialized field name for the given qualified name.
+     *
+     * This is used to map {@link slatepowered.inset.query.Query} field constraints
+     * to their database field equivalents in a database query.
+     *
+     * @param name The name.
+     * @return The serialized name.
+     */
+    default String toSerializedName(String name) {
+        return name;
+    }
+
 }

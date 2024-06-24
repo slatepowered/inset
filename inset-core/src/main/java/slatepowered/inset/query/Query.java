@@ -67,12 +67,20 @@ public interface Query {
         return this;
     }
 
+    /**
+     * The datastore which recently bound to this query,
+     * null if unqualified.
+     *
+     * @return The datastore.
+     */
+    Datastore<?, ?> getDatastore();
+
     static Query byKey(final Object key) {
         return new Query() {
             // The cached field map
             Map<String, FieldConstraint<?>> fieldConstraintMap;
             FieldConstraint<?> constraint;
-            DataCodec<?, ?> dataCodec;
+            Datastore<?, ?> datastore;
 
             // ensure the constraints are created and
             // registered for when we need them
@@ -104,7 +112,7 @@ public interface Query {
 
             @Override
             public String getKeyField() {
-                return dataCodec.getPrimaryKeyFieldName();
+                return datastore.getDataCodec().getPrimaryKeyFieldName();
             }
 
             @Override
@@ -121,8 +129,13 @@ public interface Query {
 
             @Override
             public Query qualify(Datastore<?, ?> datastore) {
-                dataCodec = datastore.getDataCodec();
+                this.datastore = datastore;
                 return this;
+            }
+
+            @Override
+            public Datastore<?, ?> getDatastore() {
+                return datastore;
             }
         };
     }
@@ -205,6 +218,11 @@ public interface Query {
                 this.datastore = datastore;
                 return this;
             }
+
+            @Override
+            public Datastore<?, ?> getDatastore() {
+                return datastore;
+            }
         };
     }
 
@@ -251,6 +269,11 @@ public interface Query {
             public Query qualify(Datastore<?, ?> datastore) {
                 this.datastore = datastore;
                 return this;
+            }
+
+            @Override
+            public Datastore<?, ?> getDatastore() {
+                return datastore;
             }
         };
     }

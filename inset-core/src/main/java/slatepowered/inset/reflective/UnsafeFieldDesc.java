@@ -23,11 +23,12 @@ final class UnsafeFieldDesc {
     public static final byte PT_BOOLEAN = 7;
     public static final byte PT_CHAR = 8;
 
-    final Field field;        // The reflection field
-    final String name;        // The name of the field
-    final long offset;        // The object field offset
-    final Type type;          // The generic type
-    final byte primitiveType; // The primitive type, must be one of the above defined constants
+    final Field field;           // The reflection field
+    final String name;           // The origin name of the field
+    final String serializedName; // The serialized name of the field
+    final long offset;           // The object field offset
+    final Type type;             // The generic type
+    final byte primitiveType;    // The primitive type, must be one of the above defined constants
 
     /**
      * Get the value in this field on the given instance, boxed if primitive.
@@ -89,7 +90,7 @@ final class UnsafeFieldDesc {
 
     public static UnsafeFieldDesc forField(Field field) {
         SerializedName fieldNameAnnotation = field.getAnnotation(SerializedName.class);
-        return new UnsafeFieldDesc(field, fieldNameAnnotation != null ? fieldNameAnnotation.value() : field.getName(), UNSAFE.objectFieldOffset(field), field.getGenericType(), getPrimitiveType(field.getType()));
+        return new UnsafeFieldDesc(field, field.getName(), fieldNameAnnotation != null ? fieldNameAnnotation.value() : field.getName(), UNSAFE.objectFieldOffset(field), field.getGenericType(), getPrimitiveType(field.getType()));
     }
 
 }

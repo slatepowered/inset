@@ -1,6 +1,5 @@
 package slatepowered.inset.reflective;
 
-import lombok.RequiredArgsConstructor;
 import slatepowered.inset.codec.ValueCodec;
 import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.DecodeInput;
@@ -33,6 +32,7 @@ class UnsafeReflectiveValueCodec<T> implements ValueCodec<T> {
         for (int i = fields.length - 1; i >= 0; i--) {
             UnsafeFieldDesc fieldDesc = fields[i];
             fieldMap.put(fieldDesc.name, fieldDesc);
+            fieldMap.put(fieldDesc.serializedName, fieldDesc);
         }
     }
 
@@ -40,7 +40,7 @@ class UnsafeReflectiveValueCodec<T> implements ValueCodec<T> {
     public void encode(CodecContext context, T value, EncodeOutput output) {
         for (UnsafeFieldDesc desc : fields) {
             Object fieldValue = desc.getAsObject(value);
-            output.set(context, desc.name, fieldValue);
+            output.set(context, desc.serializedName, fieldValue);
         }
     }
 
@@ -57,7 +57,7 @@ class UnsafeReflectiveValueCodec<T> implements ValueCodec<T> {
     @Override
     public void decode(CodecContext context, T instance, DecodeInput input) {
         for (UnsafeFieldDesc desc : fields) {
-            Object value = input.read(context, desc.name, desc.type);
+            Object value = input.read(context, desc.serializedName, desc.type);
             desc.setFromObject(instance, value);
         }
     }
@@ -70,4 +70,9 @@ class UnsafeReflectiveValueCodec<T> implements ValueCodec<T> {
         return (V) fieldDesc.getAsObject(instance);
     }
 
+    @Override
+    public String toSerializedName(String name) {
+        return fieldMap.get(name).getSerializedName();
+    }
+    
 }
