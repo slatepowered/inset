@@ -93,14 +93,7 @@ final class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T
             String fieldName = entry.getKey();
 
             UnsafeFieldDesc fieldDesc;
-            UnsafeFieldDesc theField = null;
-            for (int j = allFields.length - 1; j >= 0; j--) {
-                if ((fieldDesc = allFields[j]).serializedName.equals(fieldName)) {
-                    theField = fieldDesc;
-                    break;
-                }
-            }
-
+            UnsafeFieldDesc theField = fieldMap.get(entry.getKey());
             if (theField == null) {
                 throw new IllegalArgumentException("Query field `" + fieldName + "` could not be resolved to a field on " + tClass);
             }
