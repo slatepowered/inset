@@ -92,7 +92,6 @@ final class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T
         for (Map.Entry<String, FieldConstraint<?>> entry : fieldConstraints.entrySet()) {
             String fieldName = entry.getKey();
 
-            UnsafeFieldDesc fieldDesc;
             UnsafeFieldDesc theField = fieldMap.get(entry.getKey());
             if (theField == null) {
                 throw new IllegalArgumentException("Query field `" + fieldName + "` could not be resolved to a field on " + tClass);

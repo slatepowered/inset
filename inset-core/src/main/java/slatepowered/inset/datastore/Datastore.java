@@ -285,6 +285,7 @@ public class Datastore<K, T> {
      * @return The status of the operation.
      */
     public FindAllOperation<K, T> findAll(Query query, FindAllOperation.Options options) {
+        query = query.qualify(this);
         FindAllOperation<K, T> status = new FindAllOperation<>(this, query, options);
 
         // filter cached item stream
