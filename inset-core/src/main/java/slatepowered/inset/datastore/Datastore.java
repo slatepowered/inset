@@ -319,6 +319,7 @@ public class Datastore<K, T> {
      */
     public DeleteAllOperation<K, T> deleteAll(Query query) {
         DeleteAllOperation<K, T> operation = new DeleteAllOperation<>(this, query);
+        query = query.qualify(this);
 
         // enqueue the deletion in the database
         sourceTable.deleteAllAsync(query).whenComplete((count, throwable) -> {

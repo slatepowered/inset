@@ -321,7 +321,7 @@ public class DataItem<K, T> extends PartialItem<K, T> {
 
     @Override
     public FindOperation<K, T> find() {
-        return new FindOperation<>(datastore, null).completeSuccessfully(FindResult.CACHED, this);
+        return new FindOperation<>(datastore, Query.byKey(key)).completeSuccessfully(FindResult.CACHED, this);
     }
 
     @Override
