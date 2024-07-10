@@ -1,6 +1,7 @@
 package slatepowered.inset.reflective;
 
 import lombok.Data;
+import slatepowered.inset.util.Nullable;
 import slatepowered.veru.reflect.UnsafeUtil;
 import sun.misc.Unsafe;
 
@@ -29,6 +30,7 @@ final class UnsafeFieldDesc {
     final long offset;           // The object field offset
     final Type type;             // The generic type
     final byte primitiveType;    // The primitive type, must be one of the above defined constants
+    final long etcFlags;         // Other miscellaneous flags, such as @Nullable
 
     /**
      * Get the value in this field on the given instance, boxed if primitive.
@@ -89,8 +91,11 @@ final class UnsafeFieldDesc {
     }
 
     public static UnsafeFieldDesc forField(Field field) {
+        long flags = 0;
+        if (field.isAnnotationPresent(Nullable.class)) flags |= Nullable.FLAG;
+
         SerializedName fieldNameAnnotation = field.getAnnotation(SerializedName.class);
-        return new UnsafeFieldDesc(field, field.getName(), fieldNameAnnotation != null ? fieldNameAnnotation.value() : field.getName(), UNSAFE.objectFieldOffset(field), field.getGenericType(), getPrimitiveType(field.getType()));
+        return new UnsafeFieldDesc(field, field.getName(), fieldNameAnnotation != null ? fieldNameAnnotation.value() : field.getName(), UNSAFE.objectFieldOffset(field), field.getGenericType(), getPrimitiveType(field.getType()), flags);
     }
 
 }
