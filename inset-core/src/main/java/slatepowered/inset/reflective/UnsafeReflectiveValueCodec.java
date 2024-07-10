@@ -4,7 +4,7 @@ import slatepowered.inset.codec.ValueCodec;
 import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.codec.EncodeOutput;
-import slatepowered.inset.util.Nullable;
+import slatepowered.inset.util.NotNullable;
 import slatepowered.veru.misc.Throwables;
 import slatepowered.veru.reflect.UnsafeUtil;
 import sun.misc.Unsafe;
@@ -59,7 +59,7 @@ class UnsafeReflectiveValueCodec<T> implements ValueCodec<T> {
     public void decode(CodecContext context, T instance, DecodeInput input) {
         for (UnsafeFieldDesc desc : fields) {
             Object value = input.read(context, desc.serializedName, desc.type);
-            if (value != null || (desc.etcFlags & Nullable.FLAG) > 0) {
+            if (value != null || (desc.etcFlags & NotNullable.FLAG) == 0) {
                 desc.setFromObject(instance, value);
             }
         }

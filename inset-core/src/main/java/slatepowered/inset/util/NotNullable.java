@@ -6,14 +6,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Indicates that a field is nullable.
+ * Indicates that a field is not nullable.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface Nullable {
+public @interface NotNullable {
 
     /**
-     * The flag set on a field when it is nullable.
+     * The flag set on a field when it is not nullable.
      */
     long FLAG = 1 >> 1;
 

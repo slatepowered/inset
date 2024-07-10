@@ -1,7 +1,7 @@
 package slatepowered.inset.reflective;
 
 import lombok.Data;
-import slatepowered.inset.util.Nullable;
+import slatepowered.inset.util.NotNullable;
 import slatepowered.veru.reflect.UnsafeUtil;
 import sun.misc.Unsafe;
 
@@ -92,7 +92,7 @@ final class UnsafeFieldDesc {
 
     public static UnsafeFieldDesc forField(Field field) {
         long flags = 0;
-        if (field.isAnnotationPresent(Nullable.class)) flags |= Nullable.FLAG;
+        if (field.isAnnotationPresent(NotNullable.class)) flags |= NotNullable.FLAG;
 
         SerializedName fieldNameAnnotation = field.getAnnotation(SerializedName.class);
         return new UnsafeFieldDesc(field, field.getName(), fieldNameAnnotation != null ? fieldNameAnnotation.value() : field.getName(), UNSAFE.objectFieldOffset(field), field.getGenericType(), getPrimitiveType(field.getType()), flags);
