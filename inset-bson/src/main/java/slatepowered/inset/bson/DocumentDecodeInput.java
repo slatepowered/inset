@@ -6,6 +6,7 @@ import org.bson.Document;
 import org.bson.UuidRepresentation;
 import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.DecodeInput;
+import slatepowered.inset.util.DebugLogging;
 import slatepowered.inset.util.Reflections;
 import slatepowered.inset.util.ValueUtils;
 import slatepowered.veru.reflect.ReflectUtil;
@@ -24,7 +25,7 @@ import java.util.Map;
  */
 @Getter
 @RequiredArgsConstructor
-public class DocumentDecodeInput extends DecodeInput {
+public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
 
     protected final String keyFieldOverride;
 
@@ -66,7 +67,7 @@ public class DocumentDecodeInput extends DecodeInput {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private Object decodeDocumentValue(CodecContext context, Object value, Type expectedType) {
         Class<?> expectedClass = ReflectUtil.getClassForType(expectedType);
-        System.out.println("decodeDocumentValue(" + ValueUtils.prettyCompact(value) + ", expected: " + expectedType + ", class: " + ValueUtils.prettyCompact(expectedClass) + ")");
+        log(() -> "decodeDocumentValue(" + compactString(value) + ", expected: " + compactString(expectedType) + ")");
 
         if (value == null) {
             if (List.class.isAssignableFrom(expectedClass)) {
@@ -85,7 +86,7 @@ public class DocumentDecodeInput extends DecodeInput {
         if (value instanceof List) {
             if (Map.class.isAssignableFrom(expectedClass)) {
                 List<List> encodedMap = (List<List>) value;
-                System.out.println(" Decoding list into map, enc = " + ValueUtils.prettyCompact(encodedMap));
+                log(() -> " Decoding list into map, enc = " + compactString(encodedMap));
 
                 /*
                  * Maps are encoded as arrays with each entry being a pair of key and value
@@ -239,12 +240,16 @@ public class DocumentDecodeInput extends DecodeInput {
 
             // decode nested object
             String className = doc.getString(BsonCodecs.CLASS_NAME_FIELD);
-            System.out.println("  Decoding document value " + ValueUtils.prettyCompact(doc) + " into expected class " + ValueUtils.prettyCompact(className));
+            log(() -> "  Decoding document value " + compactString(doc) + " into explicit class " + compactString(className));
             if (className != null) {
                 // decode with an alternate target type
                 Class<?> klass = Reflections.findClass(className);
-                DocumentDecodeInput input = new DocumentDecodeInput(keyFieldOverride, doc);
-                return context.findCodec(klass).constructAndDecode(context, input);
+                if (klass != null) {
+                    DocumentDecodeInput input = new DocumentDecodeInput(keyFieldOverride, doc);
+                    return context.findCodec(klass).constructAndDecode(context, input);
+                }
+                
+                log(() -> "  Could not resolve class from " + compactString(className) + ", decoding into expected " + compactString(expectedType));
             }
 
             DocumentDecodeInput input = new DocumentDecodeInput(keyFieldOverride, doc);
@@ -270,9 +275,9 @@ public class DocumentDecodeInput extends DecodeInput {
     @Override
     public Object read(CodecContext context, String field, Type expectedType) {
         Object value = document.get(field);
-        System.out.println("Decoding value for `" + field + "` expected: " + expectedType + " from value `" + ValueUtils.prettyCompact(value) + "`");
+        log(() -> "Decoding value for `" + field + "` expected: " + expectedType + " from value `" + compactString(value) + "`");
         Object v = decodeDocumentValue(context, value, expectedType);
-        System.out.println(" Finished decode v = " + ValueUtils.prettyCompact(v));
+        log(() -> " Finished decode v = " + compactString(v));
         return v;
     }
 

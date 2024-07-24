@@ -32,6 +32,8 @@ public final class Reflections {
             Class<?> klass = Class.forName(name);
             classCache.put(name, new WeakReference<>(klass));
             return klass;
+        } catch (ClassNotFoundException ex) {
+            return null;
         } catch (Throwable t) {
             Throwables.sneakyThrow(t);
             throw new AssertionError();
