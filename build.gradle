@@ -100,7 +100,7 @@ subprojects {
         testAnnotationProcessor 'org.projectlombok:lombok:1.18.30'
 
         /* Libraries */
-        implementation 'com.github.slatepowered.veru:veru-java8:f7496e6'
+        implementation 'com.github.slatepowered.veru:veru-java8:5a975a0'
     }
 
     /* JUnit */

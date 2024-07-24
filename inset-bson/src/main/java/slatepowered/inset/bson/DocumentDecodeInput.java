@@ -66,7 +66,7 @@ public class DocumentDecodeInput extends DecodeInput {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private Object decodeDocumentValue(CodecContext context, Object value, Type expectedType) {
         Class<?> expectedClass = ReflectUtil.getClassForType(expectedType);
-        System.out.println("decodeDocumentValue(" + value + ", expected: " + expectedType + ", class: " + expectedClass + ")");
+        System.out.println("decodeDocumentValue(" + ValueUtils.prettyCompact(value) + ", expected: " + expectedType + ", class: " + ValueUtils.prettyCompact(expectedClass) + ")");
 
         if (value == null) {
             if (List.class.isAssignableFrom(expectedClass)) {
@@ -85,7 +85,7 @@ public class DocumentDecodeInput extends DecodeInput {
         if (value instanceof List) {
             if (Map.class.isAssignableFrom(expectedClass)) {
                 List<List> encodedMap = (List<List>) value;
-                System.out.println(" Decoding list into map, enc = " + encodedMap);
+                System.out.println(" Decoding list into map, enc = " + ValueUtils.prettyCompact(encodedMap));
 
                 /*
                  * Maps are encoded as arrays with each entry being a pair of key and value
@@ -188,7 +188,7 @@ public class DocumentDecodeInput extends DecodeInput {
         }
 
         // complex enum declaration
-        if (BsonCodecs.shouldWriteClassName(expectedClass) && value instanceof String) {
+        if (value instanceof String && BsonCodecs.shouldWriteClassName(expectedClass)) {
             String[] strings = ((String) value).split(":");
             String enumDeclClassName = strings[0];
             String enumConstantName = strings[1];
@@ -239,6 +239,7 @@ public class DocumentDecodeInput extends DecodeInput {
 
             // decode nested object
             String className = doc.getString(BsonCodecs.CLASS_NAME_FIELD);
+            System.out.println("  Decoding document value " + ValueUtils.prettyCompact(doc) + " into expected class " + ValueUtils.prettyCompact(className));
             if (className != null) {
                 // decode with an alternate target type
                 Class<?> klass = Reflections.findClass(className);
@@ -269,9 +270,9 @@ public class DocumentDecodeInput extends DecodeInput {
     @Override
     public Object read(CodecContext context, String field, Type expectedType) {
         Object value = document.get(field);
-        System.out.println("Decoding value for `" + field + "` expected: " + expectedType + " from value `" + value + "`");
+        System.out.println("Decoding value for `" + field + "` expected: " + expectedType + " from value `" + ValueUtils.prettyCompact(value) + "`");
         Object v = decodeDocumentValue(context, value, expectedType);
-        System.out.println(" Finished decode v = " + v);
+        System.out.println(" Finished decode v = " + ValueUtils.prettyCompact(v));
         return v;
     }
 
