@@ -3,7 +3,6 @@ package slatepowered.inset.bson;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.bson.Document;
-import org.bson.UuidRepresentation;
 import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.util.DebugLogging;
@@ -12,7 +11,6 @@ import slatepowered.inset.util.ValueUtils;
 import slatepowered.veru.reflect.ReflectUtil;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -67,7 +65,7 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private Object decodeDocumentValue(CodecContext context, Object value, Type expectedType) {
         Class<?> expectedClass = ReflectUtil.getClassForType(expectedType);
-        log(() -> "decodeDocumentValue(" + compactString(value) + ", expected: " + compactString(expectedType) + ")");
+        if (DEBUG_LOGGING_LEVEL >= TRACE) log("decodeDocumentValue(" + compactString(value) + ", expected: " + compactString(expectedType) + ")");
 
         if (value == null) {
             if (List.class.isAssignableFrom(expectedClass)) {
@@ -240,7 +238,7 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
 
             // decode nested object
             String className = doc.getString(BsonCodecs.CLASS_NAME_FIELD);
-            log(() -> "  Decoding document value " + compactString(doc) + " into explicit class " + compactString(className));
+            if (DEBUG_LOGGING_LEVEL >= TRACE) log("  Decoding document value " + compactString(doc) + " into explicit class " + compactString(className));
             if (className != null) {
                 // decode with an alternate target type
                 Class<?> klass = Reflections.findClass(className);
@@ -248,8 +246,8 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
                     DocumentDecodeInput input = new DocumentDecodeInput(keyFieldOverride, doc);
                     return context.findCodec(klass).constructAndDecode(context, input);
                 }
-                
-                log(() -> "  Could not resolve class from " + compactString(className) + ", decoding into expected " + compactString(expectedType));
+
+                if (DEBUG_LOGGING_LEVEL >= TRACE) log("  Could not resolve class from " + compactString(className) + ", decoding into expected " + compactString(expectedType));
             }
 
             DocumentDecodeInput input = new DocumentDecodeInput(keyFieldOverride, doc);
@@ -275,9 +273,9 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
     @Override
     public Object read(CodecContext context, String field, Type expectedType) {
         Object value = document.get(field);
-        log(() -> "Decoding value for `" + field + "` expected: " + expectedType + " from value `" + compactString(value) + "`");
+        if (DEBUG_LOGGING_LEVEL >= TRACE) log("Decoding value for `" + field + "` expected: " + expectedType + " from value `" + compactString(value) + "`");
         Object v = decodeDocumentValue(context, value, expectedType);
-        log(() -> " Finished decode v = " + compactString(v));
+        if (DEBUG_LOGGING_LEVEL >= TRACE) log(" Finished decode v = " + compactString(v));
         return v;
     }
 
