@@ -60,16 +60,6 @@ subprojects {
         withJavadocJar()
     }
 
-    repositories {
-        mavenCentral()
-        mavenLocal()
-
-        maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
-        maven { url = 'https://oss.sonatype.org/content/repositories/snapshots' }
-        maven { url = 'https://oss.sonatype.org/content/repositories/central' }
-        maven { url = 'https://jitpack.io' }
-    }
-
     task("install") {
         dependsOn(tasks.getByName("publishToMavenLocal"))
     }
@@ -88,7 +78,9 @@ subprojects {
 
     repositories {
         mavenCentral()
-        maven { url = "https://jitpack.io" }
+        mavenLocal()
+
+        maven { url = 'https://jitpack.io' }
     }
 
     dependencies {
