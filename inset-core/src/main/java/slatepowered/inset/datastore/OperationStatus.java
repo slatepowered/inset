@@ -248,6 +248,13 @@ public abstract class OperationStatus<K, T, R extends OperationStatus<K, T, ?>> 
      * @param value The value.
      */
     protected final void completeInternal(R value) {
+        if (error instanceof Throwable) {
+            Throwable throwable = (Throwable) error;
+            baseFuture.completeExceptionally(throwable);
+            handledFuture.completeExceptionally(throwable);
+            return;
+        }
+
         try {
             baseFuture.complete(value);
             handledFuture.complete(value);

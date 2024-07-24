@@ -4,10 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import slatepowered.inset.DataManager;
 import slatepowered.inset.cache.DataCache;
-import slatepowered.inset.codec.CodecContext;
-import slatepowered.inset.codec.CodecRegistry;
-import slatepowered.inset.codec.DataCodec;
-import slatepowered.inset.codec.DecodeInput;
+import slatepowered.inset.codec.*;
 import slatepowered.inset.operation.DeleteAllOperation;
 import slatepowered.inset.query.FindAllOperation;
 import slatepowered.inset.query.Query;
@@ -200,14 +197,18 @@ public class Datastore<K, T> {
                         return;
                     }
 
-                    // check if an item was found
-                    if (!result.found()) {
-                        queryStatus.completeSuccessfully(FindResult.ABSENT, null);
-                        return;
-                    }
+                    try {
+                        // check if an item was found
+                        if (!result.found()) {
+                            queryStatus.completeSuccessfully(FindResult.ABSENT, null);
+                            return;
+                        }
 
-                    DataItem<K, T> item = decodeFetched(result.input());
-                    queryStatus.completeSuccessfully(FindResult.FETCHED, item);
+                        DataItem<K, T> item = decodeFetched(result.input());
+                        queryStatus.completeSuccessfully(FindResult.FETCHED, item);
+                    } catch (Throwable t) {
+                        queryStatus.completeFailed(new CodecException("Uncaught error while decoding fetch result", t));
+                    }
                 });
 
         return queryStatus;
