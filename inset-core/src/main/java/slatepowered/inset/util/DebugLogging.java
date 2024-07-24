@@ -12,7 +12,7 @@ public interface DebugLogging {
     /**
      * Whether ALL debug logging EVERYWHERE is enabled.
      */
-    boolean ENABLED = true;
+    boolean ENABLED = false;
 
     default String compactString(Object value) {
         return ValueUtils.prettyCompact(value);
