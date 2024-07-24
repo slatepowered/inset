@@ -66,6 +66,7 @@ public class DocumentDecodeInput extends DecodeInput {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private Object decodeDocumentValue(CodecContext context, Object value, Type expectedType) {
         Class<?> expectedClass = ReflectUtil.getClassForType(expectedType);
+        System.out.println("decodeDocumentValue(" + value + ", expected: " + expectedType + ", class: " + expectedClass + ")");
 
         if (value == null) {
             if (List.class.isAssignableFrom(expectedClass)) {
@@ -84,6 +85,7 @@ public class DocumentDecodeInput extends DecodeInput {
         if (value instanceof List) {
             if (Map.class.isAssignableFrom(expectedClass)) {
                 List<List> encodedMap = (List<List>) value;
+                System.out.println(" Decoding list into map, enc = " + encodedMap);
 
                 /*
                  * Maps are encoded as arrays with each entry being a pair of key and value
@@ -267,7 +269,10 @@ public class DocumentDecodeInput extends DecodeInput {
     @Override
     public Object read(CodecContext context, String field, Type expectedType) {
         Object value = document.get(field);
-        return decodeDocumentValue(context, value, expectedType);
+        System.out.println("Decoding value for `" + field + "` expected: " + expectedType + " from value `" + value + "`");
+        Object v = decodeDocumentValue(context, value, expectedType);
+        System.out.println(" Finished decode v = " + v);
+        return v;
     }
 
     @Override

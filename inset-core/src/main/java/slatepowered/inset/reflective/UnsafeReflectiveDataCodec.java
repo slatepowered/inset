@@ -87,7 +87,7 @@ final class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T
         // the array of fields and comparing each one should work fine
         // also resolve the values/comparators in order into the array
         UnsafeFieldDesc[] orderedFields = new UnsafeFieldDesc[constrainedFieldCount];
-        FieldConstraint[] orderedConstrained = new FieldConstraint[constrainedFieldCount];
+        FieldConstraint[] orderedConstraints = new FieldConstraint[constrainedFieldCount];
         i = 0;
         for (Map.Entry<String, FieldConstraint<?>> entry : fieldConstraints.entrySet()) {
             String fieldName = entry.getKey();
@@ -98,7 +98,7 @@ final class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T
             }
 
             orderedFields[i] = theField;
-            orderedConstrained[i] = entry.getValue();
+            orderedConstraints[i] = entry.getValue();
 
             i++;
         }
@@ -109,7 +109,7 @@ final class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T
         return value -> {
             try {
                 for (int n = 0; n < constrainedFieldCount; n++) {
-                    if (!orderedConstrained[n].test(orderedFields[n].getAsObject(value))) {
+                    if (!orderedConstraints[n].test(orderedFields[n].getAsObject(value))) {
                         return false;
                     }
                 }
