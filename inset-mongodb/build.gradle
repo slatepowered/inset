@@ -3,6 +3,4 @@ dependencies {
     implementation project(":inset-bson")
 
     api 'org.mongodb:mongodb-driver-sync:4.1.1'
-
-//    testImplementation project(":inset-caffeine")
 }
