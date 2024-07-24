@@ -84,7 +84,7 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
         if (value instanceof List) {
             if (Map.class.isAssignableFrom(expectedClass)) {
                 List<List> encodedMap = (List<List>) value;
-                log(() -> " Decoding list into map, enc = " + compactString(encodedMap));
+                if (DEBUG_LOGGING_LEVEL >= TRACE) log(" Decoding list into map, enc = " + compactString(encodedMap));
 
                 /*
                  * Maps are encoded as arrays with each entry being a pair of key and value
