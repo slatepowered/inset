@@ -21,7 +21,7 @@ public interface DebugLogging {
      */
     int DEBUG_LOGGING_LEVEL =
 //            Integer.parseInt(System.getProperty("slatepowered.inset.debugLoggingLevel", "0")); boolean CONSTANT = false;
-            5; boolean CONSTANT = true;
+            0; boolean CONSTANT = true;
 
     /** Set the {@link DebugLogging#DEBUG_LOGGING_LEVEL} using Unsafe. */
     static void setDebugLoggingLevel(int level) {
