@@ -11,6 +11,7 @@ import slatepowered.inset.query.Query;
 import slatepowered.inset.query.FindResult;
 import slatepowered.inset.query.FindOperation;
 import slatepowered.inset.source.DataTable;
+import slatepowered.inset.util.DebugLogging;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +27,7 @@ import java.util.stream.Stream;
  * @param <T> The data type.
  */
 @Builder
-public class Datastore<K, T> {
+public class Datastore<K, T> implements DebugLogging {
 
     /** The data caching provider. */
     @Getter
@@ -180,8 +181,10 @@ public class Datastore<K, T> {
      */
     @SuppressWarnings("unchecked")
     public FindOperation<K, T> findOne(Query query) {
+        if (DEBUG_LOGGING_LEVEL >= TRACE) log("FindOne(" + query + ")");
         DataItem<K, T> cachedItem = findOneCached(query);
         if (cachedItem != null) {
+            if (DEBUG_LOGGING_LEVEL >= TRACE) log("  Found cached item: " + cachedItem);
             return new FindOperation<>(this, query).completeSuccessfully(FindResult.CACHED, cachedItem);
         }
 
@@ -190,9 +193,11 @@ public class Datastore<K, T> {
         // asynchronously try to load the item
         // from the datatable
         FindOperation<K, T> queryStatus = new FindOperation<>(this, query);
+        if (DEBUG_LOGGING_LEVEL >= TRACE) log("  Created FindOperation, executing source table query");
         getSourceTable().findOneAsync(query)
                 .whenComplete((result, throwable) -> {
                     if (throwable != null) {
+                        if (DEBUG_LOGGING_LEVEL >= TRACE) log("  Query failed with error " + throwable);
                         queryStatus.completeFailed(throwable);
                         return;
                     }
@@ -200,13 +205,17 @@ public class Datastore<K, T> {
                     try {
                         // check if an item was found
                         if (!result.found()) {
+                            if (DEBUG_LOGGING_LEVEL >= TRACE) log("  Query completed, result absent");
                             queryStatus.completeSuccessfully(FindResult.ABSENT, null);
                             return;
                         }
 
+                        if (DEBUG_LOGGING_LEVEL >= TRACE) log("  Decoding DataItem from input " + result.input());
                         DataItem<K, T> item = decodeFetched(result.input());
+                        if (DEBUG_LOGGING_LEVEL >= TRACE) log("  Query completed successfully with " + item);
                         queryStatus.completeSuccessfully(FindResult.FETCHED, item);
                     } catch (Throwable t) {
+                        if (DEBUG_LOGGING_LEVEL >= TRACE) { log("  Uncaught error while decoding fetch result: " + t); t.printStackTrace(); }
                         queryStatus.completeFailed(new CodecException("Uncaught error while decoding fetch result", t));
                     }
                 });

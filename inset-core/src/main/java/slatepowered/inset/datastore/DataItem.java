@@ -10,6 +10,7 @@ import slatepowered.inset.source.DataSourceFindResult;
 import slatepowered.inset.source.DataTable;
 
 import java.lang.reflect.Type;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -60,9 +61,6 @@ public class DataItem<K, T> extends PartialItem<K, T> {
      * as an offset onto the created time of this item.
      */
     protected volatile int lastReferenceTime;
-
-    private double[] cachedOrderCoefficient; // The cached order coefficient array
-    private int currentSortId; // The ID the cached order coefficient is for
 
     /**
      * Get the primary key for this item.
@@ -390,7 +388,9 @@ public class DataItem<K, T> extends PartialItem<K, T> {
 
     @Override
     public String toString() {
-        return "DataItem(" + key + " = " + value + ')';
+        return "DataItem(" + key + " = " + (value != null ?
+                value.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(value))
+                : "<null>") + ", last fetched " + Instant.ofEpochMilli(lastFetchTime) + ", last referenced " + Instant.ofEpochMilli(lastReferenceTime) + ')';
     }
 
 }
