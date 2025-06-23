@@ -14,10 +14,7 @@ import slatepowered.veru.reflect.ReflectUtil;
 import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Reads data from a {@link Document} input.
@@ -144,7 +141,11 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
             // decode list
             List list = (List) value;
             final int length = list.size();
-            List newList = new ArrayList(length);
+
+            List newList;
+            if (Vector.class.isAssignableFrom(expectedClass)) newList = new Vector();
+            else if (LinkedList.class.isAssignableFrom(expectedClass)) newList = new LinkedList();
+            else newList = new ArrayList();
 
             for (int i = 0; i < length; i++) {
                 newList.add(decodeDocumentValue(context, list.get(i), expectedElementType));

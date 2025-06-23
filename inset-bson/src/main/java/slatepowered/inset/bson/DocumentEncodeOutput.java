@@ -10,6 +10,7 @@ import slatepowered.inset.codec.EncodeOutput;
 import slatepowered.veru.reflect.ReflectUtil;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -71,9 +72,16 @@ public class DocumentEncodeOutput extends EncodeOutput {
             return outArr;
         } else if (value instanceof Collection) {
             Collection collection = (Collection<?>) value;
+
+            // try to find accurate element type
+            Type definedElementType = Object.class;
+            if (definedType instanceof ParameterizedType) {
+                definedElementType = ((ParameterizedType)definedType).getActualTypeArguments()[0];
+            }
+
             BsonArray outArr = new BsonArray(new ArrayList<>(collection.size()));
             for (Object o : collection)
-                outArr.add(encodeValue(context, o, null));
+                outArr.add(encodeValue(context, o, definedElementType));
 
             return outArr;
         } else if (value instanceof Map) {
