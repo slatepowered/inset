@@ -3,7 +3,7 @@ package slatepowered.inset.util;
 import slatepowered.veru.misc.Throwables;
 
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -52,6 +52,25 @@ public final class Reflections {
         } catch (Exception e) {
             Throwables.sneakyThrow(e);
             throw new AssertionError();
+        }
+    }
+
+    public static Class<?> getClassForType(Type type) {
+        if (type == null) {
+            return null;
+        } else if (type instanceof Class) {
+            return (Class)type;
+        } else if (type instanceof ParameterizedType) {
+            return getClassForType(((ParameterizedType)type).getRawType());
+        } else if (type instanceof AnnotatedType) {
+            return getClassForType(((AnnotatedType)type).getType());
+        } else if (type instanceof WildcardType) {
+            return Object.class;
+        } else if (type instanceof TypeVariable) {
+            if (((TypeVariable)type).getBounds().length == 0) return Object.class;
+            return getClassForType(((TypeVariable)type).getBounds()[0]);
+        } else {
+            throw new IllegalArgumentException("No support to get the base class from Type object of type: " + type.getClass().getSimpleName());
         }
     }
 

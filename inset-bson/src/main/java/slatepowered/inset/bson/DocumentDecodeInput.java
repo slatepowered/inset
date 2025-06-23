@@ -33,7 +33,7 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
     // decodes a map-valid key retrieved from a bson document
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private Object decodeDocumentKey(CodecContext context, String value, Type expectedType) {
-        Class<?> expectedClass = ReflectUtil.getClassForType(expectedType);
+        Class<?> expectedClass = Reflections.getClassForType(expectedType);
         if (expectedClass == String.class) {
             return value;
         }
@@ -62,7 +62,7 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
     // decodes a value retrieved from a bson document
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private Object decodeDocumentValue(CodecContext context, Object value, Type expectedType) {
-        Class<?> expectedClass = ReflectUtil.getClassForType(expectedType);
+        Class<?> expectedClass = Reflections.getClassForType(expectedType);
         if (DEBUG_LOGGING_LEVEL >= TRACE) log("decodeDocumentValue(" + compactString(value) + ", expected: " + compactString(expectedType) + ")");
 
         if (value == null) {
