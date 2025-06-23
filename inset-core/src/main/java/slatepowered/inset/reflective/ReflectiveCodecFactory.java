@@ -28,8 +28,10 @@ public final class ReflectiveCodecFactory implements CodecFactory {
         try {
             List<UnsafeFieldDesc> unsafeFields = new ArrayList<>();
             Set<Field> fields = new HashSet<>();
-            fields.addAll(Arrays.asList(klass.getFields()));
-            fields.addAll(Arrays.asList(klass.getDeclaredFields()));
+
+            for (Class<?> kl = klass; kl != Object.class; kl = kl.getSuperclass()) {
+                fields.addAll(Arrays.asList(kl.getDeclaredFields()));
+            }
 
             UnsafeFieldDesc primaryKeyField = null; // Data for data codecs: primary key field
 
