@@ -14,8 +14,6 @@ import slatepowered.inset.codec.EncodeOutput;
 import slatepowered.inset.query.Query;
 import slatepowered.inset.source.*;
 
-import javax.print.Doc;
-
 /**
  * Abstraction for a MongoDB collection.
  */

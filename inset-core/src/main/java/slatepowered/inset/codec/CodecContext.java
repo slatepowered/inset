@@ -1,5 +1,6 @@
 package slatepowered.inset.codec;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import slatepowered.inset.DataManager;
 
@@ -9,6 +10,7 @@ import slatepowered.inset.DataManager;
 @RequiredArgsConstructor
 public class CodecContext {
 
+    @Getter
     protected final DataManager dataManager;
 
     /**
@@ -21,6 +23,10 @@ public class CodecContext {
      */
     public <V> ValueCodec<V> findCodec(Class<V> vClass) {
         return dataManager.getCodecRegistry().getCodec(vClass);
+    }
+
+    public ClassDistinctionReader findClassDistinctionReader(Class<?> baseClass) {
+        return dataManager.getClassDistinctionReaders().get(baseClass);
     }
 
 }

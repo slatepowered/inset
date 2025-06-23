@@ -3,6 +3,7 @@ package slatepowered.inset.bson;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.bson.Document;
+import slatepowered.inset.codec.ClassDistinctionOverride;
 import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.util.DebugLogging;
@@ -234,6 +235,15 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
                 ));
 
                 return map;
+            }
+
+            ClassDistinctionOverride distinctionOverride = BsonCodecs.getClassDistinctionOverride(expectedClass);
+            if (distinctionOverride != null) {
+                Object classKey = document.get(distinctionOverride.value());
+                Class<?> klass = context.findClassDistinctionReader(expectedClass).findClass(classKey);
+
+                DocumentDecodeInput input = new DocumentDecodeInput(keyFieldOverride, doc);
+                return context.findCodec(klass).constructAndDecode(context, input);
             }
 
             // decode nested object

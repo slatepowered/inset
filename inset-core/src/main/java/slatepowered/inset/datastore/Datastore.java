@@ -5,6 +5,7 @@ import lombok.Getter;
 import slatepowered.inset.DataManager;
 import slatepowered.inset.cache.DataCache;
 import slatepowered.inset.codec.*;
+import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.operation.DeleteAllOperation;
 import slatepowered.inset.query.FindAllOperation;
 import slatepowered.inset.query.Query;

@@ -4,11 +4,11 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.bson.*;
 import org.bson.codecs.UuidCodec;
+import slatepowered.inset.codec.ClassDistinctionOverride;
 import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.EncodeOutput;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.Modifier;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -16,7 +16,7 @@ import java.util.*;
 import static slatepowered.inset.bson.BsonCodecs.shouldWriteClassName;
 
 /**
- * Writes data to a {@link Document} input.
+ * Writes data to a BSON {@link Document}.
  */
 @RequiredArgsConstructor
 @Getter
@@ -115,8 +115,11 @@ public class DocumentEncodeOutput extends EncodeOutput {
             DocumentEncodeOutput output = new DocumentEncodeOutput(keyFieldOverride, document);
             context.findCodec((Class<Object>) klass).encode(context, value, output);
 
-            if (shouldWriteClassName(klass)) {
-                document.put(BsonCodecs.CLASS_NAME_FIELD, new BsonString(klass.getName()));
+            ClassDistinctionOverride distinctionOverride = BsonCodecs.getClassDistinctionOverride(baseType);
+            if (distinctionOverride == null) {
+                if (shouldWriteClassName(klass)) {
+                    document.put(BsonCodecs.CLASS_NAME_FIELD, new BsonString(klass.getName()));
+                }
             }
 
             return document;

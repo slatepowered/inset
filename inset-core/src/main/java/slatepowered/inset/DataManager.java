@@ -2,12 +2,15 @@ package slatepowered.inset;
 
 import lombok.Builder;
 import lombok.Getter;
+import slatepowered.inset.codec.ClassDistinctionReader;
 import slatepowered.inset.codec.CodecRegistry;
 import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.datastore.Datastore;
 
 import java.lang.ref.WeakReference;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -16,6 +19,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Builder
 @Getter
+@SuppressWarnings({ "unchecked", "rawtypes" })
 public class DataManager {
 
     static final int DEFAULT_AWAIT_TIMEOUT_SECONDS = 30;
@@ -29,6 +33,12 @@ public class DataManager {
      * The executor to use for asynchronous operations.
      */
     protected final ExecutorService executorService;
+
+    /**
+     * All defined class distinction readers.
+     */
+    @Getter
+    protected final Map<Class, ClassDistinctionReader> classDistinctionReaders = new HashMap<>();
 
     /**
      * Await all ongoing queries and their handlers to finish

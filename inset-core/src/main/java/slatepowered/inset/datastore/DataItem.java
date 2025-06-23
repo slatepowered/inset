@@ -1,6 +1,8 @@
 package slatepowered.inset.datastore;
 
 import slatepowered.inset.codec.*;
+import slatepowered.inset.codec.DecodeInput;
+import slatepowered.inset.codec.EncodeOutput;
 import slatepowered.inset.internal.ProjectionInterface;
 import slatepowered.inset.operation.Sorting;
 import slatepowered.inset.query.FindOperation;
