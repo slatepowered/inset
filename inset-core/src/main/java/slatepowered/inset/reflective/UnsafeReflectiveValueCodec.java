@@ -41,7 +41,7 @@ public class UnsafeReflectiveValueCodec<T> implements ValueCodec<T> {
     public void encode(CodecContext context, T value, EncodeOutput output) {
         for (UnsafeFieldDesc desc : fields) {
             Object fieldValue = desc.getAsObject(value);
-            output.set(context, desc.serializedName, fieldValue);
+            output.set(context, desc.serializedName, fieldValue, desc.type);
         }
     }
 

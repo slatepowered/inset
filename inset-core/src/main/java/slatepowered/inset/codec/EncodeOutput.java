@@ -2,6 +2,8 @@ package slatepowered.inset.codec;
 
 import lombok.Getter;
 
+import java.lang.reflect.Type;
+
 /**
  * An output for structured data which values are to be encoded into.
  */
@@ -36,8 +38,9 @@ public abstract class EncodeOutput {
      * @param context The context.
      * @param field The field name.
      * @param value The value.
+     * @param definedType The generic type the field was defined as.
      */
-    public abstract void set(CodecContext context, String field, Object value);
+    public abstract void set(CodecContext context, String field, Object value, Type definedType);
 
     @SuppressWarnings("unchecked")
     public <R extends EncodeOutput> R requireType(Class<R> rClass) {

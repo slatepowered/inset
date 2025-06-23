@@ -7,8 +7,10 @@ import org.bson.codecs.UuidCodec;
 import slatepowered.inset.codec.ClassDistinctionOverride;
 import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.EncodeOutput;
+import slatepowered.veru.reflect.ReflectUtil;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -47,7 +49,7 @@ public class DocumentEncodeOutput extends EncodeOutput {
 
     // encode the given value to a bson supported document value
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    private BsonValue encodeValue(CodecContext context, Object value, Class<?> baseType) {
+    private BsonValue encodeValue(CodecContext context, Object value, Type definedType) {
         /* Null */
         if (value == null) {
             return new BsonNull();
@@ -115,8 +117,9 @@ public class DocumentEncodeOutput extends EncodeOutput {
             DocumentEncodeOutput output = new DocumentEncodeOutput(keyFieldOverride, document);
             context.findCodec((Class<Object>) klass).encode(context, value, output);
 
-            ClassDistinctionOverride distinctionOverride = BsonCodecs.getClassDistinctionOverride(baseType);
-            if (distinctionOverride == null) {
+            ClassDistinctionOverride distinctionOverride;
+            Class<?> definedClass;
+            if (definedType == null || ((distinctionOverride = BsonCodecs.getClassDistinctionOverride(definedClass = ReflectUtil.getClassForType(definedType))) == null)) {
                 if (shouldWriteClassName(klass)) {
                     document.put(BsonCodecs.CLASS_NAME_FIELD, new BsonString(klass.getName()));
                 }
@@ -153,8 +156,8 @@ public class DocumentEncodeOutput extends EncodeOutput {
     }
 
     @Override
-    public void set(CodecContext context, String field, Object value) {
-        outputDocument.append(field, encodeValue(context, value, null));
+    public void set(CodecContext context, String field, Object value, Type definedType) {
+        outputDocument.append(field, encodeValue(context, value, definedType));
     }
 
 }
