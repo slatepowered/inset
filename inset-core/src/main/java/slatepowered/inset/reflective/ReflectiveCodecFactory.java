@@ -29,7 +29,9 @@ public final class ReflectiveCodecFactory implements CodecFactory {
             List<UnsafeFieldDesc> unsafeFields = new ArrayList<>();
             Set<Field> fields = new HashSet<>();
 
-            for (Class<?> kl = klass; kl != Object.class; kl = kl.getSuperclass()) {
+            fields.addAll(Arrays.asList(klass.getFields()));
+            fields.addAll(Arrays.asList(klass.getDeclaredFields()));
+            for (Class<?> kl = klass; kl != Object.class && kl != null; kl = kl.getSuperclass()) {
                 fields.addAll(Arrays.asList(kl.getDeclaredFields()));
             }
 
