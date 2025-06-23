@@ -21,7 +21,7 @@ import java.util.function.Predicate;
  * Extension of {@link UnsafeReflectiveValueCodec} to implement {@link DataCodec}.
  */
 @SuppressWarnings("unchecked")
-final class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T> implements DataCodec<K, T> {
+public class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T> implements DataCodec<K, T> {
 
     // what the method name says lol
     private static UnsafeFieldDesc[] removePrimaryKeyFieldFromDefaultCodecFieldArray(UnsafeFieldDesc[] arr, String name) {

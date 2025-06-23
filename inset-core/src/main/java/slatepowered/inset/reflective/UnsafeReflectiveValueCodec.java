@@ -17,7 +17,7 @@ import java.util.Map;
  * Utilizes reflection and Unsafe to quickly serialize object-only fields.
  */
 @SuppressWarnings("unchecked")
-class UnsafeReflectiveValueCodec<T> implements ValueCodec<T> {
+public class UnsafeReflectiveValueCodec<T> implements ValueCodec<T> {
 
     static final Unsafe UNSAFE = UnsafeUtil.getUnsafe();
 

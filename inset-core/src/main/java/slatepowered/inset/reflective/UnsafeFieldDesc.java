@@ -9,7 +9,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 
 @Data
-final class UnsafeFieldDesc {
+public final class UnsafeFieldDesc {
 
     static final Unsafe UNSAFE = UnsafeUtil.getUnsafe();
 
