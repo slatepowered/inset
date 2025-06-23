@@ -15,7 +15,6 @@ import java.util.WeakHashMap;
  */
 @RequiredArgsConstructor
 @Getter
-@Builder(toBuilder = true)
 public class ClassTreeInfo {
 
     static final WeakHashMap<Class<?>, ClassTreeInfo> MAP = new WeakHashMap<>();
