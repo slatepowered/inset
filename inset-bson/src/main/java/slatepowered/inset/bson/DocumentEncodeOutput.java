@@ -9,7 +9,6 @@ import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.EncodeOutput;
 import slatepowered.inset.util.Reflections;
 import slatepowered.veru.reflect.ReflectUtil;
-import sun.reflect.generics.reflectiveObjects.TypeVariableImpl;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
