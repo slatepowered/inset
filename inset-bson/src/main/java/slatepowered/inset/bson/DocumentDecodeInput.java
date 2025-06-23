@@ -242,7 +242,7 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
 
             ClassDistinctionOverride distinctionOverride = expectedClassInfo != null ? expectedClassInfo.getClassDistinctionOverride() : null;
             if (distinctionOverride != null) {
-                Object classKey = document.get(distinctionOverride.value());
+                Object classKey = doc.get(distinctionOverride.value());
                 Class<?> klass = context.findClassDistinctionReader(expectedClass).findClass(classKey);
 
                 DocumentDecodeInput input = new DocumentDecodeInput(keyFieldOverride, doc);
