@@ -3,6 +3,7 @@ package slatepowered.inset.codec;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import slatepowered.inset.DataManager;
+import slatepowered.inset.codec.support.ClassDistinctionReader;
 
 /**
  * The context in which data serialization/marshalling occurs.

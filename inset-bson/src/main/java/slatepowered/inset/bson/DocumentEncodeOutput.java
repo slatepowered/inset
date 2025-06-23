@@ -4,21 +4,16 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.bson.*;
 import org.bson.codecs.UuidCodec;
-import slatepowered.inset.codec.ClassDistinctionOverride;
 import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.EncodeOutput;
-import slatepowered.inset.util.Reflections;
-import slatepowered.veru.reflect.ReflectUtil;
+import slatepowered.inset.codec.support.ClassTreeInfo;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.*;
-
-import static slatepowered.inset.bson.BsonCodecs.shouldWriteClassName;
 
 /**
  * Writes data to a BSON {@link Document}.
@@ -60,9 +55,11 @@ public class DocumentEncodeOutput extends EncodeOutput {
 
         /* Complex Types */
         Class<?> klass = value.getClass();
+        final ClassTreeInfo treeInfo = ClassTreeInfo.forClass(klass);
+
         if (Enum.class.isAssignableFrom(klass)) {
             Class<?> enumDeclClass = klass.isEnum() ? klass : klass.getSuperclass();
-            return shouldWriteClassName(klass) ?
+            return treeInfo.shouldWriteSeparateClassName() ?
                     new BsonString(enumDeclClass.getName() + ":" + ((Enum)value).name()) : /* encode as class:name */
                     new BsonString(((Enum)value).name()); /* encode as name */
         } else if (klass.isArray()) {
@@ -127,12 +124,8 @@ public class DocumentEncodeOutput extends EncodeOutput {
             DocumentEncodeOutput output = new DocumentEncodeOutput(keyFieldOverride, document);
             context.findCodec((Class<Object>) klass).encode(context, value, output);
 
-            ClassDistinctionOverride distinctionOverride;
-            Class<?> definedClass;
-            if (definedType == null || ((distinctionOverride = BsonCodecs.getClassDistinctionOverride(definedClass = Reflections.getClassForType(definedType))) == null)) {
-                if (shouldWriteClassName(klass)) {
-                    document.put(BsonCodecs.CLASS_NAME_FIELD, new BsonString(klass.getName()));
-                }
+            if (treeInfo.shouldWriteSeparateClassName()) {
+                document.put(BsonCodecs.CLASS_NAME_FIELD, new BsonString(klass.getName()));
             }
 
             return document;

@@ -2,14 +2,12 @@ package slatepowered.inset;
 
 import lombok.Builder;
 import lombok.Getter;
-import slatepowered.inset.codec.ClassDistinctionReader;
+import slatepowered.inset.codec.support.ClassDistinctionReader;
 import slatepowered.inset.codec.CodecRegistry;
 import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.datastore.Datastore;
 
-import java.lang.ref.WeakReference;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;

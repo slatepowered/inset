@@ -3,13 +3,13 @@ package slatepowered.inset.bson;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.bson.Document;
-import slatepowered.inset.codec.ClassDistinctionOverride;
+import slatepowered.inset.codec.support.ClassDistinctionOverride;
 import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.DecodeInput;
+import slatepowered.inset.codec.support.ClassTreeInfo;
 import slatepowered.inset.util.DebugLogging;
 import slatepowered.inset.util.Reflections;
 import slatepowered.inset.util.ValueUtils;
-import slatepowered.veru.reflect.ReflectUtil;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
@@ -63,6 +63,8 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private Object decodeDocumentValue(CodecContext context, Object value, Type expectedType) {
         Class<?> expectedClass = Reflections.getClassForType(expectedType);
+        final ClassTreeInfo expectedClassInfo = ClassTreeInfo.forClass(expectedClass);
+
         if (DEBUG_LOGGING_LEVEL >= TRACE) log("decodeDocumentValue(" + compactString(value) + ", expected: " + compactString(expectedType) + ")");
 
         if (value == null) {
@@ -189,7 +191,7 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
         }
 
         // complex enum declaration
-        if (value instanceof String && BsonCodecs.shouldWriteClassName(expectedClass)) {
+        if (value instanceof String && expectedClassInfo != null && expectedClassInfo.shouldWriteSeparateClassName()) {
             String[] strings = ((String) value).split(":");
             String enumDeclClassName = strings[0];
             String enumConstantName = strings[1];
@@ -238,7 +240,7 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
                 return map;
             }
 
-            ClassDistinctionOverride distinctionOverride = BsonCodecs.getClassDistinctionOverride(expectedClass);
+            ClassDistinctionOverride distinctionOverride = expectedClassInfo != null ? expectedClassInfo.getClassDistinctionOverride() : null;
             if (distinctionOverride != null) {
                 Object classKey = document.get(distinctionOverride.value());
                 Class<?> klass = context.findClassDistinctionReader(expectedClass).findClass(classKey);

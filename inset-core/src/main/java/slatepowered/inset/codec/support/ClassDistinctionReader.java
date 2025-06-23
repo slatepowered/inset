@@ -1,4 +1,4 @@
-package slatepowered.inset.codec;
+package slatepowered.inset.codec.support;
 
 public interface ClassDistinctionReader {
 
