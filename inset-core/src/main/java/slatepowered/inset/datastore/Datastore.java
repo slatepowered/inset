@@ -30,6 +30,18 @@ import java.util.stream.Stream;
 @Builder
 public class Datastore<K, T> implements DebugLogging {
 
+    public Datastore(DataCache<K, T> dataCache,
+                     DataManager dataManager,
+                     Class<K> keyClass,
+                     DataTable sourceTable,
+                     DataCodec<K, T> dataCodec) {
+        this.dataCache = dataCache;
+        this.dataManager = dataManager;
+        this.keyClass = keyClass;
+        this.sourceTable = sourceTable;
+        this.dataCodec = dataCodec;
+    }
+
     /** The data caching provider. */
     @Getter
     protected final DataCache<K, T> dataCache;
