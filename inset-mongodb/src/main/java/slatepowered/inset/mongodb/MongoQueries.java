@@ -18,6 +18,7 @@ import slatepowered.inset.query.constraint.CommonFieldConstraint;
 import slatepowered.inset.query.constraint.FieldConstraint;
 import slatepowered.inset.source.DataSourceBulkIterable;
 import slatepowered.inset.source.DataSourceFindResult;
+import slatepowered.inset.util.Range;
 
 import java.util.*;
 import java.util.stream.Stream;
@@ -80,6 +81,10 @@ final class MongoQueries {
                 case LESS_OR_EQUAL: return Filters.lte(fieldName, encodeFieldConstraintOperand(constraint, commonConstraint.getOperand()));
                 case EXISTS: return Filters.exists(fieldName);
                 case ONE_OF: return Filters.in(fieldName, (Iterable<?>) encodeFieldConstraintOperand(constraint, commonConstraint.getOperand()));
+                case IN_RANGE: {
+                    Range range = (Range) ((CommonFieldConstraint<?>) constraint).getOperand();
+                    return Filters.and(Filters.gte(fieldName, range.getStart()), Filters.lte(fieldName, range.getEnd()));
+                }
             }
         }
         

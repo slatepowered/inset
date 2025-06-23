@@ -1,6 +1,7 @@
 package slatepowered.inset.query.constraint;
 
 import lombok.RequiredArgsConstructor;
+import slatepowered.inset.util.Range;
 import slatepowered.inset.util.ValueUtils;
 
 import java.util.HashSet;
@@ -115,6 +116,19 @@ public enum CommonConstraintType {
                 @Override
                 public boolean test(T t) {
                     return set.contains(t);
+                }
+            };
+        }
+    },
+    IN_RANGE {
+        @Override
+        public <T> CommonFieldConstraint<T> forOperand(Object operand) {
+            // compile operand to a HashSet
+            Range range = (Range) operand;
+            return new CommonFieldConstraint<T>(IN_RANGE, range) {
+                @Override
+                public boolean test(T t) {
+                    return range.contains(((Number)t).longValue());
                 }
             };
         }
