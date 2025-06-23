@@ -37,7 +37,7 @@ public class ClassTreeInfo {
     }
 
     public static ClassTreeInfo forClass(Class<?> klass) {
-        if (klass.isPrimitive() || klass.isArray()) {
+        if (klass == null || klass.isPrimitive() || klass.isArray()) {
             return null;
         }
 
