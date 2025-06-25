@@ -15,6 +15,6 @@ public @interface NotNullable {
     /**
      * The flag set on a field when it is not nullable.
      */
-    long FLAG = 1 >> 1;
+    long FLAG = 1 << 1;
 
 }

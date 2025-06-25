@@ -7,6 +7,8 @@ import org.bson.codecs.UuidCodec;
 import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.EncodeOutput;
 import slatepowered.inset.codec.support.ClassTreeInfo;
+import slatepowered.inset.codec.support.PotentiallyTransient;
+import slatepowered.veru.reflect.ReflectUtil;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
@@ -47,7 +49,7 @@ public class DocumentEncodeOutput extends EncodeOutput {
 
     // encode the given value to a bson supported document value
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    private BsonValue encodeValue(CodecContext context, Object value, Type definedType) {
+    private BsonValue encodeValue(CodecContext context, Object value, Type definedType, Class definedClass) {
         /* Null */
         if (value == null) {
             return new BsonNull();
@@ -63,10 +65,12 @@ public class DocumentEncodeOutput extends EncodeOutput {
                     new BsonString(enumDeclClass.getName() + ":" + ((Enum)value).name()) : /* encode as class:name */
                     new BsonString(((Enum)value).name()); /* encode as name */
         } else if (klass.isArray()) {
+            // todo: work with defined types and PotentiallyTransient
             int l = Array.getLength(value);
             BsonArray outArr = new BsonArray(new ArrayList<>(l));
-            for (int i = 0; i < l; i++)
-                outArr.add(i, encodeValue(context, Array.get(value, i), null));
+            for (int i = 0; i < l; i++) {
+                outArr.add(i, encodeValue(context, Array.get(value, i), null, null));
+            }
 
             return outArr;
         } else if (value instanceof Collection) {
@@ -78,9 +82,27 @@ public class DocumentEncodeOutput extends EncodeOutput {
                 definedElementType = ((ParameterizedType)definedType).getActualTypeArguments()[0];
             }
 
+            Class<?> definedElemClass = ReflectUtil.getClassForType(definedElementType);
+
             BsonArray outArr = new BsonArray(new ArrayList<>(collection.size()));
-            for (Object o : collection)
-                outArr.add(encodeValue(context, o, definedElementType));
+
+            if (PotentiallyTransient.class.isAssignableFrom(definedClass)) {
+                for (Object o : collection) {
+                    if (((PotentiallyTransient)o).isTransient()) {
+                        continue;
+                    }
+
+                    outArr.add(encodeValue(context, o, definedElementType, definedElemClass));
+                }
+            } else {
+                for (Object o : collection) {
+                    if (o instanceof PotentiallyTransient && ((PotentiallyTransient) o).isTransient()) {
+                        continue;
+                    }
+
+                    outArr.add(encodeValue(context, o, definedElementType, definedElemClass));
+                }
+            }
 
             return outArr;
         } else if (value instanceof Map) {
@@ -93,13 +115,21 @@ public class DocumentEncodeOutput extends EncodeOutput {
              * [ ["a", 6], ["b", 7] ]
              */
 
+            // todo: work with defined types and optimize PotentiallyTransient
+
             Map map = (Map) value;
             BsonArray convertedMap = new BsonArray(new ArrayList<>(map.size()));
 
-            map.forEach((k, v) -> convertedMap.add(new BsonArray(Arrays.asList(
-                    encodeValue(context, k, null),
-                    encodeValue(context, v, null)
-            ))));
+            map.forEach((k, v) -> {
+                if (v instanceof PotentiallyTransient && ((PotentiallyTransient)v).isTransient()) {
+                    return;
+                }
+
+                convertedMap.add(new BsonArray(Arrays.asList(
+                        encodeValue(context, k, null, null),
+                        encodeValue(context, v, null, null)
+                )));
+            });
 
             return convertedMap;
         }
@@ -155,12 +185,12 @@ public class DocumentEncodeOutput extends EncodeOutput {
     @Override
     protected void registerKey(CodecContext context, String name, Object key) {
         setKeyField = keyFieldOverride != null ? keyFieldOverride : setKeyField;
-        outputDocument.append(setKeyField, encodeValue(context, key, null));
+        outputDocument.append(setKeyField, encodeValue(context, key, null, null));
     }
 
     @Override
     public void set(CodecContext context, String field, Object value, Type definedType) {
-        outputDocument.append(field, encodeValue(context, value, definedType));
+        outputDocument.append(field, encodeValue(context, value, definedType, ReflectUtil.getClassForType(definedType)));
     }
 
 }

@@ -10,6 +10,7 @@ import slatepowered.inset.codec.support.ClassTreeInfo;
 import slatepowered.inset.util.DebugLogging;
 import slatepowered.inset.util.Reflections;
 import slatepowered.inset.util.ValueUtils;
+import slatepowered.veru.reflect.ReflectUtil;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
@@ -32,8 +33,7 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
 
     // decodes a map-valid key retrieved from a bson document
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    private Object decodeDocumentKey(CodecContext context, String value, Type expectedType) {
-        Class<?> expectedClass = Reflections.getClassForType(expectedType);
+    private Object decodeDocumentKey(CodecContext context, String value, Type expectedType, Class<?> expectedClass) {
         if (expectedClass == String.class) {
             return value;
         }
@@ -61,8 +61,7 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
 
     // decodes a value retrieved from a bson document
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    private Object decodeDocumentValue(CodecContext context, Object value, Type expectedType) {
-        Class<?> expectedClass = Reflections.getClassForType(expectedType);
+    private Object decodeDocumentValue(CodecContext context, Object value, Type expectedType, Class<?> expectedClass) {
         final ClassTreeInfo expectedClassInfo = ClassTreeInfo.forClass(expectedClass);
 
         if (DEBUG_LOGGING_LEVEL >= TRACE) log("decodeDocumentValue(" + compactString(value) + ", expected: " + compactString(expectedType) + ")");
@@ -106,10 +105,13 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
                     expectedValueType = Object.class;
                 }
 
+                final Class<?> expectedKeyClass = ReflectUtil.getClassForType(expectedKeyType);
+                final Class<?> expectedValueClass = ReflectUtil.getClassForType(expectedValueType);
+
                 Map convertedMap = new HashMap();
                 encodedMap.forEach(pair -> convertedMap.put(
-                        decodeDocumentValue(context, pair.get(0), expectedKeyType),  // key
-                        decodeDocumentValue(context, pair.get(1), expectedValueType) // value
+                        decodeDocumentValue(context, pair.get(0), expectedKeyType, expectedKeyClass),    // key
+                        decodeDocumentValue(context, pair.get(1), expectedValueType, expectedValueClass) // value
                 ));
 
                 return convertedMap;
@@ -122,13 +124,14 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
             // check if we expect an array
             if (expectedClass.isArray()) {
                 Type expectedElementType = expectedClass.getComponentType();
+                Class<?> expectedElementClass = ReflectUtil.getClassForType(expectedElementType);
 
                 List list = (List) value;
                 final int length = list.size();
                 Object array = Array.newInstance(expectedClass.getComponentType(), length);
 
                 for (int i = 0; i < length; i++) {
-                    Array.set(array, i, decodeDocumentValue(context, value, expectedElementType));
+                    Array.set(array, i, decodeDocumentValue(context, value, expectedElementType, expectedElementClass));
                 }
 
                 return array;
@@ -140,6 +143,8 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
                 expectedElementType = ((ParameterizedType)expectedType).getActualTypeArguments()[0];
             }
 
+            Class<?> expectedElementClass = ReflectUtil.getClassForType(expectedElementType);
+
             // decode list
             List list = (List) value;
             final int length = list.size();
@@ -150,7 +155,7 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
             else newList = new ArrayList();
 
             for (int i = 0; i < length; i++) {
-                newList.add(decodeDocumentValue(context, list.get(i), expectedElementType));
+                newList.add(decodeDocumentValue(context, list.get(i), expectedElementType, expectedElementClass));
             }
 
             return newList;
@@ -231,10 +236,13 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
                     expectedValueType = Object.class;
                 }
 
+                Class<?> expectedKeyClass = ReflectUtil.getClassForType(expectedKeyType);
+                Class<?> expectedValueClass = ReflectUtil.getClassForType(expectedValueType);
+
                 Map map = new HashMap();
                 doc.forEach((k, v) -> map.put(
-                        decodeDocumentKey(context, k, expectedKeyType),
-                        decodeDocumentValue(context, v, expectedValueType)
+                        decodeDocumentKey(context, k, expectedKeyType, expectedKeyClass),
+                        decodeDocumentValue(context, v, expectedValueType, expectedValueClass)
                 ));
 
                 return map;
@@ -287,7 +295,7 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
     public Object read(CodecContext context, String field, Type expectedType) {
         Object value = document.get(field);
         if (DEBUG_LOGGING_LEVEL >= TRACE) log("Decoding value for `" + field + "` expected: " + expectedType + " from value `" + compactString(value) + "`");
-        Object v = decodeDocumentValue(context, value, expectedType);
+        Object v = decodeDocumentValue(context, value, expectedType, ReflectUtil.getClassForType(expectedType));
         if (DEBUG_LOGGING_LEVEL >= TRACE) log(" Finished decode v = " + compactString(v));
         return v;
     }
@@ -295,7 +303,7 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
     @Override
     public Object readKey(String field, Type expectedType) {
         Object value = document.get(keyFieldOverride != null ? keyFieldOverride : field);
-        return decodeDocumentValue(null, value, expectedType);
+        return decodeDocumentValue(null, value, expectedType, ReflectUtil.getClassForType(expectedType));
     }
 
 }

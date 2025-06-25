@@ -1,6 +1,7 @@
 package slatepowered.inset.reflective;
 
 import lombok.Data;
+import slatepowered.inset.codec.support.PotentiallyTransient;
 import slatepowered.inset.util.NotNullable;
 import slatepowered.veru.reflect.UnsafeUtil;
 import sun.misc.Unsafe;
@@ -31,6 +32,8 @@ public final class UnsafeFieldDesc {
     final Type type;             // The generic type
     final byte primitiveType;    // The primitive type, must be one of the above defined constants
     final long etcFlags;         // Other miscellaneous flags, such as @Nullable
+
+    boolean isPotentiallyTransient;
 
     /**
      * Get the value in this field on the given instance, boxed if primitive.
@@ -95,7 +98,13 @@ public final class UnsafeFieldDesc {
         if (field.isAnnotationPresent(NotNullable.class)) flags |= NotNullable.FLAG;
 
         SerializedName fieldNameAnnotation = field.getAnnotation(SerializedName.class);
-        return new UnsafeFieldDesc(field, field.getName(), fieldNameAnnotation != null ? fieldNameAnnotation.value() : field.getName(), UNSAFE.objectFieldOffset(field), field.getGenericType(), getPrimitiveType(field.getType()), flags);
+        UnsafeFieldDesc desc = new UnsafeFieldDesc(field, field.getName(), fieldNameAnnotation != null ? fieldNameAnnotation.value() : field.getName(), UNSAFE.objectFieldOffset(field), field.getGenericType(), getPrimitiveType(field.getType()), flags);
+
+        if (PotentiallyTransient.class.isAssignableFrom(field.getType())) {
+            desc.isPotentiallyTransient = true;
+        }
+
+        return desc;
     }
 
 }
