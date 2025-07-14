@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 
 /**
@@ -16,7 +17,7 @@ public class CodecRegistry {
     private final CodecFactory factory;
 
     /** The codec cache. */
-    private final Map<Class<?>, ValueCodec<?>> serializerMap = new HashMap<>();
+    private final Map<Class<?>, ValueCodec<?>> serializerMap = new ConcurrentHashMap<>();
 
     @SuppressWarnings("unchecked")
     public <T> ValueCodec<T> getCodec(Class<T> klass) {
