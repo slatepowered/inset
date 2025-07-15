@@ -149,9 +149,10 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
             List list = (List) value;
             final int length = list.size();
 
-            List newList;
+            Collection newList;
             if (Vector.class.isAssignableFrom(expectedClass)) newList = new Vector();
             else if (LinkedList.class.isAssignableFrom(expectedClass)) newList = new LinkedList();
+            else if (Set.class.isAssignableFrom(expectedClass)) newList = new HashSet<>();
             else newList = new ArrayList();
 
             for (int i = 0; i < length; i++) {
