@@ -196,7 +196,7 @@ public abstract class PartialItem<K, T> {
      */
     public PartialItem<K, T> delete() {
         Datastore<K, T> datastore = assertQualified();
-        datastore.getSourceTable().deleteOne(Query.byKey(getKey()));
+        datastore.getSourceTable().deleteOne(Query.byKey(getKey()).qualify(datastore));
         datastore.getDataCache().remove(getKey());
         return this;
     }
