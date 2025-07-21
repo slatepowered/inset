@@ -16,6 +16,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Reads data from a {@link Document} input.
@@ -108,7 +109,13 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
                 final Class<?> expectedKeyClass = ReflectUtil.getClassForType(expectedKeyType);
                 final Class<?> expectedValueClass = ReflectUtil.getClassForType(expectedValueType);
 
-                Map convertedMap = new HashMap();
+                /* determine map type */
+                Map convertedMap;
+                if (ConcurrentHashMap.class.isAssignableFrom(expectedClass)) convertedMap = new ConcurrentHashMap();
+                else if (WeakHashMap.class.isAssignableFrom(expectedClass)) convertedMap = new WeakHashMap();
+                else if (LinkedHashMap.class.isAssignableFrom(expectedClass)) convertedMap = new LinkedHashMap();
+                else convertedMap = new HashMap();
+
                 encodedMap.forEach(pair -> convertedMap.put(
                         decodeDocumentValue(context, pair.get(0), expectedKeyType, expectedKeyClass),    // key
                         decodeDocumentValue(context, pair.get(1), expectedValueType, expectedValueClass) // value
@@ -149,6 +156,7 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
             List list = (List) value;
             final int length = list.size();
 
+            /* determine collection type */
             Collection newList;
             if (Vector.class.isAssignableFrom(expectedClass)) newList = new Vector();
             else if (LinkedList.class.isAssignableFrom(expectedClass)) newList = new LinkedList();
