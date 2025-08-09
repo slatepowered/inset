@@ -9,7 +9,7 @@ buildscript {
         mavenCentral()
     }
 }
-
+// pls compile jitpack bro
 allprojects {
     buildscript {
         repositories {
