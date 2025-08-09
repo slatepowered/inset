@@ -99,4 +99,12 @@ public class MongoDataTable implements DataTable {
         }
     }
 
+    @Override
+    public long count(Query query) {
+        String keyFieldOverride = source.getKeyFieldOverride();
+        Bson filter = MongoQueries.serializeQueryToFindFilter(query.getDatastore().getDataCodec(), keyFieldOverride, query);
+
+        return collection.countDocuments(filter);
+    }
+
 }

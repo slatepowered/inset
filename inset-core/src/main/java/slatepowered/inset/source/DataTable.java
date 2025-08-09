@@ -125,4 +125,22 @@ public interface DataTable {
         return CompletableFuture.supplyAsync(() -> this.deleteAll(query), getSource().getExecutorService());
     }
 
+    /**
+     * Count the documents matching the given query.
+     *
+     * @param query The query.
+     * @return The document count.
+     */
+    long count(Query query);
+
+    /**
+     * Asynchronously count the documents matching the given query.
+     *
+     * @param query The query.
+     * @return The document count.
+     */
+    default CompletableFuture<Long> countAsync(Query query) {
+        return CompletableFuture.supplyAsync(() -> this.count(query), getSource().getExecutorService());
+    }
+
 }
