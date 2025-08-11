@@ -85,23 +85,12 @@ public class DocumentEncodeOutput extends EncodeOutput {
             Class<?> definedElemClass = ReflectUtil.getClassForType(definedElementType);
 
             BsonArray outArr = new BsonArray(new ArrayList<>(collection.size()));
-
-            if (PotentiallyTransient.class.isAssignableFrom(definedClass)) {
-                for (Object o : collection) {
-                    if (((PotentiallyTransient)o).isTransient()) {
-                        continue;
-                    }
-
-                    outArr.add(encodeValue(context, o, definedElementType, definedElemClass));
+            for (Object o : collection) {
+                if (o instanceof PotentiallyTransient && ((PotentiallyTransient) o).isTransient()) {
+                    continue;
                 }
-            } else {
-                for (Object o : collection) {
-                    if (o instanceof PotentiallyTransient && ((PotentiallyTransient) o).isTransient()) {
-                        continue;
-                    }
 
-                    outArr.add(encodeValue(context, o, definedElementType, definedElemClass));
-                }
+                outArr.add(encodeValue(context, o, definedElementType, definedElemClass));
             }
 
             return outArr;
