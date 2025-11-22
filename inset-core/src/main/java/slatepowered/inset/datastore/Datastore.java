@@ -249,6 +249,18 @@ public class Datastore<K, T> implements DebugLogging {
     }
 
     /**
+     * Try to find an item by the given key.
+     *
+     * @see #findOne(Query)
+     * @see Query#byKey(Object)
+     * @param key The key.
+     * @return This.
+     */
+    public FindOperation<K, T> findOne(K key, ExecutorService executor) {
+        return findOne(Query.byKey(key).withExecutor(executor));
+    }
+
+    /**
      * Find all cached items matching the given query in the datastore.
      *
      * This action is always performed synchronously.
