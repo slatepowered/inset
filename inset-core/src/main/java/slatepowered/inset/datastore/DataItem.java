@@ -264,7 +264,7 @@ public class DataItem<K, T> extends PartialItem<K, T> {
      * @param input The input.
      * @return This.
      */
-    public DataItem<K, T> decode(DecodeInput input) {
+    public synchronized DataItem<K, T> decode(DecodeInput input) {
         if (input == null) {
             return this;
         }

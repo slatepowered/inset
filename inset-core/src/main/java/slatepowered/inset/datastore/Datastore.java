@@ -203,8 +203,7 @@ public class Datastore<K, T> implements DebugLogging {
 
         query = query.qualify(this);
 
-        // asynchronously try to load the item
-        // from the datatable
+        // asynchronously try to load the item from the datatable
         FindOperation<K, T> queryStatus = new FindOperation<>(this, query);
         if (DEBUG_LOGGING_LEVEL >= TRACE) log("  Created FindOperation, executing source table query");
         Query finalQuery = query;
@@ -376,6 +375,7 @@ public class Datastore<K, T> implements DebugLogging {
         DataItem<K, T> item = getOrReference(key);
         item.decode(input);
         item.fetchedNow();
+
         return item;
     }
 
