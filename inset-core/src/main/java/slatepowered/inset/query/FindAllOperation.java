@@ -211,7 +211,7 @@ public class FindAllOperation<K, T> extends OperationStatus<K, T, FindAllOperati
 
     // asynchronously execute the given function
     private <A> CompletableFuture<A> async(Supplier<A> supplier) {
-        return CompletableFuture.supplyAsync(supplier, datastore.getExecutorService());
+        return CompletableFuture.supplyAsync(supplier, query.getEffectiveExecutor());
     }
 
     // qualify the given item for this query

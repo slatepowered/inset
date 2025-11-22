@@ -1,5 +1,7 @@
 package slatepowered.inset.query;
 
+import lombok.RequiredArgsConstructor;
+import slatepowered.inset.DataManager;
 import slatepowered.inset.codec.DataCodec;
 import slatepowered.inset.datastore.Datastore;
 import slatepowered.inset.query.constraint.CommonConstraintType;
@@ -10,6 +12,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Represents a query into a datastore.
@@ -75,6 +79,17 @@ public interface Query {
      */
     Datastore<?, ?> getDatastore();
 
+    default ExecutorService getExecutorOverride() {
+        return null;
+    }
+
+    Query withExecutor(ExecutorService executor);
+
+    default ExecutorService getEffectiveExecutor() {
+        ExecutorService ov = getExecutorOverride();
+        return ov == null ? getDatastore().getExecutorService() : ov;
+    }
+
     static Query byKey(final Object key) {
         return new Query() {
             // The cached field map
@@ -130,6 +145,19 @@ public interface Query {
             @Override
             public Query qualify(Datastore<?, ?> datastore) {
                 this.datastore = datastore;
+                return this;
+            }
+
+            ExecutorService executor;
+
+            @Override
+            public ExecutorService getExecutorOverride() {
+                return executor;
+            }
+
+            @Override
+            public Query withExecutor(ExecutorService executor) {
+                this.executor = executor;
                 return this;
             }
 
@@ -224,6 +252,19 @@ public interface Query {
                 return this;
             }
 
+            ExecutorService executor;
+
+            @Override
+            public ExecutorService getExecutorOverride() {
+                return executor;
+            }
+
+            @Override
+            public Query withExecutor(ExecutorService executor) {
+                this.executor = executor;
+                return this;
+            }
+
             @Override
             public Datastore<?, ?> getDatastore() {
                 return datastore;
@@ -286,6 +327,19 @@ public interface Query {
                 return datastore;
             }
 
+            ExecutorService executor;
+
+            @Override
+            public ExecutorService getExecutorOverride() {
+                return executor;
+            }
+
+            @Override
+            public Query withExecutor(ExecutorService executor) {
+                this.executor = executor;
+                return this;
+            }
+
             @Override
             public String toString() {
                 return "all";
@@ -298,6 +352,12 @@ public interface Query {
      */
     class Builder {
         private Map<String, FieldConstraint<?>> fieldConstraintMap = new HashMap<>();
+        private ExecutorService executor;
+
+        public Builder executor(ExecutorService executor) {
+            this.executor = executor;
+            return this;
+        }
 
         public Builder constrain(String field, FieldConstraint<?> constraint) {
             fieldConstraintMap.put(field, constraint);
@@ -341,7 +401,7 @@ public interface Query {
         }
 
         public Query build() {
-            return forFields(fieldConstraintMap);
+            return forFields(fieldConstraintMap).withExecutor(executor);
         }
     }
 

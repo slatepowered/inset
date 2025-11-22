@@ -65,7 +65,7 @@ public interface DataTable {
      * @return The query result future.
      */
     default CompletableFuture<DataSourceFindResult> findOneAsync(final Query query) {
-        return CompletableFuture.supplyAsync(() -> this.findOneSync(query), getSource().getExecutorService());
+        return CompletableFuture.supplyAsync(() -> this.findOneSync(query), query.getEffectiveExecutor());
     }
 
     /**
@@ -86,7 +86,7 @@ public interface DataTable {
      * @return The result.
      */
     default CompletableFuture<DataSourceBulkIterable> findAllAsync(final Query query) {
-        return CompletableFuture.supplyAsync(() -> this.findAllSync(query), getSource().getExecutorService());
+        return CompletableFuture.supplyAsync(() -> this.findAllSync(query), query.getEffectiveExecutor());
     }
 
     /**
@@ -104,7 +104,7 @@ public interface DataTable {
      * @return Future returning whether the item was successfully deleted.
      */
     default CompletableFuture<Boolean> deleteOneAsync(Query query) {
-        return CompletableFuture.supplyAsync(() -> this.deleteOne(query), getSource().getExecutorService());
+        return CompletableFuture.supplyAsync(() -> this.deleteOne(query), query.getEffectiveExecutor());
     }
 
     /**
@@ -122,7 +122,7 @@ public interface DataTable {
      * @return Future returning the count of deleted items.
      */
     default CompletableFuture<Long> deleteAllAsync(Query query) {
-        return CompletableFuture.supplyAsync(() -> this.deleteAll(query), getSource().getExecutorService());
+        return CompletableFuture.supplyAsync(() -> this.deleteAll(query), query.getEffectiveExecutor());
     }
 
     /**
@@ -140,7 +140,7 @@ public interface DataTable {
      * @return The document count.
      */
     default CompletableFuture<Long> countAsync(Query query) {
-        return CompletableFuture.supplyAsync(() -> this.count(query), getSource().getExecutorService());
+        return CompletableFuture.supplyAsync(() -> this.count(query), query.getEffectiveExecutor());
     }
 
 }
