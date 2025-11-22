@@ -207,6 +207,7 @@ public class Datastore<K, T> implements DebugLogging {
         // from the datatable
         FindOperation<K, T> queryStatus = new FindOperation<>(this, query);
         if (DEBUG_LOGGING_LEVEL >= TRACE) log("  Created FindOperation, executing source table query");
+        Query finalQuery = query;
         getSourceTable().findOneAsync(query)
                 .whenComplete((result, throwable) -> {
                     if (throwable != null) {
@@ -229,7 +230,7 @@ public class Datastore<K, T> implements DebugLogging {
                         queryStatus.completeSuccessfully(FindResult.FETCHED, item);
                     } catch (Throwable t) {
                         if (DEBUG_LOGGING_LEVEL >= TRACE) { log("  Uncaught error while decoding fetch result: " + t); t.printStackTrace(); }
-                        queryStatus.completeFailed(new CodecException("Uncaught error while decoding fetch result", t));
+                        queryStatus.completeFailed(new CodecException("Uncaught error while decoding fetch result of query `" + finalQuery + "` on datastore " + this, t));
                     }
                 });
 
@@ -376,6 +377,11 @@ public class Datastore<K, T> implements DebugLogging {
         item.decode(input);
         item.fetchedNow();
         return item;
+    }
+
+    @Override
+    public String toString() {
+        return "Datastore(source: " + sourceTable + ", codec: " + dataCodec + ")";
     }
 
     /**

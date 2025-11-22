@@ -23,6 +23,7 @@ public class MongoDataTable implements DataTable {
 
     // The MongoDB data source
     protected final MongoDataSource source;
+    protected final String name;
 
     // The MongoDB collection
     protected final MongoCollection<BsonDocument> bsonCollection; // TODO: switch everything to this
@@ -107,4 +108,8 @@ public class MongoDataTable implements DataTable {
         return collection.countDocuments(filter);
     }
 
+    @Override
+    public String toString() {
+        return "MongoDataTable('" + name + "')";
+    }
 }

@@ -137,6 +137,11 @@ public interface Query {
             public Datastore<?, ?> getDatastore() {
                 return datastore;
             }
+
+            @Override
+            public String toString() {
+                return "byKey(" + key + ")";
+            }
         };
     }
 
@@ -223,6 +228,11 @@ public interface Query {
             public Datastore<?, ?> getDatastore() {
                 return datastore;
             }
+
+            @Override
+            public String toString() {
+                return "fields(" + fieldConstraintMap + ")";
+            }
         };
     }
 
@@ -274,6 +284,11 @@ public interface Query {
             @Override
             public Datastore<?, ?> getDatastore() {
                 return datastore;
+            }
+
+            @Override
+            public String toString() {
+                return "all";
             }
         };
     }

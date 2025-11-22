@@ -139,4 +139,8 @@ public class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<
         return Projection.include(fields);
     }
 
+    @Override
+    public String toString() {
+        return "URDataCodec(for class: " + tClass.getName() + ", primary key field: " + primaryKeyField.getName() + ")";
+    }
 }
