@@ -40,7 +40,7 @@ final class MongoQueries {
         // check for primary key
         if (query.hasKey()) {
             String keyField = keyFieldNameOverride != null ? keyFieldNameOverride : query.getKeyField();
-            return Filters.eq(keyField , query.getKey());
+            return Filters.eq(keyField, query.getKey());
         }
 
         Map<String, FieldConstraint<?>> constraintMap = query.getFieldConstraints();
@@ -177,7 +177,7 @@ final class MongoQueries {
      * @param sorting The sorting object.
      * @return The BSON sort document.
      */
-    public static Bson serializeSorting(DataCodec<?, ?> codec, Sorting sorting) {
+    public static Bson serializeSorting(DataCodec<?, ?> codec, String keyFieldNameOverride, Sorting sorting) {
         if (sorting instanceof FieldOrderSorting) {
             FieldOrderSorting fieldOrderSorting = (FieldOrderSorting) sorting;
 
@@ -188,7 +188,9 @@ final class MongoQueries {
             BsonDocument document = new BsonDocument();
             for (int i = 0; i < size; i++) {
                 String field = fieldNames.get(i);
-                field = codec.toSerializedName(field); // resolve serialized name
+                field = field.equalsIgnoreCase(codec.getPrimaryKeyFieldName()) ?
+                        keyFieldNameOverride :
+                        codec.toSerializedName(field); // resolve serialized name
                 FieldOrdering ordering = fieldOrderings.get(i);
 
                 int orderInt = ordering == FieldOrdering.ASCENDING ? 1 : -1;
@@ -264,7 +266,7 @@ final class MongoQueries {
 
             @Override
             public DataSourceBulkIterable sort(Sorting sorting) {
-                iterable.sort(serializeSorting(getQuery().getDatastore().getDataCodec(), sorting));
+                iterable.sort(serializeSorting(getQuery().getDatastore().getDataCodec(), keyFieldNameOverride, sorting));
                 return this;
             }
 

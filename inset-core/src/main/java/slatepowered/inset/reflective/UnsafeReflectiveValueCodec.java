@@ -75,7 +75,8 @@ public class UnsafeReflectiveValueCodec<T> implements ValueCodec<T> {
 
     @Override
     public String toSerializedName(String name) {
-        return fieldMap.get(name).getSerializedName();
+        UnsafeFieldDesc field = fieldMap.get(name);
+        return field != null ? field.getSerializedName() : name;
     }
     
 }
