@@ -3,6 +3,7 @@ package slatepowered.inset.datastore;
 import slatepowered.inset.codec.*;
 import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.codec.EncodeOutput;
+import slatepowered.inset.codec.support.PotentiallyTransient;
 import slatepowered.inset.internal.ProjectionInterface;
 import slatepowered.inset.operation.Sorting;
 import slatepowered.inset.query.FindOperation;
@@ -190,6 +191,13 @@ public class DataItem<K, T> extends PartialItem<K, T> {
     }
 
     /**
+     * @return Whether this item is transient.
+     */
+    public boolean isTransient() {
+        return value instanceof PotentiallyTransient && ((PotentiallyTransient)value).isTransient();
+    }
+
+    /**
      * Inserts this item into the datastore's cache.
      */
     public DataItem<K, T> insert() {
@@ -235,6 +243,10 @@ public class DataItem<K, T> extends PartialItem<K, T> {
             return this;
         }
 
+        if (isTransient()) {
+            return this;
+        }
+
         DataTable table = datastore.getSourceTable();
 
         // serialize value
@@ -255,6 +267,10 @@ public class DataItem<K, T> extends PartialItem<K, T> {
      * @return This.
      */
     public CompletableFuture<DataItem<K, T>> saveAsync() {
+        if (isTransient()) {
+            return CompletableFuture.completedFuture(this);
+        }
+
         return CompletableFuture.supplyAsync(this::saveSync, datastore.getExecutorService());
     }
 
