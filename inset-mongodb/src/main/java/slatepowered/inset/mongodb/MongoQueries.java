@@ -53,7 +53,7 @@ final class MongoQueries {
         int i = 0;
         for (Map.Entry<String, FieldConstraint<?>> entry : constraintMap.entrySet()) {
             String serializedName = codec.getPrimaryKeyFieldName().equals(entry.getKey()) ? keyFieldNameOverride : codec.toSerializedName(entry.getKey());
-            bsonArray[i] = constraintToBson(codec.toSerializedName(entry.getKey()), entry.getValue());
+            bsonArray[i] = constraintToBson(serializedName, entry.getValue());
             i++;
         }
 
