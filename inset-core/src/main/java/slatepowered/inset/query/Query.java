@@ -392,11 +392,11 @@ public interface Query {
             return constrain(field, CommonConstraintType.EXISTS.forOperand(/* no operand */ null));
         }
 
-        public Builder oneOf(String field, Object... values) {
+        public <T> Builder oneOf(String field, T[] values) {
             return constrain(field, CommonConstraintType.ONE_OF.forOperand(values));
         }
 
-        public Builder oneOf(String field, Collection<Object> values) {
+        public Builder oneOf(String field, Collection<?> values) {
             return constrain(field, CommonConstraintType.ONE_OF.forOperand(values));
         }
 

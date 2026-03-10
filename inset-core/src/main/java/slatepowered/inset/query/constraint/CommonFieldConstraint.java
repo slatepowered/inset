@@ -16,4 +16,9 @@ public abstract class CommonFieldConstraint<T> implements FieldConstraint<T> {
     protected final CommonConstraintType type;
     protected final Object operand;
 
+    @Override
+    public String toString() {
+        return type + "(" + operand + ")";
+    }
+
 }
