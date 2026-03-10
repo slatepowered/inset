@@ -65,7 +65,7 @@ public class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<
 
     @Override
     public String getPrimaryKeyFieldName() {
-        return primaryKeyField.serializedName;
+        return primaryKeyField.name;
     }
 
     @Override
@@ -132,10 +132,11 @@ public class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<
         }
 
         // add primary key field
-        if (primaryKeyName == null)
+        if (primaryKeyName == null) {
             primaryKeyName = primaryKeyField.getSerializedName();
-        fields.add(primaryKeyName);
+        }
 
+        fields.add(primaryKeyName);
         return Projection.include(fields);
     }
 
@@ -143,4 +144,5 @@ public class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<
     public String toString() {
         return "URDataCodec(for class: " + tClass.getName() + ", primary key field: " + primaryKeyField.getName() + ")";
     }
+
 }
