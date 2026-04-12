@@ -303,7 +303,7 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
                 return value;
             }
         } catch (Exception e) {
-            throw new CodecException("In decode of BSON document value named(" + name + ") expectedType(" + expectedType + ") context(" + context + ")", e);
+            throw new CodecException("In decode of value named(" + name + ") with expectedType(" + expectedType + ") in context(" + context + ")", e);
         }
 
 //        throw new IllegalArgumentException("Got unsupported value type to decode: " + value.getClass());
