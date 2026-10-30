@@ -7,13 +7,13 @@ import slatepowered.inset.operation.Projection;
  */
 public interface ProjectionType {
 
-    /**
-     * Create a new projection which only includes the fields
-     * applicable to this data.
-     *
-     * @param primaryKeyNameOverride The primary key field name override.
-     * @return The projection.
-     */
-    Projection createExclusiveProjection(String primaryKeyNameOverride);
+  /**
+   * Create a new projection which only includes the fields
+   * applicable to this data.
+   *
+   * @param primaryKeyNameOverride The primary key field name override.
+   * @return The projection.
+   */
+  Projection createExclusiveProjection(String primaryKeyNameOverride);
 
 }

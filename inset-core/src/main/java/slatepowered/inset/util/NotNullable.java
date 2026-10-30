@@ -12,9 +12,9 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 public @interface NotNullable {
 
-    /**
-     * The flag set on a field when it is not nullable.
-     */
-    long FLAG = 1 << 1;
+  /**
+   * The flag set on a field when it is not nullable.
+   */
+  long FLAG = 1 << 1;
 
 }

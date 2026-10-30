@@ -1,12 +1,12 @@
 java {
-    // caffeine only supports as low as java 11 so no
-    // caffeine caching on java 8 ig
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+  // caffeine only supports as low as java 11 so no
+  // caffeine caching on java 8 ig
+  sourceCompatibility = JavaVersion.VERSION_11
+  targetCompatibility = JavaVersion.VERSION_11
 }
 
 dependencies {
-    implementation project(":inset-core")
+  implementation project(":inset-core")
 
-    api 'com.github.ben-manes.caffeine:caffeine:3.1.8'
+  api 'com.github.ben-manes.caffeine:caffeine:3.1.8'
 }

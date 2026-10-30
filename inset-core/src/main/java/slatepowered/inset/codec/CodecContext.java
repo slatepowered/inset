@@ -11,23 +11,23 @@ import slatepowered.inset.codec.support.ClassDistinctionReader;
 @RequiredArgsConstructor
 public class CodecContext {
 
-    @Getter
-    protected final DataManager dataManager;
+  @Getter
+  protected final DataManager dataManager;
 
-    /**
-     * Find or create an applicable value/data codec
-     * for the given class.
-     *
-     * @param vClass The class.
-     * @param <V> The value type.
-     * @return The codec or null if absent.
-     */
-    public <V> ValueCodec<V> findCodec(Class<V> vClass) {
-        return dataManager.getCodecRegistry().getCodec(vClass);
-    }
+  /**
+   * Find or create an applicable value/data codec
+   * for the given class.
+   *
+   * @param vClass The class.
+   * @param <V>    The value type.
+   * @return The codec or null if absent.
+   */
+  public <V> ValueCodec<V> findCodec(Class<V> vClass) {
+    return dataManager.getCodecRegistry().getCodec(vClass);
+  }
 
-    public ClassDistinctionReader findClassDistinctionReader(Class<?> baseClass) {
-        return dataManager.getClassDistinctionReaders().get(baseClass);
-    }
+  public ClassDistinctionReader findClassDistinctionReader(Class<?> baseClass) {
+    return dataManager.getClassDistinctionReaders().get(baseClass);
+  }
 
 }

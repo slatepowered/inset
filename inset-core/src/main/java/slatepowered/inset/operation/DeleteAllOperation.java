@@ -13,49 +13,49 @@ import slatepowered.inset.query.Query;
  */
 public class DeleteAllOperation<K, T> extends OperationStatus<K, T, DeleteAllOperation<K, T>> {
 
-    /**
-     * The count of deleted items.
-     */
-    @Getter
-    protected volatile Long deleteCount;
+  /**
+   * The count of deleted items.
+   */
+  @Getter
+  protected volatile Long deleteCount;
 
-    /**
-     * Whether the data table operation was completed.
-     */
-    protected volatile boolean completedDataTableOperation;
+  /**
+   * Whether the data table operation was completed.
+   */
+  protected volatile boolean completedDataTableOperation;
 
-    /**
-     * Whether the cache clear was completed successfully.
-     */
-    protected volatile boolean completedCacheClear;
+  /**
+   * Whether the cache clear was completed successfully.
+   */
+  protected volatile boolean completedCacheClear;
 
-    public DeleteAllOperation(Datastore<K, T> datastore, Query query) {
-        super(datastore, query);
+  public DeleteAllOperation(Datastore<K, T> datastore, Query query) {
+    super(datastore, query);
+  }
+
+  @Override
+  protected String describeOperation() {
+    return "delete all";
+  }
+
+  /**
+   * Complete this query with the given parameters.
+   */
+  public synchronized void completeDataTableOperation(Object error, Long deleteCount) {
+    this.error = error;
+    this.deleteCount = deleteCount;
+
+    completedDataTableOperation = true;
+    if (completedCacheClear) {
+      completeInternal(this);
     }
+  }
 
-    @Override
-    protected String describeOperation() {
-        return "delete all";
+  public synchronized void completeCacheClear() {
+    this.completedCacheClear = true;
+    if (completedDataTableOperation) {
+      completeInternal(this);
     }
-
-    /**
-     * Complete this query with the given parameters.
-     */
-    public synchronized void completeDataTableOperation(Object error, Long deleteCount) {
-        this.error = error;
-        this.deleteCount = deleteCount;
-
-        completedDataTableOperation = true;
-        if (completedCacheClear) {
-            completeInternal(this);
-        }
-    }
-
-    public synchronized void completeCacheClear() {
-        this.completedCacheClear = true;
-        if (completedDataTableOperation) {
-            completeInternal(this);
-        }
-    }
+  }
 
 }

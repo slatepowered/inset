@@ -20,389 +20,389 @@ import java.util.concurrent.ExecutorService;
  */
 public interface Query {
 
-    /**
-     * Whether this query searched on a primary key.
-     */
-    boolean hasKey();
+  /**
+   * Whether this query searched on a primary key.
+   */
+  boolean hasKey();
 
-    /**
-     * Get the primary key this query searches on.
-     */
-    Object getKey();
+  /**
+   * Get the primary key this query searches on.
+   */
+  Object getKey();
 
-    /**
-     * Get the name of the key field if applicable.
-     *
-     * @return The key field name.
-     */
-    String getKeyField();
+  /**
+   * Get the name of the key field if applicable.
+   *
+   * @return The key field name.
+   */
+  String getKeyField();
 
-    /**
-     * Get the constraint for the given field name.
-     *
-     * @param name The name.
-     * @return The constraint..
-     */
-    FieldConstraint<?> getConstraint(String name);
+  /**
+   * Get the constraint for the given field name.
+   *
+   * @param name The name.
+   * @return The constraint..
+   */
+  FieldConstraint<?> getConstraint(String name);
 
-    /**
-     * Get the constrained fields and their constraints for this query.
-     *
-     * @return The fields.
-     */
-    Map<String, FieldConstraint<?>> getFieldConstraints();
+  /**
+   * Get the constrained fields and their constraints for this query.
+   *
+   * @return The fields.
+   */
+  Map<String, FieldConstraint<?>> getFieldConstraints();
 
-    /**
-     * Get the number of constrained fields.
-     *
-     * @return The number of field constraints.
-     */
-    default int fieldConstraintCount() {
-        return getFieldConstraints().size();
-    }
+  /**
+   * Get the number of constrained fields.
+   *
+   * @return The number of field constraints.
+   */
+  default int fieldConstraintCount() {
+    return getFieldConstraints().size();
+  }
 
-    /**
-     * Qualifies this query for the given data store.
-     *
-     * @param datastore The datastore.
-     * @return This.
-     */
-    default Query qualify(Datastore<?, ?> datastore) {
+  /**
+   * Qualifies this query for the given data store.
+   *
+   * @param datastore The datastore.
+   * @return This.
+   */
+  default Query qualify(Datastore<?, ?> datastore) {
+    return this;
+  }
+
+  /**
+   * The datastore which recently bound to this query,
+   * null if unqualified.
+   *
+   * @return The datastore.
+   */
+  Datastore<?, ?> getDatastore();
+
+  default ExecutorService getExecutorOverride() {
+    return null;
+  }
+
+  Query withExecutor(ExecutorService executor);
+
+  default ExecutorService getEffectiveExecutor() {
+    ExecutorService ov = getExecutorOverride();
+    return ov == null ? getDatastore().getExecutorService() : ov;
+  }
+
+  static Query byKey(final Object key) {
+    return new Query() {
+      // The cached field map
+      Map<String, FieldConstraint<?>> fieldConstraintMap;
+      FieldConstraint<?> constraint;
+      Datastore<?, ?> datastore;
+
+      // ensure the constraints are created and
+      // registered for when we need them
+      private void ensureConstraints() {
+        if (constraint == null) {
+          constraint = CommonConstraintType.EQUAL.forOperand(key);
+        }
+
+        if (fieldConstraintMap == null) {
+          fieldConstraintMap = new HashMap<>();
+          fieldConstraintMap.put(getKeyField(), constraint);
+        }
+      }
+
+      @Override
+      public int fieldConstraintCount() {
+        return 1; // primary key field
+      }
+
+      @Override
+      public boolean hasKey() {
+        return true;
+      }
+
+      @Override
+      public Object getKey() {
+        return key;
+      }
+
+      @Override
+      public String getKeyField() {
+        return datastore.getDataCodec().getPrimaryKeyFieldName();
+      }
+
+      @Override
+      public FieldConstraint<?> getConstraint(String name) {
+        ensureConstraints();
+        return name.equals(getKeyField()) ? constraint : null;
+      }
+
+      @Override
+      public Map<String, FieldConstraint<?>> getFieldConstraints() {
+        ensureConstraints();
+        return fieldConstraintMap;
+      }
+
+      @Override
+      public Query qualify(Datastore<?, ?> datastore) {
+        this.datastore = datastore;
         return this;
-    }
+      }
 
-    /**
-     * The datastore which recently bound to this query,
-     * null if unqualified.
-     *
-     * @return The datastore.
-     */
-    Datastore<?, ?> getDatastore();
+      ExecutorService executor;
 
-    default ExecutorService getExecutorOverride() {
+      @Override
+      public ExecutorService getExecutorOverride() {
+        return executor;
+      }
+
+      @Override
+      public Query withExecutor(ExecutorService executor) {
+        this.executor = executor;
+        return this;
+      }
+
+      @Override
+      public Datastore<?, ?> getDatastore() {
+        return datastore;
+      }
+
+      @Override
+      public String toString() {
+        return "byKey(" + key + ")";
+      }
+    };
+  }
+
+  /**
+   * Creates a new field constraint-based query for the given
+   * field constraints.
+   *
+   * @param fieldConstraintMap The field constraints.
+   * @return The query.
+   */
+  static Query forFields(Map<String, FieldConstraint<?>> fieldConstraintMap) {
+    return new Query() {
+      // Cached hasKey field, can be checked reliably
+      // once it is qualified
+      Boolean hasKey;
+
+      // Cached key
+      Object key;
+
+      // The datastore this query was qualified for
+      Datastore<?, ?> datastore;
+
+      @Override
+      public boolean hasKey() {
+        if (hasKey == null) {
+          String field = getKeyField();
+          hasKey = field != null && fieldConstraintMap.containsKey(field);
+        }
+
+        return hasKey;
+      }
+
+      @Override
+      public Object getKey() {
+        if (key == null) {
+          String field = getKeyField();
+          if (field == null) {
+            return null;
+          }
+
+          // find key from field constraints
+          FieldConstraint<?> constraint = fieldConstraintMap.get(field);
+          if (constraint == null) {
+            return null;
+          }
+
+          if (constraint instanceof CommonFieldConstraint) {
+            return key = ((CommonFieldConstraint<?>) constraint).getOperand();
+          }
+        }
+
+        return key;
+      }
+
+      @Override
+      public String getKeyField() {
+        return datastore != null ? datastore.getDataCodec().getPrimaryKeyFieldName() : null;
+      }
+
+      @Override
+      public FieldConstraint<?> getConstraint(String name) {
+        return fieldConstraintMap.get(name);
+      }
+
+      @Override
+      public Map<String, FieldConstraint<?>> getFieldConstraints() {
+        return Collections.unmodifiableMap(fieldConstraintMap);
+      }
+
+      @Override
+      public int fieldConstraintCount() {
+        return fieldConstraintMap.size();
+      }
+
+      @Override
+      public Query qualify(Datastore<?, ?> datastore) {
+        key = null;
+        hasKey = null;
+        this.datastore = datastore;
+        return this;
+      }
+
+      ExecutorService executor;
+
+      @Override
+      public ExecutorService getExecutorOverride() {
+        return executor;
+      }
+
+      @Override
+      public Query withExecutor(ExecutorService executor) {
+        this.executor = executor;
+        return this;
+      }
+
+      @Override
+      public Datastore<?, ?> getDatastore() {
+        return datastore;
+      }
+
+      @Override
+      public String toString() {
+        return "fields(" + fieldConstraintMap + ")";
+      }
+    };
+  }
+
+  static Builder builder() {
+    return new Builder();
+  }
+
+  static Query all() {
+    return new Query() {
+      // The datastore this query was qualified for
+      Datastore<?, ?> datastore;
+
+      @Override
+      public boolean hasKey() {
+        return false;
+      }
+
+      @Override
+      public Object getKey() {
         return null;
+      }
+
+      @Override
+      public String getKeyField() {
+        return datastore.getDataCodec().getPrimaryKeyFieldName();
+      }
+
+      @Override
+      public FieldConstraint<?> getConstraint(String name) {
+        return null;
+      }
+
+      @Override
+      public Map<String, FieldConstraint<?>> getFieldConstraints() {
+        return Collections.emptyMap();
+      }
+
+      @Override
+      public int fieldConstraintCount() {
+        return 0;
+      }
+
+      @Override
+      public Query qualify(Datastore<?, ?> datastore) {
+        this.datastore = datastore;
+        return this;
+      }
+
+      @Override
+      public Datastore<?, ?> getDatastore() {
+        return datastore;
+      }
+
+      ExecutorService executor;
+
+      @Override
+      public ExecutorService getExecutorOverride() {
+        return executor;
+      }
+
+      @Override
+      public Query withExecutor(ExecutorService executor) {
+        this.executor = executor;
+        return this;
+      }
+
+      @Override
+      public String toString() {
+        return "all";
+      }
+    };
+  }
+
+  /**
+   * Builds queries with field constraints.
+   */
+  class Builder {
+    private Map<String, FieldConstraint<?>> fieldConstraintMap = new HashMap<>();
+    private ExecutorService executor;
+
+    public Builder executor(ExecutorService executor) {
+      this.executor = executor;
+      return this;
     }
 
-    Query withExecutor(ExecutorService executor);
-
-    default ExecutorService getEffectiveExecutor() {
-        ExecutorService ov = getExecutorOverride();
-        return ov == null ? getDatastore().getExecutorService() : ov;
+    public Builder constrain(String field, FieldConstraint<?> constraint) {
+      fieldConstraintMap.put(field, constraint);
+      return this;
     }
 
-    static Query byKey(final Object key) {
-        return new Query() {
-            // The cached field map
-            Map<String, FieldConstraint<?>> fieldConstraintMap;
-            FieldConstraint<?> constraint;
-            Datastore<?, ?> datastore;
-
-            // ensure the constraints are created and
-            // registered for when we need them
-            private void ensureConstraints() {
-                if (constraint == null) {
-                    constraint = CommonConstraintType.EQUAL.forOperand(key);
-                }
-
-                if (fieldConstraintMap == null) {
-                    fieldConstraintMap = new HashMap<>();
-                    fieldConstraintMap.put(getKeyField(), constraint);
-                }
-            }
-
-            @Override
-            public int fieldConstraintCount() {
-                return 1; // primary key field
-            }
-
-            @Override
-            public boolean hasKey() {
-                return true;
-            }
-
-            @Override
-            public Object getKey() {
-                return key;
-            }
-
-            @Override
-            public String getKeyField() {
-                return datastore.getDataCodec().getPrimaryKeyFieldName();
-            }
-
-            @Override
-            public FieldConstraint<?> getConstraint(String name) {
-                ensureConstraints();
-                return name.equals(getKeyField()) ? constraint : null;
-            }
-
-            @Override
-            public Map<String, FieldConstraint<?>> getFieldConstraints() {
-                ensureConstraints();
-                return fieldConstraintMap;
-            }
-
-            @Override
-            public Query qualify(Datastore<?, ?> datastore) {
-                this.datastore = datastore;
-                return this;
-            }
-
-            ExecutorService executor;
-
-            @Override
-            public ExecutorService getExecutorOverride() {
-                return executor;
-            }
-
-            @Override
-            public Query withExecutor(ExecutorService executor) {
-                this.executor = executor;
-                return this;
-            }
-
-            @Override
-            public Datastore<?, ?> getDatastore() {
-                return datastore;
-            }
-
-            @Override
-            public String toString() {
-                return "byKey(" + key + ")";
-            }
-        };
+    public Builder eq(String field, Object value) {
+      return constrain(field, CommonConstraintType.EQUAL.forOperand(value));
     }
 
-    /**
-     * Creates a new field constraint-based query for the given
-     * field constraints.
-     *
-     * @param fieldConstraintMap The field constraints.
-     * @return The query.
-     */
-    static Query forFields(Map<String, FieldConstraint<?>> fieldConstraintMap) {
-        return new Query() {
-            // Cached hasKey field, can be checked reliably
-            // once it is qualified
-            Boolean hasKey;
-
-            // Cached key
-            Object key;
-
-            // The datastore this query was qualified for
-            Datastore<?, ?> datastore;
-
-            @Override
-            public boolean hasKey() {
-                if (hasKey == null) {
-                    String field = getKeyField();
-                    hasKey = field != null && fieldConstraintMap.containsKey(field);
-                }
-
-                return hasKey;
-            }
-
-            @Override
-            public Object getKey() {
-                if (key == null) {
-                    String field = getKeyField();
-                    if (field == null) {
-                        return null;
-                    }
-
-                    // find key from field constraints
-                    FieldConstraint<?> constraint = fieldConstraintMap.get(field);
-                    if (constraint == null) {
-                        return null;
-                    }
-
-                    if (constraint instanceof CommonFieldConstraint) {
-                        return key = ((CommonFieldConstraint<?>)constraint).getOperand();
-                    }
-                }
-
-                return key;
-            }
-
-            @Override
-            public String getKeyField() {
-                return datastore != null ? datastore.getDataCodec().getPrimaryKeyFieldName() : null;
-            }
-
-            @Override
-            public FieldConstraint<?> getConstraint(String name) {
-                return fieldConstraintMap.get(name);
-            }
-
-            @Override
-            public Map<String, FieldConstraint<?>> getFieldConstraints() {
-                return Collections.unmodifiableMap(fieldConstraintMap);
-            }
-
-            @Override
-            public int fieldConstraintCount() {
-                return fieldConstraintMap.size();
-            }
-
-            @Override
-            public Query qualify(Datastore<?, ?> datastore) {
-                key = null;
-                hasKey = null;
-                this.datastore = datastore;
-                return this;
-            }
-
-            ExecutorService executor;
-
-            @Override
-            public ExecutorService getExecutorOverride() {
-                return executor;
-            }
-
-            @Override
-            public Query withExecutor(ExecutorService executor) {
-                this.executor = executor;
-                return this;
-            }
-
-            @Override
-            public Datastore<?, ?> getDatastore() {
-                return datastore;
-            }
-
-            @Override
-            public String toString() {
-                return "fields(" + fieldConstraintMap + ")";
-            }
-        };
+    public Builder neq(String field, Object value) {
+      return constrain(field, CommonConstraintType.NOT_EQUAL.forOperand(value));
     }
 
-    static Builder builder() {
-        return new Builder();
+    public Builder greater(String field, Object value) {
+      return constrain(field, CommonConstraintType.GREATER.forOperand(value));
     }
 
-    static Query all() {
-        return new Query() {
-            // The datastore this query was qualified for
-            Datastore<?, ?> datastore;
-
-            @Override
-            public boolean hasKey() {
-                return false;
-            }
-
-            @Override
-            public Object getKey() {
-                return null;
-            }
-
-            @Override
-            public String getKeyField() {
-                return datastore.getDataCodec().getPrimaryKeyFieldName();
-            }
-
-            @Override
-            public FieldConstraint<?> getConstraint(String name) {
-                return null;
-            }
-
-            @Override
-            public Map<String, FieldConstraint<?>> getFieldConstraints() {
-                return Collections.emptyMap();
-            }
-
-            @Override
-            public int fieldConstraintCount() {
-                return 0;
-            }
-
-            @Override
-            public Query qualify(Datastore<?, ?> datastore) {
-                this.datastore = datastore;
-                return this;
-            }
-
-            @Override
-            public Datastore<?, ?> getDatastore() {
-                return datastore;
-            }
-
-            ExecutorService executor;
-
-            @Override
-            public ExecutorService getExecutorOverride() {
-                return executor;
-            }
-
-            @Override
-            public Query withExecutor(ExecutorService executor) {
-                this.executor = executor;
-                return this;
-            }
-
-            @Override
-            public String toString() {
-                return "all";
-            }
-        };
+    public Builder less(String field, Object value) {
+      return constrain(field, CommonConstraintType.LESS.forOperand(value));
     }
 
-    /**
-     * Builds queries with field constraints.
-     */
-    class Builder {
-        private Map<String, FieldConstraint<?>> fieldConstraintMap = new HashMap<>();
-        private ExecutorService executor;
-
-        public Builder executor(ExecutorService executor) {
-            this.executor = executor;
-            return this;
-        }
-
-        public Builder constrain(String field, FieldConstraint<?> constraint) {
-            fieldConstraintMap.put(field, constraint);
-            return this;
-        }
-
-        public Builder eq(String field, Object value) {
-            return constrain(field, CommonConstraintType.EQUAL.forOperand(value));
-        }
-
-        public Builder neq(String field, Object value) {
-            return constrain(field, CommonConstraintType.NOT_EQUAL.forOperand(value));
-        }
-
-        public Builder greater(String field, Object value) {
-            return constrain(field, CommonConstraintType.GREATER.forOperand(value));
-        }
-
-        public Builder less(String field, Object value) {
-            return constrain(field, CommonConstraintType.LESS.forOperand(value));
-        }
-
-        public Builder greaterOrEq(String field, Object value) {
-            return constrain(field, CommonConstraintType.GREATER_OR_EQUAL.forOperand(value));
-        }
-
-        public Builder lessOrEq(String field, Object value) {
-            return constrain(field, CommonConstraintType.LESS_OR_EQUAL.forOperand(value));
-        }
-
-        public Builder exists(String field) {
-            return constrain(field, CommonConstraintType.EXISTS.forOperand(/* no operand */ null));
-        }
-
-        public <T> Builder oneOf(String field, T[] values) {
-            return constrain(field, CommonConstraintType.ONE_OF.forOperand(values));
-        }
-
-        public Builder oneOf(String field, Collection<?> values) {
-            return constrain(field, CommonConstraintType.ONE_OF.forOperand(values));
-        }
-
-        public Query build() {
-            return forFields(fieldConstraintMap).withExecutor(executor);
-        }
+    public Builder greaterOrEq(String field, Object value) {
+      return constrain(field, CommonConstraintType.GREATER_OR_EQUAL.forOperand(value));
     }
+
+    public Builder lessOrEq(String field, Object value) {
+      return constrain(field, CommonConstraintType.LESS_OR_EQUAL.forOperand(value));
+    }
+
+    public Builder exists(String field) {
+      return constrain(field, CommonConstraintType.EXISTS.forOperand(/* no operand */ null));
+    }
+
+    public <T> Builder oneOf(String field, T[] values) {
+      return constrain(field, CommonConstraintType.ONE_OF.forOperand(values));
+    }
+
+    public Builder oneOf(String field, Collection<?> values) {
+      return constrain(field, CommonConstraintType.ONE_OF.forOperand(values));
+    }
+
+    public Query build() {
+      return forFields(fieldConstraintMap).withExecutor(executor);
+    }
+  }
 
 }

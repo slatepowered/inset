@@ -23,126 +23,128 @@ import java.util.function.Predicate;
 @SuppressWarnings("unchecked")
 public class UnsafeReflectiveDataCodec<K, T> extends UnsafeReflectiveValueCodec<T> implements DataCodec<K, T> {
 
-    // what the method name says lol
-    private static UnsafeFieldDesc[] removePrimaryKeyFieldFromDefaultCodecFieldArray(UnsafeFieldDesc[] arr, String name) {
-        int i = 0;
-        for (; i < arr.length; i++)
-            if (arr[i].serializedName.equals(name))
-                break;
+  // what the method name says lol
+  private static FieldAccessor[] removePrimaryKeyFieldFromDefaultCodecFieldArray(FieldAccessor[] arr, String name) {
+    int i = 0;
+    for (; i < arr.length; i++)
+      if (arr[i].getSerializedName().equals(name))
+        break;
 
-        UnsafeFieldDesc[] result = new UnsafeFieldDesc[arr.length - 1];
-        if (i > 0) // its not the first element
-            System.arraycopy(arr, 0, result, 0, i);
-        if (i < arr.length - 1) // its not the last element
-            System.arraycopy(arr, i + 1, result, i, arr.length - i - 1);
-        return result;
+    FieldAccessor[] result = new FieldAccessor[arr.length - 1];
+    if (i > 0) // its not the first element
+      System.arraycopy(arr, 0, result, 0, i);
+    if (i < arr.length - 1) // its not the last element
+      System.arraycopy(arr, i + 1, result, i, arr.length - i - 1);
+    return result;
+  }
+
+  static final Unsafe UNSAFE = UnsafeUtil.getUnsafe();
+
+  /**
+   * The field containing the primary key.
+   */
+  final FieldAccessor[] allFields;
+  final FieldAccessor primaryKeyField;
+
+  public UnsafeReflectiveDataCodec(Class<T> tClass, FieldAccessor[] fields, MethodHandle constructor, FieldAccessor primaryKeyField) {
+    super(tClass, removePrimaryKeyFieldFromDefaultCodecFieldArray(fields, primaryKeyField.getSerializedName()), constructor);
+    this.allFields = fields;
+    this.primaryKeyField = primaryKeyField;
+  }
+
+  @Override
+  public void decode(CodecContext context, T instance, DecodeInput input) {
+    super.decode(context, instance, input);
+
+    // decode primary key
+    primaryKeyField.setFromObject(instance, input.getOrReadKey(primaryKeyField.getSerializedName(), primaryKeyField.getType()));
+  }
+
+  @Override
+  public K getPrimaryKey(T value) {
+    return (K) primaryKeyField.getAsObject(value);
+  }
+
+  @Override
+  public String getPrimaryKeyFieldName() {
+    return primaryKeyField.getName();
+  }
+
+  @Override
+  public T createDefault(DataItem<K, T> item) {
+    T instance = super.construct(null, null);
+    primaryKeyField.setFromObject(instance, item.key());
+    return instance;
+  }
+
+  @Override
+  @SuppressWarnings("rawtypes")
+  public Predicate<T> getFilterPredicate(Query query) {
+    int i;
+    final Map<String, FieldConstraint<?>> fieldConstraints = query.getFieldConstraints();
+    final int constrainedFieldCount = fieldConstraints.size();
+
+    // resolve constrained fields by name into an ordered array, assuming the
+    // serialized objects don't have too many fields just iterating over
+    // the array of fields and comparing each one should work fine
+    // also resolve the values/comparators in order into the array
+    FieldAccessor[] orderedFields = new FieldAccessor[constrainedFieldCount];
+    FieldConstraint[] orderedConstraints = new FieldConstraint[constrainedFieldCount];
+    i = 0;
+    for (Map.Entry<String, FieldConstraint<?>> entry : fieldConstraints.entrySet()) {
+      String fieldName = entry.getKey();
+
+      FieldAccessor theField = fieldMap.get(entry.getKey());
+      if (theField == null) {
+        throw new IllegalArgumentException("Query field `" + fieldName + "` could not be resolved to a field on " + tClass);
+      }
+
+      orderedFields[i] = theField;
+      orderedConstraints[i] = entry.getValue();
+
+      i++;
     }
 
-    static final Unsafe UNSAFE = UnsafeUtil.getUnsafe();
-
-    /** The field containing the primary key. */
-    final UnsafeFieldDesc[] allFields;
-    final UnsafeFieldDesc primaryKeyField;
-
-    public UnsafeReflectiveDataCodec(Class<T> tClass, UnsafeFieldDesc[] fields, MethodHandle constructor, UnsafeFieldDesc primaryKeyField) {
-        super(tClass, removePrimaryKeyFieldFromDefaultCodecFieldArray(fields, primaryKeyField.serializedName), constructor);
-        this.allFields = fields;
-        this.primaryKeyField = primaryKeyField;
-    }
-
-    @Override
-    public void decode(CodecContext context, T instance, DecodeInput input) {
-        super.decode(context, instance, input);
-
-        // decode primary key
-        primaryKeyField.setFromObject(instance, input.getOrReadKey(primaryKeyField.serializedName, primaryKeyField.type));
-    }
-
-    @Override
-    public K getPrimaryKey(T value) {
-        return (K) primaryKeyField.getAsObject(value);
-    }
-
-    @Override
-    public String getPrimaryKeyFieldName() {
-        return primaryKeyField.name;
-    }
-
-    @Override
-    public T createDefault(DataItem<K, T> item) {
-        T instance = super.construct(null, null);
-        primaryKeyField.setFromObject(instance, item.key());
-        return instance;
-    }
-
-    @Override
-    @SuppressWarnings("rawtypes")
-    public Predicate<T> getFilterPredicate(Query query) {
-        int i;
-        final Map<String, FieldConstraint<?>> fieldConstraints = query.getFieldConstraints();
-        final int constrainedFieldCount = fieldConstraints.size();
-
-        // resolve constrained fields by name into an ordered array, assuming the
-        // serialized objects don't have too many fields just iterating over
-        // the array of fields and comparing each one should work fine
-        // also resolve the values/comparators in order into the array
-        UnsafeFieldDesc[] orderedFields = new UnsafeFieldDesc[constrainedFieldCount];
-        FieldConstraint[] orderedConstraints = new FieldConstraint[constrainedFieldCount];
-        i = 0;
-        for (Map.Entry<String, FieldConstraint<?>> entry : fieldConstraints.entrySet()) {
-            String fieldName = entry.getKey();
-
-            UnsafeFieldDesc theField = fieldMap.get(entry.getKey());
-            if (theField == null) {
-                throw new IllegalArgumentException("Query field `" + fieldName + "` could not be resolved to a field on " + tClass);
-            }
-
-            orderedFields[i] = theField;
-            orderedConstraints[i] = entry.getValue();
-
-            i++;
+    /* the actual predicate, this code is run on each cached item
+     * so it needs to be fast which is the reason we did all the
+     * preparation above. */
+    return value -> {
+      try {
+        for (int n = 0; n < constrainedFieldCount; n++) {
+          if (!orderedConstraints[n].test(orderedFields[n].getAsObject(value))) {
+            return false;
+          }
         }
 
-        /* the actual predicate, this code is run on each cached item
-         * so it needs to be fast which is the reason we did all the
-         * preparation above. */
-        return value -> {
-            try {
-                for (int n = 0; n < constrainedFieldCount; n++) {
-                    if (!orderedConstraints[n].test(orderedFields[n].getAsObject(value))) {
-                        return false;
-                    }
-                }
+        return true;
+      } catch (Throwable t) {
+        Throwables.sneakyThrow(t);
+        throw new AssertionError(); // unreachable
+      }
+    };
+  }
 
-                return true;
-            } catch (Throwable t) {
-                Throwables.sneakyThrow(t);
-                throw new AssertionError(); // unreachable
-            }
-        };
+  @Override
+  public Projection createExclusiveProjection(String primaryKeyName) {
+    List<String> fields = new ArrayList<>();
+
+    // add applicable data fields
+    for (FieldAccessor fieldDesc : super.fields) {
+      fields.add(fieldDesc.getSerializedName());
     }
 
-    @Override
-    public Projection createExclusiveProjection(String primaryKeyName) {
-        List<String> fields = new ArrayList<>();
-
-        // add applicable data fields
-        for (UnsafeFieldDesc fieldDesc : super.fields) {
-            fields.add(fieldDesc.serializedName);
-        }
-
-        // add primary key field
-        if (primaryKeyName == null) {
-            primaryKeyName = primaryKeyField.getSerializedName();
-        }
-
-        fields.add(primaryKeyName);
-        return Projection.include(fields);
+    // add primary key field
+    if (primaryKeyName == null) {
+      primaryKeyName = primaryKeyField.getSerializedName();
     }
 
-    @Override
-    public String toString() {
-        return "URDataCodec(for class: " + tClass.getName() + ", primary key field: " + primaryKeyField.getName() + ")";
-    }
+    fields.add(primaryKeyName);
+    return Projection.include(fields);
+  }
+
+  @Override
+  public String toString() {
+    return "URDataCodec(for class: " + tClass.getName() + ", primary key field: " + primaryKeyField.getName() + ")";
+  }
 
 }

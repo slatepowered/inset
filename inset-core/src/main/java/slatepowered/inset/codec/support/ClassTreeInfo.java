@@ -17,65 +17,65 @@ import java.util.WeakHashMap;
 @Getter
 public class ClassTreeInfo {
 
-    static final WeakHashMap<Class<?>, ClassTreeInfo> MAP = new WeakHashMap<>();
+  static final WeakHashMap<Class<?>, ClassTreeInfo> MAP = new WeakHashMap<>();
 
-    static boolean hasAbstractParentsOrIsAbstract(Class<?> klass) {
-        if ((
-                klass.isInterface() ||
-                        Modifier.isAbstract(klass.getModifiers()) ||
-                        klass.getInterfaces().length != 0
-        ) && (
-                // Special classes
-                klass != Enum.class
-        )) {
-            return true;
-        }
-
-        Class<?> superclass = klass.getSuperclass();
-        return superclass != null && superclass != Object.class &&
-                hasAbstractParentsOrIsAbstract(klass.getSuperclass());
+  static boolean hasAbstractParentsOrIsAbstract(Class<?> klass) {
+    if ((
+        klass.isInterface() ||
+            Modifier.isAbstract(klass.getModifiers()) ||
+            klass.getInterfaces().length != 0
+    ) && (
+        // Special classes
+        klass != Enum.class
+    )) {
+      return true;
     }
 
-    public static ClassTreeInfo forClass(Class<?> klass) {
-        if (klass == null || klass.isPrimitive() || klass.isArray()) {
-            return null;
-        }
+    Class<?> superclass = klass.getSuperclass();
+    return superclass != null && superclass != Object.class &&
+        hasAbstractParentsOrIsAbstract(klass.getSuperclass());
+  }
 
-        ClassTreeInfo info = MAP.get(klass);
-        if (info != null) {
-            return info;
-        }
-
-        info = new ClassTreeInfo(klass);
-
-        // parse own properties
-        info.abstractOrHasAbstractParents = hasAbstractParentsOrIsAbstract(klass);
-        info.classDistinctionOverride = klass.getAnnotation(ClassDistinctionOverride.class);
-        for (Annotation ann : klass.getAnnotations()) {
-            info.annotationMap.put(ann.getClass(), ann);
-        }
-
-        // load superclass properties
-        Class<?> superclass = klass.getSuperclass();
-        if (superclass != null && superclass != Object.class) {
-            ClassTreeInfo scInfo = forClass(superclass);
-            info.annotationMap.putAll(scInfo.getAnnotationMap());
-            if (scInfo.isAbstractOrHasAbstractParents()) info.abstractOrHasAbstractParents = true;
-            if (scInfo.getClassDistinctionOverride() != null) info.classDistinctionOverride = scInfo.getClassDistinctionOverride();
-        }
-
-        return info;
+  public static ClassTreeInfo forClass(Class<?> klass) {
+    if (klass == null || klass.isPrimitive() || klass.isArray()) {
+      return null;
     }
 
-    private final Class<?> klass;
-
-    /* Annotations and other properties */
-    private Map<Class<? extends Annotation>, Annotation> annotationMap = new HashMap<>();
-    private boolean abstractOrHasAbstractParents;
-    private ClassDistinctionOverride classDistinctionOverride;
-
-    public boolean shouldWriteSeparateClassName() {
-        return classDistinctionOverride == null && abstractOrHasAbstractParents;
+    ClassTreeInfo info = MAP.get(klass);
+    if (info != null) {
+      return info;
     }
+
+    info = new ClassTreeInfo(klass);
+
+    // parse own properties
+    info.abstractOrHasAbstractParents = hasAbstractParentsOrIsAbstract(klass);
+    info.classDistinctionOverride = klass.getAnnotation(ClassDistinctionOverride.class);
+    for (Annotation ann : klass.getAnnotations()) {
+      info.annotationMap.put(ann.getClass(), ann);
+    }
+
+    // load superclass properties
+    Class<?> superclass = klass.getSuperclass();
+    if (superclass != null && superclass != Object.class) {
+      ClassTreeInfo scInfo = forClass(superclass);
+      info.annotationMap.putAll(scInfo.getAnnotationMap());
+      if (scInfo.isAbstractOrHasAbstractParents()) info.abstractOrHasAbstractParents = true;
+      if (scInfo.getClassDistinctionOverride() != null) info.classDistinctionOverride = scInfo.getClassDistinctionOverride();
+    }
+
+    return info;
+  }
+
+  private final Class<?> klass;
+
+  /* Annotations and other properties */
+  private Map<Class<? extends Annotation>, Annotation> annotationMap = new HashMap<>();
+  private boolean abstractOrHasAbstractParents;
+  private ClassDistinctionOverride classDistinctionOverride;
+
+  public boolean shouldWriteSeparateClassName() {
+    return classDistinctionOverride == null && abstractOrHasAbstractParents;
+  }
 
 }

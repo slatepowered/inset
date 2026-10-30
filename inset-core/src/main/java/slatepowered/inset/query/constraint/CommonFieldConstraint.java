@@ -13,12 +13,12 @@ import lombok.RequiredArgsConstructor;
 @Getter
 public abstract class CommonFieldConstraint<T> implements FieldConstraint<T> {
 
-    protected final CommonConstraintType type;
-    protected final Object operand;
+  protected final CommonConstraintType type;
+  protected final Object operand;
 
-    @Override
-    public String toString() {
-        return type + "(" + operand + ")";
-    }
+  @Override
+  public String toString() {
+    return type + "(" + operand + ")";
+  }
 
 }

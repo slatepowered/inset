@@ -11,20 +11,20 @@ import java.util.List;
  */
 public interface Projection {
 
-    static CommonProjection include(Collection<String> collection) {
-        return new CommonProjection(CommonProjection.Action.INCLUDE, collection instanceof List ? (List<String>) collection : new ArrayList<>(collection));
-    }
+  static CommonProjection include(Collection<String> collection) {
+    return new CommonProjection(CommonProjection.Action.INCLUDE, collection instanceof List ? (List<String>) collection : new ArrayList<>(collection));
+  }
 
-    static CommonProjection include(String... fields) {
-        return new CommonProjection(CommonProjection.Action.INCLUDE, Arrays.asList(fields));
-    }
+  static CommonProjection include(String... fields) {
+    return new CommonProjection(CommonProjection.Action.INCLUDE, Arrays.asList(fields));
+  }
 
-    static CommonProjection exclude(Collection<String> collection) {
-        return new CommonProjection(CommonProjection.Action.EXCLUDE, collection instanceof List ? (List<String>) collection : new ArrayList<>(collection));
-    }
+  static CommonProjection exclude(Collection<String> collection) {
+    return new CommonProjection(CommonProjection.Action.EXCLUDE, collection instanceof List ? (List<String>) collection : new ArrayList<>(collection));
+  }
 
-    static CommonProjection exclude(String... fields) {
-        return new CommonProjection(CommonProjection.Action.EXCLUDE, Arrays.asList(fields));
-    }
+  static CommonProjection exclude(String... fields) {
+    return new CommonProjection(CommonProjection.Action.EXCLUDE, Arrays.asList(fields));
+  }
 
 }

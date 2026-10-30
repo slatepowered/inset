@@ -1,107 +1,107 @@
 group 'com.github.slatepowered.inset'
 
 buildscript {
-    repositories {
-        maven { url "https://maven.minecraftforge.net" }
-        maven { url "https://repo.spongepowered.org/repository/maven-public/" }
-        maven { url "https://plugins.gradle.org/m2/" }
-        maven { url "https://jitpack.io" }
-        mavenCentral()
-    }
+  repositories {
+    maven { url "https://maven.minecraftforge.net" }
+    maven { url "https://repo.spongepowered.org/repository/maven-public/" }
+    maven { url "https://plugins.gradle.org/m2/" }
+    maven { url "https://jitpack.io" }
+    mavenCentral()
+  }
 }
 // pls compile jitpack bro
 allprojects {
-    buildscript {
-        repositories {
-            maven { url = 'https://maven.minecraftforge.net' }
-            maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
-            maven { url = 'https://plugins.gradle.org/m2/' }
-            maven { url = 'https://jitpack.io' }
-            mavenCentral()
-        }
+  buildscript {
+    repositories {
+      maven { url = 'https://maven.minecraftforge.net' }
+      maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+      maven { url = 'https://plugins.gradle.org/m2/' }
+      maven { url = 'https://jitpack.io' }
+      mavenCentral()
     }
+  }
 }
 
 afterEvaluate {
-    task("publishToMavenLocal") {
-        for (Project proj : subprojects) {
-            dependsOn(proj.tasks.getByName("publishToMavenLocal"))
-        }
+  task("publishToMavenLocal") {
+    for (Project proj : subprojects) {
+      dependsOn(proj.tasks.getByName("publishToMavenLocal"))
     }
+  }
 }
 
 version '0.2.2'
 
 subprojects {
-    apply plugin: "java"
-    apply plugin: "maven-publish"
-    apply plugin: "java-library"
+  apply plugin: "java"
+  apply plugin: "maven-publish"
+  apply plugin: "java-library"
 
-    group = rootProject.group
-    version = rootProject.version
+  group = rootProject.group
+  version = rootProject.version
 
-    /* Java Compile Settings */
-    compileJava.options.encoding = 'UTF-8'
+  /* Java Compile Settings */
+  compileJava.options.encoding = 'UTF-8'
 
-    tasks.withType(JavaCompile) {
-        options.encoding = 'UTF-8'
+  tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+  }
+
+  tasks.withType(Javadoc) {
+    options.encoding = 'UTF-8'
+  }
+
+  java {
+    // By default, build for java 8
+    sourceCompatibility = 17
+    targetCompatibility = 17
+
+    withSourcesJar()
+    withJavadocJar()
+  }
+
+  task("install") {
+    dependsOn(tasks.getByName("publishToMavenLocal"))
+  }
+
+  /* Maven Publications */
+  publishing {
+    publications {
+      maven(MavenPublication) {
+        groupId = project.group as String
+        artifactId = project.name
+        version = project.version as String
+        from components.java
+      }
     }
+  }
 
-    tasks.withType(Javadoc) {
-        options.encoding = 'UTF-8'
-    }
+  repositories {
+    mavenCentral()
+    mavenLocal()
 
-    java {
-        // By default, build for java 8
-        sourceCompatibility = 8
-        targetCompatibility = 8
+    maven { url = 'https://jitpack.io' }
+  }
 
-        withSourcesJar()
-        withJavadocJar()
-    }
+  dependencies {
+    /* Lombok (java 8 is a pain otherwise) */
+    compileOnly 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
 
-    task("install") {
-        dependsOn(tasks.getByName("publishToMavenLocal"))
-    }
+    testCompileOnly 'org.projectlombok:lombok:1.18.30'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.30'
 
-    /* Maven Publications */
-    publishing {
-        publications {
-            maven(MavenPublication) {
-                groupId = project.group as String
-                artifactId = project.name
-                version = project.version as String
-                from components.java
-            }
-        }
-    }
+    /* Libraries */
+    implementation 'com.github.slatepowered.veru:veru-java8:5a975a0'
+  }
 
-    repositories {
-        mavenCentral()
-        mavenLocal()
+  /* JUnit */
+  dependencies {
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.0")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.0")
+  }
 
-        maven { url = 'https://jitpack.io' }
-    }
-
-    dependencies {
-        /* Lombok (java 8 is a pain otherwise) */
-        compileOnly 'org.projectlombok:lombok:1.18.30'
-        annotationProcessor 'org.projectlombok:lombok:1.18.30'
-
-        testCompileOnly 'org.projectlombok:lombok:1.18.30'
-        testAnnotationProcessor 'org.projectlombok:lombok:1.18.30'
-
-        /* Libraries */
-        implementation 'com.github.slatepowered.veru:veru-java8:5a975a0'
-    }
-
-    /* JUnit */
-    dependencies {
-        testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.0")
-        testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.0")
-    }
-
-    tasks.test {
-        useJUnitPlatform()
-    }
+  tasks.test {
+    useJUnitPlatform()
+  }
 }

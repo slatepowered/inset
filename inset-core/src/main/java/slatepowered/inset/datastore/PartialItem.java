@@ -24,213 +24,213 @@ import java.util.concurrent.CompletableFuture;
  */
 public abstract class PartialItem<K, T> {
 
-    protected DecodeInput cachedInput; // The cached input, used by this class to read partial data
-    private double[] cachedOrderCoefficients; // The cached order coefficient array
-    private Sorting cachedSort; // The ID the cached order coefficient is for
+  protected DecodeInput cachedInput; // The cached input, used by this class to read partial data
+  private double[] cachedOrderCoefficients; // The cached order coefficient array
+  private Sorting cachedSort; // The ID the cached order coefficient is for
 
-    /**
-     * Assert this item has been qualified and return the source of the
-     * item if present.
-     *
-     * @return The source.
-     * @throws IllegalStateException If the item has not been qualified.
-     */
-    protected abstract Datastore<K, T> assertQualified();
+  /**
+   * Assert this item has been qualified and return the source of the
+   * item if present.
+   *
+   * @return The source.
+   * @throws IllegalStateException If the item has not been qualified.
+   */
+  protected abstract Datastore<K, T> assertQualified();
 
-    /**
-     * Whether the data of this item was projected and should be
-     * fetched further if needed or is complete and ready to be
-     * decoded into a valid object.
-     *
-     * @return Whether the data is incomplete/partial.
-     */
-    public abstract boolean isPartial();
+  /**
+   * Whether the data of this item was projected and should be
+   * fetched further if needed or is complete and ready to be
+   * decoded into a valid object.
+   *
+   * @return Whether the data is incomplete/partial.
+   */
+  public abstract boolean isPartial();
 
-    /**
-     * Get the data input to decode the retrieved data of this item.
-     *
-     * @return The input.
-     */
-    public abstract DecodeInput input();
+  /**
+   * Get the data input to decode the retrieved data of this item.
+   *
+   * @return The input.
+   */
+  public abstract DecodeInput input();
 
-    /**
-     * Get and use the cached input or create a new input.
-     *
-     * @return The input.
-     */
-    public DecodeInput getOrCreateInput() {
-        if (cachedInput == null) {
-            cachedInput = input();
-        }
-
-        return cachedInput;
+  /**
+   * Get and use the cached input or create a new input.
+   *
+   * @return The input.
+   */
+  public DecodeInput getOrCreateInput() {
+    if (cachedInput == null) {
+      cachedInput = input();
     }
 
-    /**
-     * Get or read the primary key for this data item.
-     *
-     * @param fieldName The set name for the key field.
-     * @param expectedType The type expected for the key.
-     * @see DecodeInput#getOrReadKey(String, Type)
-     * @return The primary key.
-     */
-    public abstract K getOrReadKey(String fieldName, Type expectedType);
+    return cachedInput;
+  }
 
-    /**
-     * Get or read the primary key for this data item when qualified
-     * so the data codec can be used.
-     *
-     * @return The key.
-     */
-    public K getKey() {
-        Datastore<K, T> datastore = assertQualified();
-        return getOrReadKey(datastore.getDataCodec().getPrimaryKeyFieldName(), datastore.getKeyClass());
+  /**
+   * Get or read the primary key for this data item.
+   *
+   * @param fieldName    The set name for the key field.
+   * @param expectedType The type expected for the key.
+   * @return The primary key.
+   * @see DecodeInput#getOrReadKey(String, Type)
+   */
+  public abstract K getOrReadKey(String fieldName, Type expectedType);
+
+  /**
+   * Get or read the primary key for this data item when qualified
+   * so the data codec can be used.
+   *
+   * @return The key.
+   */
+  public K getKey() {
+    Datastore<K, T> datastore = assertQualified();
+    return getOrReadKey(datastore.getDataCodec().getPrimaryKeyFieldName(), datastore.getKeyClass());
+  }
+
+  /**
+   * Get or read the given field for this data item.
+   *
+   * @param fieldName    The field name.
+   * @param expectedType The type expected for the value.
+   * @return The primary key.
+   * @see DecodeInput#read(CodecContext, String, Type)
+   */
+  public abstract <V> V getField(String fieldName, Type expectedType);
+
+  /**
+   * Find or fetch a data item from the database if this result was partial,
+   * otherwise ensure it is cached.
+   *
+   * @return The data item.
+   */
+  public abstract FindOperation<K, T> find();
+
+  /**
+   * If this item is complete, synchronize this data with the cache,
+   * otherwise fetch the complete data from the database and update it
+   * in the cache.
+   *
+   * @return The data item.
+   */
+  public FindOperation<K, T> fetch() {
+    return find().thenFetchIfCached();
+  }
+
+  /**
+   * Find a cached item for this partial item if present,
+   * otherwise return an empty optional.
+   *
+   * @return The cached item if present.
+   */
+  public abstract Optional<DataItem<K, T>> findCached();
+
+  /**
+   * Create an array of numbers easily comparable to other numbers
+   * of the same data which is to represent the order.
+   *
+   * @return The numbers representing the order.
+   */
+  public abstract double[] createFastOrderCoefficients(String[] fields, Sorting sorting);
+
+  /**
+   * Get or create an array of packed number easily comparable to other numbers
+   * of the same data which is to represent the order.
+   *
+   * @return The numbers representing the order.
+   */
+  public double[] getFastOrderCoefficients(String[] fields, Sorting sorting) {
+    if (cachedOrderCoefficients != null && cachedSort == sorting) {
+      return cachedOrderCoefficients;
     }
 
-    /**
-     * Get or read the given field for this data item.
-     *
-     * @param fieldName The field name.
-     * @param expectedType The type expected for the value.
-     * @see DecodeInput#read(CodecContext, String, Type)
-     * @return The primary key.
-     */
-    public abstract <V> V getField(String fieldName, Type expectedType);
+    cachedOrderCoefficients = createFastOrderCoefficients(fields, sorting);
+    cachedSort = sorting;
+    return cachedOrderCoefficients;
+  }
 
-    /**
-     * Find or fetch a data item from the database if this result was partial,
-     * otherwise ensure it is cached.
-     *
-     * @return The data item.
-     */
-    public abstract FindOperation<K, T> find();
+  /**
+   * Project the potentially partial data onto a new instance of the given
+   * data type.
+   *
+   * @param vClass The data class.
+   * @param <V>    The data type.
+   * @return The data instance with the projected data.
+   */
+  @SuppressWarnings("unchecked")
+  public <V> V project(Class<V> vClass) {
+    ProjectionType projectionType = ProjectionTypes.getProjectionType(vClass, assertQualified());
 
-    /**
-     * If this item is complete, synchronize this data with the cache,
-     * otherwise fetch the complete data from the database and update it
-     * in the cache.
-     *
-     * @return The data item.
-     */
-    public FindOperation<K, T> fetch() {
-        return find().thenFetchIfCached();
+    if (projectionType instanceof ProjectionInterface) {
+      return projectInterface((ProjectionInterface) projectionType);
+    } else if (projectionType instanceof DataCodec) {
+      return projectDataClass((DataCodec<K, ? extends V>) projectionType);
     }
 
-    /**
-     * Find a cached item for this partial item if present,
-     * otherwise return an empty optional.
-     *
-     * @return The cached item if present.
-     */
-    public abstract Optional<DataItem<K, T>> findCached();
+    throw new UnsupportedOperationException("Unsupported projection type compiled from " + vClass + ": " + projectionType);
+  }
 
-    /**
-     * Create an array of numbers easily comparable to other numbers
-     * of the same data which is to represent the order.
-     *
-     * @return The numbers representing the order.
-     */
-    public abstract double[] createFastOrderCoefficients(String[] fields, Sorting sorting);
+  /**
+   * Project the potentially partial data from this item through the
+   * given projection interface.
+   *
+   * @param projectionInterface The projection interface.
+   * @param <V>                 The interface type.
+   * @return The interface instance.
+   */
+  protected abstract <V> V projectInterface(ProjectionInterface projectionInterface);
 
-    /**
-     * Get or create an array of packed number easily comparable to other numbers
-     * of the same data which is to represent the order.
-     *
-     * @return The numbers representing the order.
-     */
-    public double[] getFastOrderCoefficients(String[] fields, Sorting sorting) {
-        if (cachedOrderCoefficients != null && cachedSort == sorting) {
-            return cachedOrderCoefficients;
-        }
+  /**
+   * Drop this item from the cache if cached.
+   *
+   * @return This.
+   */
+  public PartialItem<K, T> dispose() {
+    assertQualified().getDataCache().remove(getKey());
+    return this;
+  }
 
-        cachedOrderCoefficients = createFastOrderCoefficients(fields, sorting);
-        cachedSort = sorting;
-        return cachedOrderCoefficients;
-    }
+  /**
+   * Delete this item from the database and drop it from the cache.
+   *
+   * @return This.
+   */
+  public PartialItem<K, T> delete() {
+    Datastore<K, T> datastore = assertQualified();
+    datastore.getSourceTable().deleteOne(Query.byKey(getKey()).qualify(datastore));
+    datastore.getDataCache().remove(getKey());
+    return this;
+  }
 
-    /**
-     * Project the potentially partial data onto a new instance of the given
-     * data type.
-     *
-     * @param vClass The data class.
-     * @param <V> The data type.
-     * @return The data instance with the projected data.
-     */
-    @SuppressWarnings("unchecked")
-    public <V> V project(Class<V> vClass) {
-        ProjectionType projectionType = ProjectionTypes.getProjectionType(vClass, assertQualified());
+  /**
+   * Asynchronously delete this item from the database and drop it
+   * from the cache when complete.
+   *
+   * @return The future.
+   */
+  public CompletableFuture<PartialItem<K, T>> deleteAsync() {
+    return CompletableFuture.supplyAsync(this::delete, assertQualified().getExecutorService());
+  }
 
-        if (projectionType instanceof ProjectionInterface) {
-            return projectInterface((ProjectionInterface) projectionType);
-        } else if (projectionType instanceof DataCodec) {
-            return projectDataClass((DataCodec<K, ? extends V>) projectionType);
-        }
+  // project the partial data into the given class
+  protected <V> V projectDataClass(DataCodec<K, V> codec) {
+    Datastore<K, T> datastore = assertQualified();
+    CodecContext context = datastore.newCodecContext();
+    return codec.constructAndDecode(context, input());
+  }
 
-        throw new UnsupportedOperationException("Unsupported projection type compiled from " + vClass + ": " + projectionType);
-    }
+  @Override
+  public boolean equals(Object other) {
+    if (other == this) return true;
+    if (!(other instanceof PartialItem)) return false;
+    PartialItem<?, ?> otherItem = (PartialItem<?, ?>) other;
 
-    /**
-     * Project the potentially partial data from this item through the
-     * given projection interface.
-     *
-     * @param projectionInterface The projection interface.
-     * @param <V> The interface type.
-     * @return The interface instance.
-     */
-    protected abstract <V> V projectInterface(ProjectionInterface projectionInterface);
+    // compare keys
+    return getKey().equals(otherItem.getKey());
+  }
 
-    /**
-     * Drop this item from the cache if cached.
-     *
-     * @return This.
-     */
-    public PartialItem<K, T> dispose() {
-        assertQualified().getDataCache().remove(getKey());
-        return this;
-    }
-
-    /**
-     * Delete this item from the database and drop it from the cache.
-     *
-     * @return This.
-     */
-    public PartialItem<K, T> delete() {
-        Datastore<K, T> datastore = assertQualified();
-        datastore.getSourceTable().deleteOne(Query.byKey(getKey()).qualify(datastore));
-        datastore.getDataCache().remove(getKey());
-        return this;
-    }
-
-    /**
-     * Asynchronously delete this item from the database and drop it
-     * from the cache when complete.
-     *
-     * @return The future.
-     */
-    public CompletableFuture<PartialItem<K, T>> deleteAsync() {
-        return CompletableFuture.supplyAsync(this::delete, assertQualified().getExecutorService());
-    }
-
-    // project the partial data into the given class
-    protected <V> V projectDataClass(DataCodec<K, V> codec) {
-        Datastore<K, T> datastore = assertQualified();
-        CodecContext context = datastore.newCodecContext();
-        return codec.constructAndDecode(context, input());
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (other == this) return true;
-        if (!(other instanceof PartialItem)) return false;
-        PartialItem<?, ?> otherItem = (PartialItem<?, ?>) other;
-
-        // compare keys
-        return getKey().equals(otherItem.getKey());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(getKey());
-    }
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(getKey());
+  }
 
 }

@@ -12,24 +12,24 @@ import java.util.List;
 @Getter
 public class CommonProjection implements Projection {
 
+  /**
+   * Specifies the action to perform with the field list operand.
+   */
+  public enum Action {
+
     /**
-     * Specifies the action to perform with the field list operand.
+     * Include the set fields.
      */
-    public enum Action {
+    INCLUDE,
 
-        /**
-         * Include the set fields.
-         */
-        INCLUDE,
+    /**
+     * Exclude the set fields.
+     */
+    EXCLUDE
 
-        /**
-         * Exclude the set fields.
-         */
-        EXCLUDE
+  }
 
-    }
-
-    protected final Action action;
-    protected final List<String> fieldNames;
+  protected final Action action;
+  protected final List<String> fieldNames;
 
 }

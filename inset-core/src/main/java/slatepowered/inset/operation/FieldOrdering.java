@@ -10,12 +10,10 @@ import lombok.RequiredArgsConstructor;
 @Getter
 public enum FieldOrdering {
 
-    ASCENDING(1),
+  ASCENDING(1),
 
-    DESCENDING(-1)
+  DESCENDING(-1);
 
-    ;
-
-    protected final int factor;
+  protected final int factor;
 
 }

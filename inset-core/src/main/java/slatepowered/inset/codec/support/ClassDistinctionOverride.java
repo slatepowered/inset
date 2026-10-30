@@ -8,8 +8,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface ClassDistinctionOverride {
-    /**
-     * The encoded field name for this distinction.
-     */
-    String value();
+  /**
+   * The encoded field name for this distinction.
+   */
+  String value();
 }

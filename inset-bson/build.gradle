@@ -1,4 +1,4 @@
 dependencies {
-    implementation project(":inset-core")
-    api 'org.mongodb:bson:3.4.3'
+  implementation project(":inset-core")
+  api 'org.mongodb:bson:3.4.3'
 }

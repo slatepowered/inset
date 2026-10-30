@@ -8,76 +8,76 @@ package slatepowered.inset.codec;
  */
 public interface ValueCodec<T> {
 
-    /**
-     * Expect this instance to be of a specific {@link ValueCodec} super type.
-     *
-     * @param cClass The expected class.
-     * @param <C> The return type.
-     * @return This.
-     */
-    @SuppressWarnings("unchecked")
-    default <C extends ValueCodec<T>> C expect(Class<? super C> cClass) {
-        if (!cClass.isInstance(this)) {
-            throw new IllegalArgumentException("Expected " + cClass.getSimpleName() + ", got " + this.getClass().getSimpleName() + " (maybe you forgot to define a primary key?)");
-        }
-
-        return (C) this;
+  /**
+   * Expect this instance to be of a specific {@link ValueCodec} super type.
+   *
+   * @param cClass The expected class.
+   * @param <C>    The return type.
+   * @return This.
+   */
+  @SuppressWarnings("unchecked")
+  default <C extends ValueCodec<T>> C expect(Class<? super C> cClass) {
+    if (!cClass.isInstance(this)) {
+      throw new IllegalArgumentException("Expected " + cClass.getSimpleName() + ", got " + this.getClass().getSimpleName() + " (maybe you forgot to define a primary key?)");
     }
 
-    /**
-     * Serialize the given value into the given serialization output.
-     *
-     * @param context The context.
-     * @param value The input value.
-     * @param output The output.
-     */
-    void encode(CodecContext context, T value, EncodeOutput output);
+    return (C) this;
+  }
 
-    /**
-     * Construct a value of the correct type from the given serialization input.
-     *
-     * @param context The context.
-     * @param input The input.
-     * @return The output value.
-     */
-    T construct(CodecContext context, DecodeInput input);
+  /**
+   * Serialize the given value into the given serialization output.
+   *
+   * @param context The context.
+   * @param value   The input value.
+   * @param output  The output.
+   */
+  void encode(CodecContext context, T value, EncodeOutput output);
 
-    /**
-     * Deserialize the fields of the given document instance from the given input.
-     *
-     * @param context The context.
-     * @param instance The output document/value.
-     * @param input The input.
-     */
-    void decode(CodecContext context, T instance, DecodeInput input);
+  /**
+   * Construct a value of the correct type from the given serialization input.
+   *
+   * @param context The context.
+   * @param input   The input.
+   * @return The output value.
+   */
+  T construct(CodecContext context, DecodeInput input);
 
-    /**
-     * Get the field on the given instance.
-     *
-     * @param instance The instance.
-     * @param field The field.
-     * @param <V> The field value type.
-     * @return The value of the field or null if absent.
-     */
-    <V> V getField(T instance, String field);
+  /**
+   * Deserialize the fields of the given document instance from the given input.
+   *
+   * @param context  The context.
+   * @param instance The output document/value.
+   * @param input    The input.
+   */
+  void decode(CodecContext context, T instance, DecodeInput input);
 
-    default T constructAndDecode(CodecContext context, DecodeInput input) {
-        T instance = construct(context, input);
-        decode(context, instance, input);
-        return instance;
-    }
+  /**
+   * Get the field on the given instance.
+   *
+   * @param instance The instance.
+   * @param field    The field.
+   * @param <V>      The field value type.
+   * @return The value of the field or null if absent.
+   */
+  <V> V getField(T instance, String field);
 
-    /**
-     * Find the serialized field name for the given qualified name.
-     *
-     * This is used to map {@link slatepowered.inset.query.Query} field constraints
-     * to their database field equivalents in a database query.
-     *
-     * @param name The name.
-     * @return The serialized name.
-     */
-    default String toSerializedName(String name) {
-        return name;
-    }
+  default T constructAndDecode(CodecContext context, DecodeInput input) {
+    T instance = construct(context, input);
+    decode(context, instance, input);
+    return instance;
+  }
+
+  /**
+   * Find the serialized field name for the given qualified name.
+   *
+   * This is used to map {@link slatepowered.inset.query.Query} field constraints
+   * to their database field equivalents in a database query.
+   *
+   * @param name The name.
+   * @return The serialized name.
+   */
+  default String toSerializedName(String name) {
+    return name;
+  }
 
 }

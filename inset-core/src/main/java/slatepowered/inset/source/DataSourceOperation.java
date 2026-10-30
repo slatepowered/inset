@@ -5,15 +5,15 @@ package slatepowered.inset.source;
  */
 public interface DataSourceOperation {
 
-    /**
-     * Get the override for the name of the primary key field
-     * in the output data.
-     *
-     * A return value of null is interpreted as to use the key
-     * field name provided by the data codec to decode the key.
-     *
-     * @return The primary key field override.
-     */
-    String getPrimaryKeyFieldOverride();
+  /**
+   * Get the override for the name of the primary key field
+   * in the output data.
+   *
+   * A return value of null is interpreted as to use the key
+   * field name provided by the data codec to decode the key.
+   *
+   * @return The primary key field override.
+   */
+  String getPrimaryKeyFieldOverride();
 
 }

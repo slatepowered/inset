@@ -12,6 +12,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.RecordComponent;
 import java.util.*;
 
 /**
@@ -20,60 +21,69 @@ import java.util.*;
 @Builder
 public final class ReflectiveCodecFactory implements CodecFactory {
 
-    static final Unsafe UNSAFE = UnsafeUtil.getUnsafe();
-    static final MethodHandles.Lookup LOOKUP = UnsafeUtil.getInternalLookup();
+  static final Unsafe UNSAFE = UnsafeUtil.getUnsafe();
+  static final MethodHandles.Lookup LOOKUP = UnsafeUtil.getInternalLookup();
 
-    @Override
-    public <T> ValueCodec<T> create(CodecRegistry registry, Class<T> klass) {
-        try {
-            List<UnsafeFieldDesc> unsafeFields = new ArrayList<>();
-            Set<Field> fields = new HashSet<>();
-
-            fields.addAll(Arrays.asList(klass.getFields()));
-            fields.addAll(Arrays.asList(klass.getDeclaredFields()));
-            for (Class<?> kl = klass; kl != Object.class && kl != null; kl = kl.getSuperclass()) {
-                fields.addAll(Arrays.asList(kl.getDeclaredFields()));
-            }
-
-            UnsafeFieldDesc primaryKeyField = null; // Data for data codecs: primary key field
-
-            for (Field field : fields) {
-                if (Modifier.isStatic(field.getModifiers()) || Modifier.isTransient(field.getModifiers())) continue;
-
-                UnsafeFieldDesc fieldDesc = UnsafeFieldDesc.forField(field);
-                unsafeFields.add(fieldDesc);
-
-                // check for primary key field
-                Key keyAnnotation = field.getAnnotation(Key.class);
-                if (keyAnnotation != null) {
-                    primaryKeyField = fieldDesc;
-                }
-            }
-
-            UnsafeFieldDesc[] unsafeFieldArr = unsafeFields.toArray(new UnsafeFieldDesc[0]);
-
-            // find constructor or null
-            MethodHandle constructorHandle;
-
-            try {
-                Constructor<?> constructor = klass.getDeclaredConstructor();
-                constructorHandle = LOOKUP.unreflectConstructor(constructor);
-            } catch (NoSuchMethodException ignored) {
-                constructorHandle = null;
-            }
-
-            // check if we should build a data codec or
-            // a value codec based on the collected data
-            if (
-                    primaryKeyField != null
-            ) {
-                return new UnsafeReflectiveDataCodec<>(klass, unsafeFieldArr, constructorHandle, primaryKeyField);
-            } else {
-                return new UnsafeReflectiveValueCodec<>(klass, unsafeFieldArr, constructorHandle);
-            }
-        } catch (Throwable t) {
-            throw new RuntimeException("Failed to create reflective codec for " + klass, t);
+  @Override
+  public <T> ValueCodec<T> create(CodecRegistry registry, Class<T> klass) {
+    try {
+      if (klass.isRecord()) {
+        final List<RecordFieldAccessor> fields = new ArrayList<>();
+        for (RecordComponent component : klass.getRecordComponents()) {
+          fields.add(RecordFieldAccessor.of(component));
         }
+
+        return new ReflectiveRecordValueCodec<>(fields, klass.getConstructors()[0]);
+      }
+
+      List<UnsafeFieldDesc> unsafeFields = new ArrayList<>();
+      Set<Field> fields = new HashSet<>();
+
+      fields.addAll(Arrays.asList(klass.getFields()));
+      fields.addAll(Arrays.asList(klass.getDeclaredFields()));
+      for (Class<?> kl = klass; kl != Object.class && kl != null; kl = kl.getSuperclass()) {
+        fields.addAll(Arrays.asList(kl.getDeclaredFields()));
+      }
+
+      UnsafeFieldDesc primaryKeyField = null; // Data for data codecs: primary key field
+
+      for (Field field : fields) {
+        if (Modifier.isStatic(field.getModifiers()) || Modifier.isTransient(field.getModifiers())) continue;
+
+        UnsafeFieldDesc fieldDesc = UnsafeFieldDesc.forField(field);
+        unsafeFields.add(fieldDesc);
+
+        // check for primary key field
+        Key keyAnnotation = field.getAnnotation(Key.class);
+        if (keyAnnotation != null) {
+          primaryKeyField = fieldDesc;
+        }
+      }
+
+      UnsafeFieldDesc[] unsafeFieldArr = unsafeFields.toArray(new UnsafeFieldDesc[0]);
+
+      // find constructor or null
+      MethodHandle constructorHandle;
+
+      try {
+        Constructor<?> constructor = klass.getDeclaredConstructor();
+        constructorHandle = LOOKUP.unreflectConstructor(constructor);
+      } catch (NoSuchMethodException ignored) {
+        constructorHandle = null;
+      }
+
+      // check if we should build a data codec or
+      // a value codec based on the collected data
+      if (
+          primaryKeyField != null
+      ) {
+        return new UnsafeReflectiveDataCodec<>(klass, unsafeFieldArr, constructorHandle, primaryKeyField);
+      } else {
+        return new UnsafeReflectiveValueCodec<>(klass, unsafeFieldArr, constructorHandle);
+      }
+    } catch (Throwable t) {
+      throw new RuntimeException("Failed to create reflective codec for " + klass, t);
     }
+  }
 
 }
