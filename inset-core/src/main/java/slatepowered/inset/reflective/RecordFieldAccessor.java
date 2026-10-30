@@ -17,7 +17,7 @@ public class RecordFieldAccessor implements FieldAccessor {
   final Method accessor;
   final String name;
   final String serializedName;
-  final int primitiveType;
+  final byte primitiveType;
   final Type type;
   final long etcFlags;
 

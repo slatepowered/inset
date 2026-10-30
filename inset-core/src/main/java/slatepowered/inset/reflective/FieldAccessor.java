@@ -9,7 +9,7 @@ public interface FieldAccessor {
   String getName();
   String getSerializedName();
   Type getType();
-  int getPrimitiveType();
+  byte getPrimitiveType();
   long getEtcFlags();
   boolean isPotentiallyTransient();
 
