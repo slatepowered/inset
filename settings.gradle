@@ -2,5 +2,4 @@ rootProject.name = 'inset'
 include 'inset-core'
 include 'inset-bson'
 include 'inset-mongodb'
-include 'inset-caffeine'
 
