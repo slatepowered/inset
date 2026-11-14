@@ -106,18 +106,15 @@ public abstract class ValuePolicy {
         throw new IllegalArgumentException("Marked decode frame by path `" + first + "` has missing or invalid object decode input");
       }
 
-      ValueCodec<?> codec = context.findCodec(context.marked().get(first).getAccessor().getTypeAsClass());
       for (String elem : traverse) {
         String fieldName = elem;
-        curr = curr.inputObject(codec.toSerializedName(fieldName));
+        curr = curr.inputObject(fieldName);
         if (curr == null) {
           return null;
         }
-
-        codec = context.findCodec(codec.fieldAccessor(fieldName).getTypeAsClass());
       }
 
-      return curr.read(context, codec.toSerializedName(last), accessor1.getType());
+      return curr.read(context, last, accessor1.getType());
     };
   }
 }
