@@ -4,7 +4,7 @@ import slatepowered.inset.codec.ValueCodec;
 import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.codec.EncodeOutput;
-import slatepowered.inset.util.NotNullable;
+import slatepowered.inset.util.Special;
 import slatepowered.veru.misc.Throwables;
 import slatepowered.veru.reflect.UnsafeUtil;
 import sun.misc.Unsafe;
@@ -58,8 +58,12 @@ public class UnsafeReflectiveValueCodec<T> implements ValueCodec<T> {
   @Override
   public void decode(CodecContext context, T instance, DecodeInput input) {
     for (FieldAccessor desc : fields) {
-      Object value = input.read(context, desc.getSerializedName(), desc.getType());
-      if (value != null || (desc.getEtcFlags() & NotNullable.FLAG) == 0) {
+      if (desc.getMark() != null) {
+        context.marked().put(desc.getMark(), new DecodeFrame(context, instance, input));
+      }
+
+      Object value = desc.decodeAndConform(context, input, instance);
+      if (value != Special.IGNORE) {
         desc.setFromObject(instance, value);
       }
     }
@@ -71,6 +75,16 @@ public class UnsafeReflectiveValueCodec<T> implements ValueCodec<T> {
     if (fieldDesc == null)
       throw new IllegalArgumentException("No field by name `" + field + "` on " + tClass);
     return (V) fieldDesc.getAsObject(instance);
+  }
+
+  @Override
+  public void updateNotDecoded(CodecContext context, T instance) {
+    for (FieldAccessor desc : fields) {
+      Object updated = desc.updateNotDecoded(context, instance);
+      if (updated != Special.IGNORE) {
+        desc.setFromObject(instance, updated);
+      }
+    }
   }
 
   @Override

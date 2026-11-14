@@ -61,6 +61,9 @@ public interface ValueCodec<T> {
    */
   <V> V getField(T instance, String field);
 
+  // Called if this value was not decoded previously and must be inspected for defaults or migrations.
+  void updateNotDecoded(CodecContext context, T instance);
+
   default T constructAndDecode(CodecContext context, DecodeInput input) {
     T instance = construct(context, input);
     decode(context, instance, input);

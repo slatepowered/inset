@@ -3,6 +3,7 @@ package slatepowered.inset.codec.support;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import slatepowered.inset.reflective.Mark;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
@@ -48,6 +49,16 @@ public class ClassTreeInfo {
 
     info = new ClassTreeInfo(klass);
 
+    // load superclass properties
+    Class<?> superclass = klass.getSuperclass();
+    ClassTreeInfo scInfo = superclass != null && superclass != Object.class ?
+        forClass(superclass) :
+        null;
+    if (scInfo != null) {
+      info.annotationMap.putAll(scInfo.getAnnotationMap());
+      info.defaultMark = scInfo.defaultMark;
+    }
+
     // parse own properties
     info.abstractOrHasAbstractParents = hasAbstractParentsOrIsAbstract(klass);
     info.classDistinctionOverride = klass.getAnnotation(ClassDistinctionOverride.class);
@@ -55,11 +66,13 @@ public class ClassTreeInfo {
       info.annotationMap.put(ann.getClass(), ann);
     }
 
-    // load superclass properties
-    Class<?> superclass = klass.getSuperclass();
-    if (superclass != null && superclass != Object.class) {
-      ClassTreeInfo scInfo = forClass(superclass);
-      info.annotationMap.putAll(scInfo.getAnnotationMap());
+    info.isPotentiallyTransient = info.isPotentiallyTransient || PotentiallyTransient.class.isAssignableFrom(klass);
+    if (klass.isAnnotationPresent(Mark.class)) {
+      info.defaultMark = klass.getAnnotation(Mark.class).value();
+    }
+
+    // load overriding superclass properties
+    if (scInfo != null) {
       if (scInfo.isAbstractOrHasAbstractParents()) info.abstractOrHasAbstractParents = true;
       if (scInfo.getClassDistinctionOverride() != null) info.classDistinctionOverride = scInfo.getClassDistinctionOverride();
     }
@@ -73,6 +86,8 @@ public class ClassTreeInfo {
   private Map<Class<? extends Annotation>, Annotation> annotationMap = new HashMap<>();
   private boolean abstractOrHasAbstractParents;
   private ClassDistinctionOverride classDistinctionOverride;
+  private boolean isPotentiallyTransient;
+  private String defaultMark;
 
   public boolean shouldWriteSeparateClassName() {
     return classDistinctionOverride == null && abstractOrHasAbstractParents;

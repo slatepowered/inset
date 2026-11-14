@@ -4,6 +4,10 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import slatepowered.inset.DataManager;
 import slatepowered.inset.codec.support.ClassDistinctionReader;
+import slatepowered.inset.reflective.DecodeFrame;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The context in which data serialization/marshalling occurs.
@@ -13,6 +17,8 @@ public class CodecContext {
 
   @Getter
   protected final DataManager dataManager;
+
+  protected Map<String, DecodeFrame> marked = new HashMap<>();
 
   /**
    * Find or create an applicable value/data codec
@@ -28,6 +34,10 @@ public class CodecContext {
 
   public ClassDistinctionReader findClassDistinctionReader(Class<?> baseClass) {
     return dataManager.getClassDistinctionReaders().get(baseClass);
+  }
+
+  public Map<String, DecodeFrame> marked() {
+    return marked;
   }
 
 }

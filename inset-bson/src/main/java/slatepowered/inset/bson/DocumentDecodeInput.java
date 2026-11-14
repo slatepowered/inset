@@ -319,6 +319,16 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
   }
 
   @Override
+  public DecodeInput inputObject(String field) {
+    Object value = document.get(field);
+    if (value instanceof Document document) {
+      return new DocumentDecodeInput(null, document);
+    }
+
+    throw new UnsupportedOperationException("FUCK");
+  }
+
+  @Override
   public Object readKey(String field, Type expectedType) {
     Object value = document.get(keyFieldOverride != null ? keyFieldOverride : field);
     return decodeDocumentValue(null, "primary key", value, expectedType, ReflectUtil.getClassForType(expectedType));

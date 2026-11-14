@@ -1,15 +1,13 @@
 package slatepowered.inset.reflective;
 
-import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.codec.EncodeOutput;
 import slatepowered.inset.codec.ValueCodec;
-import slatepowered.inset.util.NotNullable;
+import slatepowered.inset.util.Special;
 
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,8 +45,8 @@ public class ReflectiveRecordValueCodec<T> implements ValueCodec<T> {
     Object[] vals = new Object[len];
     for (int i = 0; i < len; i++) {
       final RecordFieldAccessor desc = fields.get(i);
-      Object value = input.read(context, desc.getSerializedName(), desc.getType());
-      if (value != null || (desc.getEtcFlags() & NotNullable.FLAG) == 0) {
+      Object value = desc.decodeAndConform(context, input, null);
+      if (value != Special.IGNORE) {
         vals[i] = value;
       }
     }
@@ -59,6 +57,13 @@ public class ReflectiveRecordValueCodec<T> implements ValueCodec<T> {
   @Override
   public void decode(CodecContext context, T instance, DecodeInput input) {
     // decode is done in construct with all values
+  }
+
+  @Override
+  public void updateNotDecoded(CodecContext context, T instance) {
+    for (RecordFieldAccessor accessor : fields) {
+      Object updated = accessor.updateNotDecoded(context, instance);
+    }
   }
 
   @Override

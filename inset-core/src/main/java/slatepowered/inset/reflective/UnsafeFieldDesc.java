@@ -1,6 +1,7 @@
 package slatepowered.inset.reflective;
 
 import lombok.Data;
+import slatepowered.inset.codec.support.ClassTreeInfo;
 import slatepowered.inset.codec.support.PotentiallyTransient;
 import slatepowered.inset.util.NotNullable;
 import slatepowered.veru.reflect.UnsafeUtil;
@@ -30,10 +31,20 @@ public final class UnsafeFieldDesc implements FieldAccessor {
   final String serializedName; // The serialized name of the field
   final long offset;           // The object field offset
   final Type type;             // The generic type
+  final Class<?> typeAsClass;  // Non generic type
   final byte primitiveType;    // The primitive type, must be one of the above defined constants
-  final long etcFlags;         // Other miscellaneous flags, such as @Nullable
+  final long flags;            // Other miscellaneous flags
+
+  String mark;
+  ValuePolicy valuePolicy;
+  boolean mustProcessDecoding;
 
   boolean isPotentiallyTransient;
+
+  @Override
+  public boolean mustProcessDecoding() {
+    return true; // todo: determine instead of every field
+  }
 
   /**
    * Get the value in this field on the given instance, boxed if primitive.
@@ -43,27 +54,17 @@ public final class UnsafeFieldDesc implements FieldAccessor {
    */
   public Object getAsObject(Object instance) {
     switch (primitiveType) {
-      case PT_REFERENCE:
-        return UNSAFE.getObject(instance, offset);
-      case PT_LONG:
-        return UNSAFE.getLong(instance, offset);
-      case PT_INT:
-        return UNSAFE.getInt(instance, offset);
-      case PT_DOUBLE:
-        return UNSAFE.getDouble(instance, offset);
-      case PT_FLOAT:
-        return UNSAFE.getFloat(instance, offset);
-      case PT_SHORT:
-        return UNSAFE.getShort(instance, offset);
-      case PT_CHAR:
-        return UNSAFE.getChar(instance, offset);
-      case PT_BYTE:
-        return UNSAFE.getByte(instance, offset);
-      case PT_BOOLEAN:
-        return UNSAFE.getBoolean(instance, offset);
+      case PT_REFERENCE: return UNSAFE.getObject(instance, offset);
+      case PT_LONG: return UNSAFE.getLong(instance, offset);
+      case PT_INT: return UNSAFE.getInt(instance, offset);
+      case PT_DOUBLE: return UNSAFE.getDouble(instance, offset);
+      case PT_FLOAT: return UNSAFE.getFloat(instance, offset);
+      case PT_SHORT: return UNSAFE.getShort(instance, offset);
+      case PT_CHAR: return UNSAFE.getChar(instance, offset);
+      case PT_BYTE: return UNSAFE.getByte(instance, offset);
+      case PT_BOOLEAN: return UNSAFE.getBoolean(instance, offset);
+      default: throw new IllegalArgumentException("Weird primitive type idk how to get that [byte primitiveType = " + primitiveType + "]");
     }
-
-    throw new IllegalArgumentException("Goofy primitive type idk how to get that [byte primitiveType = " + primitiveType + "]");
   }
 
   /**
@@ -75,26 +76,16 @@ public final class UnsafeFieldDesc implements FieldAccessor {
    */
   public void setFromObject(Object instance, Object value) {
     switch (primitiveType) {
-      case PT_REFERENCE:
-        UNSAFE.putObject(instance, offset, value); break;
-      case PT_LONG:
-        UNSAFE.putLong(instance, offset, value != null ? (Long) value : 0); break;
-      case PT_INT:
-        UNSAFE.putInt(instance, offset, value != null ? (Integer) value : 0); break;
-      case PT_DOUBLE:
-        UNSAFE.putDouble(instance, offset, value != null ? (Double) value : 0); break;
-      case PT_FLOAT:
-        UNSAFE.putFloat(instance, offset, value != null ? (Float) value : 0); break;
-      case PT_SHORT:
-        UNSAFE.putShort(instance, offset, value != null ? (Short) value : 0); break;
-      case PT_CHAR:
-        UNSAFE.putChar(instance, offset, value != null ? (Character) value : 0); break;
-      case PT_BYTE:
-        UNSAFE.putByte(instance, offset, value != null ? (Byte) value : 0); break;
-      case PT_BOOLEAN:
-        UNSAFE.putBoolean(instance, offset, value != null ? (Boolean) value : false); break;
-      default:
-        throw new IllegalArgumentException("Goofy primitive type idk how to set that [byte primitiveType = " + primitiveType + "]");
+      case PT_REFERENCE: UNSAFE.putObject(instance, offset, value); break;
+      case PT_LONG: UNSAFE.putLong(instance, offset, value != null ? (Long) value : 0); break;
+      case PT_INT: UNSAFE.putInt(instance, offset, value != null ? (Integer) value : 0); break;
+      case PT_DOUBLE: UNSAFE.putDouble(instance, offset, value != null ? (Double) value : 0); break;
+      case PT_FLOAT: UNSAFE.putFloat(instance, offset, value != null ? (Float) value : 0); break;
+      case PT_SHORT: UNSAFE.putShort(instance, offset, value != null ? (Short) value : 0); break;
+      case PT_CHAR: UNSAFE.putChar(instance, offset, value != null ? (Character) value : 0); break;
+      case PT_BYTE: UNSAFE.putByte(instance, offset, value != null ? (Byte) value : 0); break;
+      case PT_BOOLEAN: UNSAFE.putBoolean(instance, offset, value != null ? (Boolean) value : false); break;
+      default: throw new IllegalArgumentException("Weird primitive type idk how to set that [byte primitiveType = " + primitiveType + "]");
     }
   }
 
@@ -114,13 +105,35 @@ public final class UnsafeFieldDesc implements FieldAccessor {
 
   public static UnsafeFieldDesc forField(Field field) {
     long flags = 0;
-    if (field.isAnnotationPresent(NotNullable.class)) flags |= NotNullable.FLAG;
 
     SerializedName fieldNameAnnotation = field.getAnnotation(SerializedName.class);
-    UnsafeFieldDesc desc = new UnsafeFieldDesc(field, field.getName(), fieldNameAnnotation != null ? fieldNameAnnotation.value() : field.getName(), UNSAFE.objectFieldOffset(field), field.getGenericType(), getPrimitiveType(field.getType()), flags);
+    UnsafeFieldDesc desc = new UnsafeFieldDesc(field, field.getName(),
+        fieldNameAnnotation != null ? fieldNameAnnotation.value() :
+        field.getName(),
+        UNSAFE.objectFieldOffset(field),
+        field.getGenericType(),
+        field.getType(),
+        getPrimitiveType(field.getType()),
+        flags);
 
     if (PotentiallyTransient.class.isAssignableFrom(field.getType())) {
       desc.isPotentiallyTransient = true;
+    }
+
+    ClassTreeInfo treeInfo = ClassTreeInfo.forClass(field.getType());
+    desc.isPotentiallyTransient = treeInfo.isPotentiallyTransient();
+    desc.mark = treeInfo.getDefaultMark();
+
+    Mark markAnn = field.getAnnotation(Mark.class);
+    if (markAnn != null) {
+      desc.mark = markAnn.value();
+    }
+
+    Or orAnn = field.getAnnotation(Or.class);
+    if (orAnn != null) {
+      desc.valuePolicy = ValuePolicy.from(desc, orAnn);
+    } else {
+      if (field.isAnnotationPresent(NotNullable.class)) desc.valuePolicy = new ValuePolicy.Static(true, null);
     }
 
     return desc;

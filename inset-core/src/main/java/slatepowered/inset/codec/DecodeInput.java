@@ -44,11 +44,39 @@ public abstract class DecodeInput {
    */
   protected abstract Object readKey(String field, Type expectedType);
 
+  /**
+   * Create a {@link DecodeInput} to read from the given field.
+   */
+  public abstract DecodeInput inputObject(String field);
+
   @SuppressWarnings("unchecked")
   public <R extends DecodeInput> R requireType(Class<R> rClass) {
     if (!rClass.isInstance(this))
       throw new RuntimeException("Input of type " + rClass.getName() + " required, got " + this.getClass().getSimpleName());
     return (R) this;
+  }
+
+  public static class Empty extends DecodeInput {
+    static final Empty EMPTY = new Empty();
+
+    @Override
+    public Object read(CodecContext context, String field, Type expectedType) {
+      return null;
+    }
+
+    @Override
+    protected Object readKey(String field, Type expectedType) {
+      return null;
+    }
+
+    @Override
+    public DecodeInput inputObject(String field) {
+      return EMPTY;
+    }
+  }
+
+  public static DecodeInput empty() {
+    return new Empty();
   }
 
 }
