@@ -92,6 +92,7 @@ public abstract class ValuePolicy {
     final String last = path[path.length - 1];
     final String[] traverse = Arrays.copyOfRange(path, 1, path.length - 1);
     return (context, accessor1, parent, current) -> {
+      System.out.println("first: `" + first + "`, allmarked: " + context.marked());
       DecodeInput curr = context.marked().get(first).getInput();
       ValueCodec<?> codec = context.findCodec(context.marked().get(first).getAccessor().getTypeAsClass());
       for (String elem : traverse) {
