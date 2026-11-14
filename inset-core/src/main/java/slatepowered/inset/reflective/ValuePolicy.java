@@ -32,9 +32,9 @@ public abstract class ValuePolicy {
 
   public static ValuePolicy fromString(FieldAccessor accessor, String str) {
     switch (str) {
-      case "declineAbsent+decodeDefaultIfNull" -> new Static(true, DefaultProviders.DECODE_EMPTY);
-      case "declineAbsent+ignoreNull" -> new Static(true, null);
-      case "acceptAbsent+decodeDefaultIfNull" -> new Static(false, DefaultProviders.DECODE_EMPTY);
+      case "declineAbsent+decodeDefaultIfNull": return new Static(true, DefaultProviders.DECODE_EMPTY);
+      case "declineAbsent+ignoreNull": return new Static(true, null);
+      case "acceptAbsent+decodeDefaultIfNull": return new Static(false, DefaultProviders.DECODE_EMPTY);
     }
 
     // parse simple command
@@ -43,7 +43,7 @@ public abstract class ValuePolicy {
     String remaining = str.substring(space + 1);
 
     switch (alias) {
-      case "from" -> new Static(true, inputFromPathDefault(accessor, remaining));
+      case "from": return new Static(true, inputFromPathDefault(accessor, remaining));
     }
 
     throw new IllegalArgumentException("Unsupported ValuePolicy string `" + str + "`");
