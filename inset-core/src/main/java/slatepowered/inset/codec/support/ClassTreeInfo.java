@@ -38,7 +38,7 @@ public class ClassTreeInfo {
   }
 
   public static ClassTreeInfo forClass(Class<?> klass) {
-    if (klass == null || klass.isPrimitive() || klass.isArray()) {
+    if (klass == null) {
       return null;
     }
 
@@ -48,6 +48,10 @@ public class ClassTreeInfo {
     }
 
     info = new ClassTreeInfo(klass);
+    if (klass.isPrimitive() || klass.isArray()) {
+      MAP.put(klass, info);
+      return info;
+    }
 
     // load superclass properties
     Class<?> superclass = klass.getSuperclass();

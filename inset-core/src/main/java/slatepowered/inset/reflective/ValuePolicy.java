@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import slatepowered.inset.codec.CodecContext;
 import slatepowered.inset.codec.DecodeInput;
+import slatepowered.inset.util.Special;
 
 import java.util.Arrays;
 
@@ -90,16 +91,16 @@ public abstract class ValuePolicy {
     final String first = path[0];
     final String last = path[path.length - 1];
     final String[] traverse = Arrays.copyOfRange(path, 1, path.length - 1);
-    return new DefaultProvider() {
-      @Override
-      public Object defaultFor(CodecContext context, FieldAccessor accessor, Object parent, Object current) {
-        DecodeInput curr = context.marked().get(first).getInput();
-        for (String elem : traverse) {
-          curr = curr.inputObject(elem);
+    return (context, accessor1, parent, current) -> {
+      DecodeInput curr = context.marked().get(first).getInput();
+      for (String elem : traverse) {
+        curr = curr.inputObject(elem);
+        if (curr == null) {
+          return null;
         }
-
-        return curr.read(context, last, accessor.getType());
       }
+
+      return curr.read(context, last, accessor1.getType());
     };
   }
 }

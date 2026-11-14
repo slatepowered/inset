@@ -325,7 +325,7 @@ public class DocumentDecodeInput extends DecodeInput implements DebugLogging {
       return new DocumentDecodeInput(null, document);
     }
 
-    throw new UnsupportedOperationException("FUCK");
+    return null;
   }
 
   @Override

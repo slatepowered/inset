@@ -45,7 +45,8 @@ public abstract class DecodeInput {
   protected abstract Object readKey(String field, Type expectedType);
 
   /**
-   * Create a {@link DecodeInput} to read from the given field.
+   * Create a {@link DecodeInput} to read from the given field. Should return null
+   * for null or unsupported values.
    */
   public abstract DecodeInput inputObject(String field);
 
