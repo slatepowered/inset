@@ -6,6 +6,7 @@ import slatepowered.inset.codec.DecodeInput;
 import slatepowered.inset.codec.EncodeOutput;
 import slatepowered.inset.codec.ValueCodec;
 import slatepowered.inset.util.Special;
+import slatepowered.inset.util.ValueUtils;
 
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
@@ -17,16 +18,24 @@ public class ReflectiveRecordValueCodec<T> implements ValueCodec<T> {
   private final List<RecordFieldAccessor> fields;
   private final Map<String, RecordFieldAccessor> fieldMap;
   private final Constructor constructor;
+  private final Object[] defaults;
 
   public ReflectiveRecordValueCodec(List<RecordFieldAccessor> fields, Constructor constructor) {
     this.fields = fields;
     this.fieldMap = new HashMap<>();
     this.constructor = constructor;
+
     for (var f : fields) {
       fieldMap.put(f.getName(), f);
       if (f.getSerializedName() != null) {
         fieldMap.put(f.getSerializedName(), f);
       }
+    }
+
+    defaults = new Object[fields.size()];
+    for (int i = 0; i < defaults.length; i++) {
+      final var desc = fields.get(i);
+      defaults[i] = ValueUtils.defaultValueForPrimitive(desc.getTypeAsClass());
     }
   }
 
@@ -48,6 +57,8 @@ public class ReflectiveRecordValueCodec<T> implements ValueCodec<T> {
       Object value = desc.decodeAndConform(context, input, null);
       if (value != Special.IGNORE) {
         vals[i] = value;
+      } else {
+        vals[i] = defaults[i];
       }
     }
 

@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
  * Migration policy if the key associated with this field does not exist.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.FIELD)
+@Target({ ElementType.FIELD, ElementType.RECORD_COMPONENT })
 public @interface Or {
 
   /**

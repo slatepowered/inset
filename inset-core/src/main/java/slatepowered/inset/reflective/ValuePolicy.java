@@ -31,7 +31,6 @@ public abstract class ValuePolicy {
   }
 
   public static ValuePolicy fromString(FieldAccessor accessor, String str) {
-    str = str.trim();
     switch (str) {
       case "declineAbsent+decodeDefaultIfNull" -> new Static(true, DefaultProviders.DECODE_EMPTY);
       case "declineAbsent+ignoreNull" -> new Static(true, null);

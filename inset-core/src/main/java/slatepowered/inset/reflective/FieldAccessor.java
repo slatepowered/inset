@@ -78,7 +78,7 @@ public interface FieldAccessor {
     // the original value of the field. this should be tracked because
     // we dont want to apply default policy updates twice since it
     // already occurs during the decoding process.
-    Object original = parent != null ? getAsObject(parent) : null;
+    Object original = parent != null ? getAsObject(parent) : Special.IGNORE;
     Object current = original; // track the current value set on the field
 
     Object read = input.read(context, getSerializedName(), getType());
@@ -110,6 +110,7 @@ public interface FieldAccessor {
   }
 
   // Should only be called on fields that didn't undergo the decoding procedure
+  @SuppressWarnings("unchecked")
   default Object updateNotDecoded(CodecContext context, Object parent) {
     ValuePolicy policy = getValuePolicy();
     if (policy == null) {
@@ -119,6 +120,10 @@ public interface FieldAccessor {
     Object current = getAsObject(parent);
     if (policy.shouldUpdateValue(context, this, parent, current)) {
       current = policy.updateValue(context, this, parent, getAsObject(parent));
+    }
+
+    if (current != null) {
+      context.findCodec((Class<Object>) current.getClass()).updateNotDecoded(context, current);
     }
 
     return current;

@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
  * Indicates that a field is not nullable.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.FIELD)
+@Target({ ElementType.FIELD, ElementType.RECORD_COMPONENT })
 public @interface NotNullable {
 
   /**

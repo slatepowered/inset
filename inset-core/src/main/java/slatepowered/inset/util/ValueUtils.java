@@ -94,6 +94,22 @@ public final class ValueUtils {
     return str;
   }
 
+  public static Object defaultValueForPrimitive(Class<?> kl) {
+    if (!kl.isPrimitive()) {
+      return null;
+    }
+
+    if (kl == byte.class) return (byte)0;
+    if (kl == short.class) return (short)0;
+    if (kl == char.class) return (char)0;
+    if (kl == int.class) return (int)0;
+    if (kl == long.class) return (long)0;
+    if (kl == float.class) return (float)0;
+    if (kl == double.class) return (double)0;
+    if (kl == boolean.class) return Boolean.FALSE;
+    throw new AssertionError();
+  }
+
   /**
    * Get a pretty, formatted and compact representation of the given value.
    */
