@@ -82,7 +82,11 @@ public abstract class ValuePolicy {
 
     @Override
     public Object updateValue(CodecContext context, FieldAccessor accessor, Object parent, Object current) {
-      return defaultProvider.defaultFor(context, accessor, parent, current);
+      try {
+        return defaultProvider.defaultFor(context, accessor, parent, current);
+      } catch (Exception ex) {
+        throw new RuntimeException("In resolution of default value for field `" + accessor.getName() + "`", ex);
+      }
     }
   }
 
@@ -92,8 +96,12 @@ public abstract class ValuePolicy {
     final String last = path[path.length - 1];
     final String[] traverse = Arrays.copyOfRange(path, 1, path.length - 1);
     return (context, accessor1, parent, current) -> {
-      System.out.println("first: `" + first + "`, allmarked: " + context.marked());
-      DecodeInput curr = context.marked().get(first).getInput();
+      DecodeFrame frame = context.marked().get(first);
+      if (frame == null) {
+        throw new IllegalArgumentException("No marked decode frame by path `" + first + "`");
+      }
+
+      DecodeInput curr = frame.getInput();
       ValueCodec<?> codec = context.findCodec(context.marked().get(first).getAccessor().getTypeAsClass());
       for (String elem : traverse) {
         String fieldName = elem;
