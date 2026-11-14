@@ -98,18 +98,23 @@ public abstract class ValuePolicy {
     return (context, accessor1, parent, current) -> {
       DecodeFrame frame = context.marked().get(first);
       if (frame == null) {
-        throw new IllegalArgumentException("No marked decode frame by path `" + first + "`, all: " + context.marked());
+        throw new IllegalArgumentException("No marked decode frame by path `" + first + "`");
       }
 
       DecodeInput curr = frame.getInput();
+      if (curr == null) {
+        throw new IllegalArgumentException("Marked decode frame by path `" + first + "` has missing or invalid object decode input");
+      }
+
       ValueCodec<?> codec = context.findCodec(context.marked().get(first).getAccessor().getTypeAsClass());
       for (String elem : traverse) {
         String fieldName = elem;
         curr = curr.inputObject(codec.toSerializedName(fieldName));
-        codec = context.findCodec(codec.fieldAccessor(fieldName).getTypeAsClass());
         if (curr == null) {
           return null;
         }
+
+        codec = context.findCodec(codec.fieldAccessor(fieldName).getTypeAsClass());
       }
 
       return curr.read(context, codec.toSerializedName(last), accessor1.getType());
