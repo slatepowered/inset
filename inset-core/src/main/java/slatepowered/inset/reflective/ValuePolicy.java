@@ -98,7 +98,7 @@ public abstract class ValuePolicy {
     return (context, accessor1, parent, current) -> {
       DecodeFrame frame = context.marked().get(first);
       if (frame == null) {
-        throw new IllegalArgumentException("No marked decode frame by path `" + first + "`");
+        throw new IllegalArgumentException("No marked decode frame by path `" + first + "`, all: " + context.marked());
       }
 
       DecodeInput curr = frame.getInput();
