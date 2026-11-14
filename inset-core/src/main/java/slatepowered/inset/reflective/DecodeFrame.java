@@ -10,6 +10,7 @@ import slatepowered.inset.codec.DecodeInput;
 public class DecodeFrame {
 
   private final CodecContext context;
+  private final FieldAccessor accessor;
   private final Object parentInstance;
   private final DecodeInput input;
 

@@ -59,7 +59,7 @@ public class UnsafeReflectiveValueCodec<T> implements ValueCodec<T> {
   public void decode(CodecContext context, T instance, DecodeInput input) {
     for (FieldAccessor desc : fields) {
       if (desc.getMark() != null) {
-        context.marked().put(desc.getMark(), new DecodeFrame(context, instance, input));
+        context.marked().put(desc.getMark(), new DecodeFrame(context, desc, instance, input.inputObject(desc.getSerializedName())));
       }
 
       Object value = desc.decodeAndConform(context, input, instance);
@@ -67,6 +67,11 @@ public class UnsafeReflectiveValueCodec<T> implements ValueCodec<T> {
         desc.setFromObject(instance, value);
       }
     }
+  }
+
+  @Override
+  public FieldAccessor fieldAccessor(String field) {
+    return fieldMap.get(field);
   }
 
   @Override

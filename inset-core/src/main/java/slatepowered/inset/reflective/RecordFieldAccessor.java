@@ -56,6 +56,7 @@ public class RecordFieldAccessor implements FieldAccessor {
     desc.isPotentiallyTransient = treeInfo.isPotentiallyTransient();
 
     Mark markAnn = field.getAnnotation(Mark.class);
+    desc.mark = treeInfo.getDefaultMark();
     if (markAnn != null) {
       desc.mark = markAnn.value();
     }

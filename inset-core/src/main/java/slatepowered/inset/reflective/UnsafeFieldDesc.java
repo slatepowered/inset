@@ -122,8 +122,8 @@ public final class UnsafeFieldDesc implements FieldAccessor {
 
     ClassTreeInfo treeInfo = ClassTreeInfo.forClass(field.getType());
     desc.isPotentiallyTransient = treeInfo.isPotentiallyTransient();
-    desc.mark = treeInfo.getDefaultMark();
 
+    desc.mark = treeInfo.getDefaultMark();
     Mark markAnn = field.getAnnotation(Mark.class);
     if (markAnn != null) {
       desc.mark = markAnn.value();

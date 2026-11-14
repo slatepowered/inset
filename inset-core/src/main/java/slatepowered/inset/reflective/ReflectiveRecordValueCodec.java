@@ -54,6 +54,10 @@ public class ReflectiveRecordValueCodec<T> implements ValueCodec<T> {
     Object[] vals = new Object[len];
     for (int i = 0; i < len; i++) {
       final RecordFieldAccessor desc = fields.get(i);
+      if (desc.getMark() != null) {
+        context.marked().put(desc.getMark(), new DecodeFrame(context, desc, null, input.inputObject(desc.getSerializedName())));
+      }
+
       Object value = desc.decodeAndConform(context, input, null);
       if (value != Special.IGNORE) {
         vals[i] = value;
@@ -63,6 +67,11 @@ public class ReflectiveRecordValueCodec<T> implements ValueCodec<T> {
     }
 
     return (T) constructor.newInstance(vals);
+  }
+
+  @Override
+  public FieldAccessor fieldAccessor(String field) {
+    return fieldMap.get(field);
   }
 
   @Override

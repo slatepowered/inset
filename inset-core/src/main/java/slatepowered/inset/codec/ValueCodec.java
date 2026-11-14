@@ -1,5 +1,7 @@
 package slatepowered.inset.codec;
 
+import slatepowered.inset.reflective.FieldAccessor;
+
 /**
  * Serializes/deserializes data of type {@code T} to/from serialization
  * outputs and inputs.
@@ -60,6 +62,13 @@ public interface ValueCodec<T> {
    * @return The value of the field or null if absent.
    */
   <V> V getField(T instance, String field);
+
+  /**
+   * Get the field accessor for the given field if applicable.
+   */
+  default FieldAccessor fieldAccessor(String field) {
+    return null;
+  }
 
   // Called if this value was not decoded previously and must be inspected for defaults or migrations.
   void updateNotDecoded(CodecContext context, T instance);
