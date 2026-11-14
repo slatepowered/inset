@@ -78,7 +78,7 @@ public interface FieldAccessor {
     // the original value of the field. this should be tracked because
     // we dont want to apply default policy updates twice since it
     // already occurs during the decoding process.
-    Object original = getAsObject(parent);
+    Object original = parent != null ? getAsObject(parent) : null;
     Object current = original; // track the current value set on the field
 
     Object read = input.read(context, getSerializedName(), getType());
