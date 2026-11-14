@@ -76,7 +76,7 @@ public abstract class ValuePolicy {
 
     @Override
     public boolean shouldUpdateValue(CodecContext context, FieldAccessor accessor, Object parent, Object current) {
-      return defaultProvider != null && current == null;
+      return defaultProvider != null && (current == null || current == Special.IGNORE);
     }
 
     @Override
